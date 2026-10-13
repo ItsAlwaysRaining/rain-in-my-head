@@ -1,0 +1,40 @@
+name: Sync scrobbles
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Fetch new scrobbles from Last.fm
+        run: uv run --no-default-groups listening fetch
+        env:
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_USER: ${{ secrets.LASTFM_USER }}
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/raw/lastfm
+          if git diff --cached --quiet; then
+            echo "No new scrobbles."
+          else
+            git commit -m "Sync scrobbles $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push
+          fi

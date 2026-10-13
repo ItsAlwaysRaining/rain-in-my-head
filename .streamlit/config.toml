@@ -1,0 +1,43 @@
+# Dark theme from the project palette (dark-mode values). Chart colors are the palette's
+# iris / teal / coral hues re-stepped to OKLCH L≈0.62, C≥0.10 so they read on #18181C and
+# pass color-blind separation checks; the raw pastel UI tones are too light for chart marks.
+
+[theme]
+base = "dark"
+primaryColor = "#9995E4"             # --iris
+backgroundColor = "#18181C"          # --page
+secondaryBackgroundColor = "#202030" # --iris-surface
+textColor = "#E4E4EA"                # --text
+linkColor = "#B2B0F7"                # --iris-strong
+borderColor = "#4C4C54"              # --line
+dataframeBorderColor = "#4C4C54"
+dataframeHeaderBackgroundColor = "#202030"
+showWidgetBorder = true
+baseRadius = "0.5rem"
+
+blueColor = "#9995E4"                # info callouts → iris
+blueBackgroundColor = "#202030"
+blueTextColor = "#B2B0F7"
+violetColor = "#9995E4"
+greenColor = "#5AA8A2"               # positive deltas → teal
+greenBackgroundColor = "#142524"
+greenTextColor = "#78C0BA"
+redColor = "#FEC0B6"                 # negative deltas → coral
+redBackgroundColor = "#2F1C19"
+redTextColor = "#FFD2CA"
+orangeColor = "#FEC0B6"              # warnings → coral
+orangeBackgroundColor = "#2F1C19"
+orangeTextColor = "#FFD2CA"
+grayColor = "#AAAAB4"                # --text-muted
+grayTextColor = "#AAAAB4"
+
+chartCategoricalColors = ["#7F77D6", "#0E9A94", "#CD6153"]
+# Iris, dark → light (more = brighter on a dark surface). Streamlit requires exactly 10.
+chartSequentialColors = ["#1D1C34", "#2B284D", "#393567", "#484383", "#58519E", "#6B63BC", "#7F78D6", "#948FE8", "#AAA8F1", "#C2C1F7"]
+
+[theme.sidebar]
+backgroundColor = "#202030"          # --iris-surface
+secondaryBackgroundColor = "#18181C"
+
+[client]
+toolbarMode = "viewer"  # hide the Deploy button and developer menu

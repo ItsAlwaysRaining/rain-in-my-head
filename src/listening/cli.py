@@ -1,0 +1,247 @@
+"""Command line entry point: `listening fetch | build | enrich | stats`."""
+
+from __future__ import annotations
+
+import argparse
+import sqlite3
+
+from . import config
+
+
+def _client():
+    from .lastfm import LastfmClient
+
+    return LastfmClient(*config.lastfm_credentials())
+
+
+def cmd_fetch(args) -> None:
+    from .fetch import fetch
+
+    fetch(_client(), config.RAW_DIR)
+
+
+def cmd_build(args) -> None:
+    from .build import build
+
+    build(config.RAW_DIR, config.DB_PATH)
+
+
+def cmd_enrich(args) -> None:
+    from .enrich import enrich
+
+    enrich(_client(), config.DB_PATH, args.limit)
+
+
+def cmd_stats(args) -> None:
+    if not config.DB_PATH.exists():
+        raise SystemExit("No database yet. Run `listening build` first.")
+    conn = sqlite3.connect(config.DB_PATH)
+    q = lambda sql: conn.execute(sql).fetchall()  # noqa: E731
+
+    n, first, last = q(
+        "SELECT COUNT(*), date(MIN(played_at),'unixepoch'), date(MAX(played_at),'unixepoch') FROM scrobbles"
+    )[0]
+    print(f"Scrobbles: {n}  ({first} → {last})")
+    (bad,), = q("SELECT COUNT(*) FROM scrobbles WHERE played_at < 946684800")
+    if bad:
+        print(f"  {bad} have placeholder timestamps before 2000 and are excluded from v_plays/dashboard")
+    (tracks, artists), = q("SELECT COUNT(DISTINCT track_key), COUNT(DISTINCT artist_key) FROM scrobbles")
+    print(f"Unique tracks: {tracks}   unique artists: {artists}")
+
+    (t_done, t_dur), = q("SELECT COUNT(*), COUNT(duration_ms) FROM tracks")
+    (a_done,), = q("SELECT COUNT(*) FROM artists")
+    (a_tagged,), = q("SELECT COUNT(DISTINCT artist_key) FROM artist_tags")
+    print(f"Enriched tracks: {t_done}/{tracks} ({t_dur} with duration)")
+    print(f"Enriched artists: {a_done}/{artists} ({a_tagged} with tags)")
+
+    # Same track scrobbled 20+ times within 5 minutes is almost certainly junk.
+    bursts = q(
+        """SELECT datetime(MIN(played_at),'unixepoch'), artist_name, track_name, MAX(n) FROM (
+             SELECT played_at, artist_name, track_name, track_key,
+                    COUNT(*) OVER (PARTITION BY track_key ORDER BY played_at
+                                   RANGE BETWEEN CURRENT ROW AND 300 FOLLOWING) AS n
+             FROM scrobbles WHERE played_at >= 946684800)
+           WHERE n >= 20 GROUP BY track_key, played_at / 3600 ORDER BY 4 DESC LIMIT 10"""
+    )
+    if bursts:
+        print("\nSuspicious bursts (≥20 plays of one track in 5 min):")
+        for when, artist, track, count in bursts:
+            print(f"  {when}  {artist} – {track}  ×{count}")
+    conn.close()
+
+
+def cmd_spotify_login(args) -> None:
+    from .spotify import login
+
+    login(config.spotify_client_id(), config.SPOTIFY_TOKEN_PATH)
+
+
+def parse_days(text: str) -> list[int]:
+    from .playlist import WEEKDAY_NAMES
+
+    names = [d.lower() for d in WEEKDAY_NAMES]
+    groups = {"all": range(7), "weekdays": range(5), "weekends": range(5, 7)}
+    days: set[int] = set()
+    for part in text.lower().replace(" ", "").split(","):
+        if part in groups:
+            days.update(groups[part])
+        elif part[:3] in names:
+            days.add(names.index(part[:3]))
+        else:
+            raise SystemExit(f"Unknown day {part!r}. Use e.g. fri, sat,sun, weekdays, weekends, all.")
+    return sorted(days)
+
+
+def parse_hours(text: str) -> tuple[int, int]:
+    try:
+        start, end = (int(h) for h in text.split("-"))
+    except ValueError:
+        raise SystemExit("--hours must look like 17-19 (24h clock; end is exclusive).")
+    if not (0 <= start <= 23 and 1 <= end <= 24 and start != end):
+        raise SystemExit("--hours must be within 0-24, e.g. 17-19 or 22-2.")
+    return start, end
+
+
+def cmd_playlist(args) -> None:
+    from datetime import date
+
+    from .build import connect
+    from .playlist import Slot, match_tracks, rank_tracks
+    from .spotify import SpotifyClient
+
+    start, end = parse_hours(args.hours)
+    slot = Slot(
+        weekdays=parse_days(args.days), start_hour=start, end_hour=end,
+        since=date.fromisoformat(args.since) if args.since else None,
+        until=date.fromisoformat(args.until) if args.until else None,
+    )
+    conn = connect(config.DB_PATH)
+    ranked = rank_tracks(conn, slot, args.min_plays)
+    print(f"{slot.label()}: {len(ranked)} candidate tracks")
+    if ranked.empty:
+        return
+    if args.dry_run:
+        print(ranked.head(args.size)[["artist", "track", "slot_plays", "total_plays", "lift"]].to_string())
+        return
+    client = SpotifyClient(config.spotify_client_id(), config.SPOTIFY_TOKEN_PATH)
+    matched = match_tracks(conn, client, ranked, args.size)
+    hits = matched[matched["spotify_uri"].notna()]
+    for row in matched[matched["spotify_uri"].isna()].itertuples():
+        print(f"  no Spotify match: {row.artist} – {row.track}")
+    url = client.create_playlist(args.name or slot.label(), slot.describe(), list(hits["spotify_uri"]))
+    print(f"Created playlist with {len(hits)} tracks: {url}")
+
+
+def cmd_discoveries(args) -> None:
+    from .build import connect
+    from .playlist import discoveries, match_tracks
+    from .spotify import SpotifyClient
+
+    conn = connect(config.DB_PATH)
+    ranked = discoveries(conn, args.year, args.min_plays, args.rank_by)
+    print(f"Discovered in {args.year}: {len(ranked)} candidate tracks")
+    if ranked.empty:
+        return
+    if args.dry_run:
+        print(ranked.head(args.size)[["artist", "track", "first_played", "year_plays", "total_plays"]].to_string())
+        return
+    client = SpotifyClient(config.spotify_client_id(), config.SPOTIFY_TOKEN_PATH)
+    matched = match_tracks(conn, client, ranked, args.size)
+    hits = matched[matched["spotify_uri"].notna()]
+    if args.chronological:
+        hits = hits.sort_values("first_played")
+    for row in matched[matched["spotify_uri"].isna()].itertuples():
+        print(f"  no Spotify match: {row.artist} – {row.track}")
+    picked = "plays that year" if args.rank_by == "year" else "plays since"
+    url = client.create_playlist(
+        args.name or f"Discovered in {args.year}",
+        f"Songs I first heard in {args.year}, picked by {picked}. Made from my Last.fm history.",
+        list(hits["spotify_uri"]),
+    )
+    print(f"Created playlist with {len(hits)} tracks: {url}")
+
+
+def cmd_binges(args) -> None:
+    from .build import connect
+    from .playlist import (
+        BINGE_ORDERS, binge_tracks, binges, format_span, match_tracks, order_binge_episodes, order_binge_tracks,
+    )
+    from .spotify import SpotifyClient
+
+    conn = connect(config.DB_PATH)
+    episodes = binges(conn, args.min_plays, args.window_days, args.since, args.until)
+    ranked = binge_tracks(episodes)
+    print(f"{len(episodes)} binges across {len(ranked)} songs ({args.min_plays}+ plays within {args.window_days} days)")
+    if ranked.empty:
+        return
+    if args.dry_run:
+        chosen = set(ranked.head(args.size)["track_key"])
+        shown = order_binge_episodes(episodes[episodes["track_key"].isin(chosen)], args.order)
+        for r in shown.itertuples():
+            print(f"  {format_span(r.start, r.end):<26} {r.plays:>3} plays  {r.artist} – {r.track}")
+        return
+    client = SpotifyClient(config.spotify_client_id(), config.SPOTIFY_TOKEN_PATH)
+    # Match biggest binges first so misses are replaced by the next biggest, then apply the order.
+    matched = match_tracks(conn, client, ranked, args.size)
+    hits = order_binge_tracks(matched[matched["spotify_uri"].notna()], args.order)
+    for row in matched[matched["spotify_uri"].isna()].itertuples():
+        print(f"  no Spotify match: {row.artist} – {row.track}")
+    ordering = BINGE_ORDERS[args.order]
+    url = client.create_playlist(
+        args.name or "Binged",
+        f"Songs I played {args.min_plays}+ times within {args.window_days} days, {ordering}. "
+        "Made from my Last.fm history.",
+        list(hits["spotify_uri"]),
+    )
+    print(f"Created playlist with {len(hits)} tracks: {url}")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(prog="listening", description="Last.fm listening analytics")
+    sub = parser.add_subparsers(dest="command", required=True)
+    sub.add_parser("fetch", help="append new scrobbles to data/raw/lastfm/").set_defaults(func=cmd_fetch)
+    sub.add_parser("build", help="load raw scrobbles into SQLite").set_defaults(func=cmd_build)
+    p = sub.add_parser("enrich", help="cache track/artist info and tags from Last.fm")
+    p.add_argument("--limit", type=int, default=None, help="max tracks and max artists to look up this run")
+    p.set_defaults(func=cmd_enrich)
+    sub.add_parser("stats", help="summarize the database").set_defaults(func=cmd_stats)
+    sub.add_parser("spotify-login", help="connect Spotify (for creating playlists)").set_defaults(
+        func=cmd_spotify_login
+    )
+    p = sub.add_parser("playlist", help="make a Spotify playlist of tracks distinctive to a time slot")
+    p.add_argument("--days", default="all", help="e.g. fri | sat,sun | weekdays | weekends | all")
+    p.add_argument("--hours", default="0-24", help="local hours, end exclusive, e.g. 17-19 or 22-2")
+    p.add_argument("--since", help="only plays on/after this date, YYYY-MM-DD")
+    p.add_argument("--until", help="only plays on/before this date, YYYY-MM-DD")
+    p.add_argument("--size", type=int, default=50, help="number of tracks (default 50)")
+    p.add_argument("--min-plays", type=int, default=3, help="min plays in the slot (default 3)")
+    p.add_argument("--name", help="playlist name (default: the slot, e.g. 'Fris 5pm–7pm')")
+    p.add_argument("--dry-run", action="store_true", help="print the ranking without touching Spotify")
+    p.set_defaults(func=cmd_playlist)
+    p = sub.add_parser("discoveries", help="make a Spotify playlist of songs first heard in a given year")
+    p.add_argument("--year", type=int, required=True)
+    p.add_argument("--rank-by", choices=["year", "ever"], default="year",
+                   help="year = most played that year (default); ever = most played since")
+    p.add_argument("--size", type=int, default=50)
+    p.add_argument("--min-plays", type=int, default=2)
+    p.add_argument("--chronological", action="store_true", help="order the playlist by discovery date")
+    p.add_argument("--name", help="playlist name (default: 'Discovered in <year>')")
+    p.add_argument("--dry-run", action="store_true", help="print the ranking without touching Spotify")
+    p.set_defaults(func=cmd_discoveries)
+    p = sub.add_parser("binges", help="make a Spotify playlist of songs you played on repeat")
+    p.add_argument("--min-plays", type=int, default=8, help="plays within the window to count as a binge (default 8)")
+    p.add_argument("--window-days", type=int, default=7, help="binge window in days (default 7)")
+    p.add_argument("--since", type=int, help="only binges starting in/after this year")
+    p.add_argument("--until", type=int, help="only binges starting in/before this year")
+    p.add_argument("--size", type=int, default=50)
+    p.add_argument("--order", choices=["oldest", "newest", "biggest"], default="oldest",
+                   help="playlist order: oldest binge first (default), newest first, or biggest first")
+    p.add_argument("--name", help="playlist name (default 'Binged')")
+    p.add_argument("--dry-run", action="store_true", help="list the binges without touching Spotify")
+    p.set_defaults(func=cmd_binges)
+    args = parser.parse_args()
+    args.func(args)
+
+
+if __name__ == "__main__":
+    main()
