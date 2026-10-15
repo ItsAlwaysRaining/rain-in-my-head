@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import sqlite3
-from datetime import timedelta
-
 import altair as alt
 import pandas as pd
 import streamlit as st
 
 from listening import config
+from listening import overview as ov
 
 
 # Chart steps of the theme palette (see .streamlit/config.toml): iris = plays, teal = discovery.
@@ -17,50 +15,25 @@ IRIS, TEAL = "#7F77D6", "#0E9A94"
 IRIS_RAMP = ["#1D1C34", "#2B284D", "#393567", "#484383", "#58519E", "#6B63BC", "#7F78D6", "#948FE8", "#AAA8F1", "#C2C1F7"]
 IRIS_DIM = IRIS_RAMP[2]  # unselected bars while a period is selected
 BAR = {"cornerRadiusEnd": 4, "color": IRIS}
-FREQ = {"Day": "D", "Week": "W-MON", "Month": "MS", "Year": "YS"}
-PERIOD_LENGTH = {"Week": pd.DateOffset(weeks=1), "Month": pd.DateOffset(months=1), "Year": pd.DateOffset(years=1)}
-
-WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-LISTENER_BUCKETS = [0, 10_000, 100_000, 1_000_000, 5_000_000, float("inf")]
-LISTENER_LABELS = ["<10k", "10k–100k", "100k–1M", "1M–5M", "5M+"]
 
 
 @st.cache_data
 def load(db_mtime: float) -> pd.DataFrame:
-    with sqlite3.connect(config.DB_PATH) as conn:
-        df = pd.read_sql("SELECT * FROM v_plays", conn)
-    df["played_local"] = pd.to_datetime(df["played_local"])
-    df["date"] = df["played_local"].dt.normalize()
-    # SQLite weekday is 0 = Sunday; shift to 0 = Monday.
-    df["weekday_name"] = pd.Categorical(
-        [WEEKDAYS[(w - 1) % 7] for w in df["weekday"]], categories=WEEKDAYS, ordered=True
-    )
-    df["artist_first_play"] = df.groupby("artist_key")["played_local"].transform("min")
-    return df
+    return ov.load_plays(config.DB_PATH)
 
 
-def top_bar(df: pd.DataFrame, field: str, title: str, n: int = 20) -> alt.Chart:
-    counts = df.groupby(field).size().nlargest(n).rename("plays").reset_index()
+def top_bar(counts: pd.DataFrame, field: str, title: str) -> alt.Chart:
+    """`counts` has `name` and `plays` (from ov.top_lists); `field` is the tooltip label."""
     return (
         alt.Chart(counts, title=title)
         .mark_bar(**BAR)
         .encode(
             x=alt.X("plays:Q", title="Plays"),
-            y=alt.Y(f"{field}:N", sort="-x", title=None, axis=alt.Axis(labelLimit=320, labelOverlap=False)),
-            tooltip=[field, "plays"],
+            y=alt.Y("name:N", sort="-x", title=None, axis=alt.Axis(labelLimit=320, labelOverlap=False)),
+            tooltip=[alt.Tooltip("name:N", title=field), "plays"],
         )
         .properties(height=max(200, 26 * len(counts)))
     )
-
-
-def kpis(cur: pd.DataFrame) -> dict[str, float]:
-    return {
-        "Scrobbles": len(cur),
-        "Hours (est.)": cur["est_minutes"].sum() / 60,
-        "Tracks": cur["track_key"].nunique(),
-        "Artists": cur["artist_key"].nunique(),
-        "Albums": cur["album_name"].nunique(),
-    }
 
 
 if not config.DB_PATH.exists():
@@ -74,57 +47,29 @@ if data.empty:
     st.stop()
 
 # ---- Sidebar filters -------------------------------------------------------
-first_day, last_day = data["date"].min().date(), data["date"].max().date()
+first_day, last_day = ov.data_bounds(data)
 with st.sidebar:
     st.header("Filters")
-    preset = st.radio("Range", ["Last 30 days", "Last 12 months", "This year", "All time", "Custom"], index=1)
-    if preset == "Last 30 days":
-        start, end = last_day - timedelta(days=29), last_day
-    elif preset == "Last 12 months":
-        start, end = last_day - timedelta(days=364), last_day
-    elif preset == "This year":
-        start, end = last_day.replace(month=1, day=1), last_day
-    elif preset == "All time":
-        start, end = first_day, last_day
-    else:
-        picked = st.date_input("Dates", (last_day - timedelta(days=364), last_day), first_day, last_day)
-        start, end = (picked if len(picked) == 2 else (picked[0], picked[0]))
-    start = max(start, first_day)
-    grain = st.radio("Time grain", ["Week", "Month", "Year"], index=1, horizontal=True)
-
-in_range = data["date"].between(pd.Timestamp(start), pd.Timestamp(end))
-df = data[in_range]
+    preset = st.radio("Range", ov.PRESETS, index=1)
+    custom = None
+    if preset == "Custom":
+        picked = st.date_input("Dates", ov.resolve_range(data, "Last 12 months"), first_day, last_day)
+        custom = picked if len(picked) == 2 else (picked[0], picked[0])
+    start, end = ov.resolve_range(data, preset, custom)
+    grain = st.radio("Time grain", ov.GRAINS, index=1, horizontal=True)
 
 # ---- Over-time table, and the period clicked in its chart ------------------
 # Built from the sidebar range so the chart keeps every period while one is selected.
-freq = FREQ[grain]
-label_fmt = {"Week": "%d %b %Y", "Month": "%b %Y", "Year": "%Y"}[grain]
-over_time = (
-    df.groupby(pd.Grouper(key="played_local", freq=freq, label="left", closed="left"))
-    .agg(scrobbles=("track_key", "size"), hours=("est_minutes", lambda m: m.sum() / 60))
-    .reset_index()
-)
-# Ordinal labels keep each bar centered under its own period (a time axis offsets them by half a band).
-over_time["period"] = over_time["played_local"].dt.strftime(label_fmt)
+over_time = ov.over_time(data, start, end, grain)
 
 # The chart's selection from the last click is in session state before the chart is drawn.
 # Range and grain are in the key so changing either drops the selection.
 over_time_key = f"over_time-{grain}-{start}-{end}-{st.session_state.get('over_time_resets', 0)}"
 clicked = (st.session_state.get(over_time_key) or {}).get("selection", {}).get("pick") or [{}]
-match = over_time[over_time["period"] == clicked[0].get("period")]
-selected = None
-if not match.empty:
-    selected = match["period"].iloc[0]
-    period_start = match["played_local"].iloc[0]
-    period_end = period_start + PERIOD_LENGTH[grain] - pd.Timedelta(days=1)
-    start, end = max(start, period_start.date()), min(end, period_end.date())
-    df = data[data["date"].between(pd.Timestamp(start), pd.Timestamp(end))]
-# Inside a selected period, time series step by day (week or month) or month (year).
-inner_grain = grain if selected is None else ("Month" if grain == "Year" else "Day")
-inner_freq = FREQ[inner_grain]
-
-span = pd.Timestamp(end) - pd.Timestamp(start)
-prev = data[data["date"].between(pd.Timestamp(start) - span - pd.Timedelta(days=1), pd.Timestamp(start) - pd.Timedelta(days=1))]
+start, end, selected = ov.select_period(over_time, start, end, grain, clicked[0].get("period"))
+df = ov.in_range(data, start, end)
+inner_grain = ov.inner_grain(grain, selected)
+prev = ov.previous(data, start, end)
 
 st.title("Listening")
 st.caption(f"{start:%d %b %Y} – {end:%d %b %Y} · data through {data['played_local'].max():%d %b %Y %H:%M}")
@@ -134,11 +79,9 @@ if df.empty:
     st.stop()
 
 # ---- KPIs ------------------------------------------------------------------
-cur_k, prev_k = kpis(df), kpis(prev)
-for col, (label, value) in zip(st.columns(len(cur_k)), cur_k.items()):
-    delta = None
-    if not prev.empty and prev_k[label]:
-        delta = f"{(value - prev_k[label]) / prev_k[label]:+.0%}"
+kpis = ov.kpis(df, prev)
+for col, (label, (value, change)) in zip(st.columns(len(kpis)), kpis.items()):
+    delta = None if change is None else f"{change:+.0%}"
     col.metric(label, f"{value:,.0f}", delta, help="Change vs. the previous period of equal length")
 
 # ---- Over time -------------------------------------------------------------
@@ -176,25 +119,17 @@ else:
 
 # ---- Top lists -------------------------------------------------------------
 st.subheader("Top")
-df_named = df.assign(
-    track=df["artist_name"] + " – " + df["track_name"],
-    album=df["artist_name"] + " – " + df["album_name"].fillna(""),
-)
+top = ov.top_lists(df)
 tab_art, tab_trk, tab_alb, tab_year = st.tabs(["Artists", "Tracks", "Albums", "#1 per year"])
 with tab_art:
-    st.altair_chart(top_bar(df_named, "artist_name", "Top artists"), width="stretch")
+    st.altair_chart(top_bar(top["artists"], "artist_name", "Top artists"), width="stretch")
 with tab_trk:
-    st.altair_chart(top_bar(df_named, "track", "Top tracks"), width="stretch")
+    st.altair_chart(top_bar(top["tracks"], "track", "Top tracks"), width="stretch")
 with tab_alb:
-    albums = df_named[df_named["album_name"].fillna("") != ""]
-    st.altair_chart(top_bar(albums, "album", "Top albums"), width="stretch")
+    st.altair_chart(top_bar(top["albums"], "album", "Top albums"), width="stretch")
 with tab_year:
-    by_year = data.groupby(["year", "artist_name"]).size().rename("plays").reset_index()
-    top = by_year.sort_values("plays", ascending=False).drop_duplicates("year").sort_values("year")
-    totals = data.groupby("year").size().rename("total")
-    top = top.join(totals, on="year").assign(share=lambda t: t["plays"] / t["total"])
     st.dataframe(
-        top[["year", "artist_name", "plays", "share"]],
+        ov.top_per_year(data),
         column_config={
             "year": st.column_config.NumberColumn("Year", format="%d"),
             "artist_name": "Artist",
@@ -207,13 +142,13 @@ with tab_year:
 # ---- When you listen -------------------------------------------------------
 left, right = st.columns(2)
 with left:
-    heat = df.groupby(["weekday_name", "hour"], observed=False).size().rename("plays").reset_index()
+    heat = ov.heatmap(df)
     st.altair_chart(
         alt.Chart(heat, title="When you listen")
         .mark_rect(stroke="#18181C", strokeWidth=2, cornerRadius=2)
         .encode(
             x=alt.X("hour:O", title="Hour of day"),
-            y=alt.Y("weekday_name:O", sort=WEEKDAYS, title=None, axis=alt.Axis(labelOverlap=False)),
+            y=alt.Y("weekday_name:O", sort=ov.WEEKDAYS, title=None, axis=alt.Axis(labelOverlap=False)),
             color=alt.Color("plays:Q", title="Plays", scale=alt.Scale(range=IRIS_RAMP)),
             tooltip=["weekday_name", "hour", "plays"],
         )
@@ -223,14 +158,7 @@ with left:
 
 # ---- Discovery -------------------------------------------------------------
 with right:
-    firsts = data.drop_duplicates("artist_key")[["artist_key", "artist_first_play"]]
-    firsts = firsts[firsts["artist_first_play"].dt.normalize().between(pd.Timestamp(start), pd.Timestamp(end))]
-    new_artists = (
-        firsts.groupby(pd.Grouper(key="artist_first_play", freq=inner_freq, label="left", closed="left"))
-        .size()
-        .rename("new_artists")
-        .reset_index()
-    )
+    new_artists = ov.new_artists(data, start, end, inner_grain)
     st.altair_chart(
         alt.Chart(new_artists, title=f"New artists per {inner_grain.lower()}")
         .mark_line(color=TEAL, strokeWidth=2, point=alt.OverlayMarkDef(color=TEAL, size=64))
@@ -242,26 +170,16 @@ with right:
         .properties(height=260),
         width="stretch",
     )
-    new_share = (df["artist_first_play"].dt.year == df["played_local"].dt.year).mean()
-    st.caption(f"{new_share:.0%} of plays in this range were artists you first heard that same year.")
+    st.caption(f"{ov.new_share(df):.0%} of plays in this range were artists you first heard that same year.")
 
 # ---- Genres & mainstream (need `listening enrich`) -------------------------
 st.subheader("Genres and mainstream-ness")
-if df["primary_genre"].notna().sum() == 0:
+genres = ov.genre_shares(df, inner_grain)
+if genres is None:
     st.info("Run `uv run listening enrich` to add genres (Last.fm tags), durations and artist popularity.")
 else:
     # Small multiples: one panel per genre on a shared y-scale, so no genre needs its own hue.
-    tagged = df[df["primary_genre"].notna()]
-    top_genres = list(tagged["primary_genre"].value_counts().head(6).index)
-    period = pd.Grouper(key="played_local", freq=inner_freq, label="left", closed="left")
-    per_period = tagged.groupby(period).size().rename("tagged")
-    genre_time = (
-        tagged[tagged["primary_genre"].isin(top_genres)]
-        .groupby([period, "primary_genre"]).size().rename("plays").reset_index()
-        .join(per_period, on="played_local")
-        .assign(share=lambda d: d["plays"] / d["tagged"])
-    )
-    y_max = float(genre_time["share"].max()) if not genre_time.empty else 1.0
+    top_genres, y_max, genre_time = genres
     st.caption(f"Share of tagged plays per {inner_grain.lower()} for your top {len(top_genres)} genres (artist's top Last.fm tag). "
                "Click a chart to see its artists.")
     for row_start in range(0, len(top_genres), 3):
@@ -291,19 +209,12 @@ else:
                 })
     g_left, _ = st.columns(2)
     with g_left:
-        known = df[df["artist_listeners"].notna()]
-        buckets = (
-            pd.cut(known["artist_listeners"], LISTENER_BUCKETS, labels=LISTENER_LABELS, right=False)
-            .value_counts(normalize=True, sort=False)
-            .rename("share")
-            .reset_index()
-            .rename(columns={"artist_listeners": "bucket"})
-        )
+        buckets = ov.listener_buckets(df)
         st.altair_chart(
             alt.Chart(buckets, title="Mainstream vs. niche (artist's Last.fm listeners)")
             .mark_bar(**BAR)
             .encode(
-                x=alt.X("bucket:N", sort=LISTENER_LABELS, title="Artist's global listeners", axis=alt.Axis(labelAngle=0)),
+                x=alt.X("bucket:N", sort=ov.LISTENER_LABELS, title="Artist's global listeners", axis=alt.Axis(labelAngle=0)),
                 y=alt.Y("share:Q", title="Share of your plays", axis=alt.Axis(format="%")),
                 tooltip=["bucket", alt.Tooltip("share:Q", format=".1%")],
             )
@@ -315,16 +226,7 @@ else:
 l_left, l_right = st.columns(2)
 with l_left:
     st.subheader("Loved tracks")
-    # `loved` is captured when a scrobble is fetched, so a track counts as loved if any scrobble says so.
-    loved_keys = set(data.loc[data["loved"] == 1, "track_key"])
-    loved = (
-        df[df["track_key"].isin(loved_keys)]
-        .groupby(["artist_name", "track_name"])
-        .size()
-        .rename("plays")
-        .sort_values(ascending=False)
-        .reset_index()
-    )
+    loved = ov.loved(data, df)
     if loved.empty:
         st.caption("No loved tracks in this range.")
     else:
@@ -333,20 +235,7 @@ with l_left:
 with l_right:
     st.subheader("Data quality")
     st.dataframe(
-        pd.DataFrame(
-            {
-                "Check": [
-                    "Plays with a known track duration",
-                    "Plays with artist info",
-                    "Plays with a genre tag",
-                ],
-                "Coverage": [
-                    df["duration_ms"].notna().mean(),
-                    df["artist_listeners"].notna().mean(),
-                    df["primary_genre"].notna().mean(),
-                ],
-            }
-        ),
+        ov.coverage(df),
         column_config={
             "Coverage": st.column_config.ProgressColumn(format="percent", min_value=0, max_value=1)
         },
