@@ -144,7 +144,7 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
   - what was easy and hard in each, including what Streamlit gave for free (tables, date input, caching, selection state) and what TS made possible
   - load timings from T022
 - [x] T024 Add a "Two dashboards" section to `README.md` (how to run either app or both: build, serve, dev mode; that the numbers are shared). Note that the web group is installed by `uv sync`
-- [ ] T025 Open PR 1 (Overview), stating it affects **both** apps (the Streamlit Overview now calls shared functions; no behaviour change) and listing what was checked per constitution III. Base it on `main` once PR #10 is merged
+- [x] T025 Open PR 1 (Overview), stating it affects **both** apps (the Streamlit Overview now calls shared functions; no behaviour change) and listing what was checked per constitution III. Base it on `main` once PR #10 is merged
 
 **Checkpoint**: PR 1. The MVP is usable: both Overviews show the same numbers.
 
