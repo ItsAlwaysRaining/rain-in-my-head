@@ -27,6 +27,15 @@ uv run streamlit run dashboard/app.py
 
 The first `enrich` makes about one call per unique track and two per unique artist, at roughly 2 per second in practice. For about 76k tracks and 24k artists that is around 15 hours, so use `--limit` or leave it running overnight. It's safe to Ctrl-C and rerun. Later runs only look up new items.
 
+## Genre drill-down
+
+On the **Overview**, click any of the genre charts to open the **Genre** page for that genre and date range. It lists the artists in the genre by your play count, most played first. Click an artist to see the songs you've played by them, also most played first. Artists and songs show album art.
+
+You can also open **Genre** from the sidebar and pick any genre from the dropdown. Opened that way, it covers all time.
+
+- The genre needs `enrich` to have run. An artist belongs to one genre, their top Last.fm tag.
+- Album art is the cover Last.fm saved with each scrobble, so it needs no extra API calls. An artist's picture is the cover they appear with most. Last.fm's grey "no image" placeholder is hidden.
+
 ## Scheduled sync (GitHub Actions)
 
 1. Push this repo to a **private** GitHub repository. It contains your listening history.
