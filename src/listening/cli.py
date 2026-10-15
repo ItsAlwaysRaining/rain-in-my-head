@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
+from pathlib import Path
 
 from . import config
 
@@ -196,6 +197,16 @@ def cmd_binges(args) -> None:
     print(f"Created playlist with {len(hits)} tracks: {url}")
 
 
+def cmd_serve(args) -> None:
+    try:
+        import uvicorn  # in the `web` dependency group, so the sync install never needs it
+    except ImportError:
+        raise SystemExit("The dashboard API needs the web group: run `uv sync`.")
+    print(f"Listening dashboard (TypeScript): http://{args.host}:{args.port}")
+    uvicorn.run("listening.api:app", host=args.host, port=args.port, reload=args.dev,
+                reload_dirs=[str(Path(__file__).parent)] if args.dev else None)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="listening", description="Last.fm listening analytics")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -239,6 +250,11 @@ def main() -> None:
     p.add_argument("--name", help="playlist name (default 'Binged')")
     p.add_argument("--dry-run", action="store_true", help="list the binges without touching Spotify")
     p.set_defaults(func=cmd_binges)
+    p = sub.add_parser("serve", help="run the TypeScript dashboard and its JSON API")
+    p.add_argument("--host", default="127.0.0.1")
+    p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--dev", action="store_true", help="reload on Python changes (use with `npm run dev` in web/)")
+    p.set_defaults(func=cmd_serve)
     args = parser.parse_args()
     args.func(args)
 

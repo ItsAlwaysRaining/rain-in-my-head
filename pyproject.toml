@@ -17,10 +17,16 @@ dashboard = [
     "pandas>=2.2",
     "streamlit>=1.40",
 ]
+# The TypeScript dashboard's JSON API (src/listening/api.py); the frontend itself lives in web/.
+web = [
+    "fastapi>=0.143",
+    "pandas>=2.2",
+    "uvicorn>=0.54",
+]
 
 [tool.uv]
-# `uv sync` installs the dashboard too; CI uses --no-default-groups to skip it.
-default-groups = ["dashboard"]
+# `uv sync` installs both dashboards too; CI uses --no-default-groups to skip them.
+default-groups = ["dashboard", "web"]
 
 [build-system]
 requires = ["hatchling"]

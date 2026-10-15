@@ -1,0 +1,71 @@
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--surface);
+  padding: var(--space-7) var(--space-5) var(--space-5);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--line);
+}
+
+.navLink,
+.navActive {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 6px var(--space-3);
+  border-radius: var(--radius);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.navLink:hover {
+  background: #2a2a40;
+}
+.navActive {
+  background: #34344c;
+  font-weight: 600;
+}
+.navIcon {
+  width: 1em;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.sidebarSlot:not(:empty) {
+  padding-top: var(--space-5);
+}
+
+.main {
+  padding: var(--space-7) var(--space-7) 96px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (max-width: 800px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    position: static;
+    height: auto;
+    padding: var(--space-4);
+  }
+  .main {
+    padding: var(--space-5) var(--space-4) var(--space-7);
+  }
+}
