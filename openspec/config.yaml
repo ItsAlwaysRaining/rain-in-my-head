@@ -1,0 +1,49 @@
+schema: spec-driven
+
+context: |
+  Personal listening analytics: Last.fm scrobbles (from Spotify) stored as JSONL,
+  loaded into SQLite and explored in a Streamlit dashboard. Can create Spotify playlists.
+  Tech stack: Python 3.10+, managed with uv. httpx, python-dotenv; dashboard uses
+  Streamlit, pandas and Altair.
+  Layout: src/listening/ (CLI `listening`, fetch/build/enrich/playlist/spotify, schema.sql),
+  dashboard/app.py and dashboard/views/ (one module per page).
+  data/raw/lastfm/YYYY-MM.jsonl is the source of truth and is appended by a scheduled
+  GitHub Action; data/listening.db is rebuilt from it and gitignored.
+  OpenSpec is for fixes and small additions to existing behaviour. New features use
+  GitHub Spec Kit (specs/). See CLAUDE.md for which to use.
+
+rules:
+  proposal:
+    - Keep proposals short. If the change needs a new page, CLI command, data source,
+      dependency or schema change, say so and recommend Spec Kit instead.
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing
