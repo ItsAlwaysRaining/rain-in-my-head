@@ -27,6 +27,23 @@ uv run streamlit run dashboard/app.py
 
 The first `enrich` makes about one call per unique track and two per unique artist, at roughly 2 per second in practice. For about 76k tracks and 24k artists that is around 15 hours, so use `--limit` or leave it running overnight. It's safe to Ctrl-C and rerun. Later runs only look up new items.
 
+## Two dashboards
+
+There are two dashboards over the same database, kept side by side to compare them. They show the same numbers because both use the functions in `src/listening/` (for example `overview.py`).
+
+| | Streamlit | TypeScript |
+|---|---|---|
+| Code | `dashboard/` | `web/` (Vite + React) and its JSON API, `src/listening/api.py` |
+| Run | `uv run streamlit run dashboard/app.py` | `cd web && npm install && npm run build`, then `uv run listening serve` |
+| Open | http://localhost:8501 | http://localhost:8000 |
+| Pages | Overview, Genre, SQL, Schema, Playlists | Overview so far; the other pages are being added |
+
+Both can run at the same time. `uv sync` installs what both need (the `dashboard` and `web` groups). The TypeScript app also needs Node 22 or newer.
+
+To work on the TypeScript app with hot reload, run `uv run listening serve --dev` (API only) and `npm run dev` in `web/`, then open http://localhost:5173.
+
+[docs/streamlit-vs-typescript.md](docs/streamlit-vs-typescript.md) records how building each page went in each app.
+
 ## Filter by period
 
 On the **Overview**, click a bar in the "Scrobbles per month" chart (or the week, year or hours version) to show just that period. Every other figure and chart on the page then shows only that period, and the KPI changes compare it with the period of the same length just before it. The bar chart keeps every period, with the clicked bar highlighted, so you can click another one straight away.
