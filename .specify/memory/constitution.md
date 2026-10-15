@@ -1,50 +1,91 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Listening Analytics Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Raw Scrobbles Are the Source of Truth
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+- `data/raw/lastfm/YYYY-MM.jsonl` is append-only. Code MUST NOT rewrite or delete existing lines.
+- `data/listening.db` MUST be fully rebuildable from the raw files plus cached API lookups
+  (`listening build`, `listening enrich`). It stays gitignored.
+- Schema changes go in `src/listening/schema.sql` and MUST apply cleanly to an existing database
+  on the next `build`. A change that needs the database deleted MUST say so in its spec.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+Rationale: the history is personal and irreplaceable; everything derived from it can be rebuilt.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Spec First, Small Changes
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+- Every change except docs and chores starts with a spec: OpenSpec for fixes and small additions,
+  Spec Kit for new features (see `CLAUDE.md`).
+- When code needs to differ from the spec, the spec is updated first.
+- Work happens on a branch and lands through a pull request that the repository owner reviews and
+  merges. PRs stay small, with commits that each describe one step.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Rationale: a one-person project still needs a record of why things are the way they are.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Verify in the Real App
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- Dashboard changes MUST be checked in a real browser (for example headless Chrome) by doing what a
+  user would do: clicking, selecting, navigating. Unit-style runs such as Streamlit's AppTest are a
+  smoke test, not proof.
+- Any number a change shows or alters MUST be cross-checked once against a direct SQLite query.
+- PR descriptions list what was checked and what was not.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+Rationale: the bugs found so far (unclickable rows, unclickable charts) only showed up in a browser.
+
+### IV. Few Dependencies, Existing Stack
+
+- Python 3.10+, managed with uv. The CLI uses httpx and python-dotenv; the dashboard uses
+  Streamlit, pandas and Altair.
+- A new runtime dependency MUST be justified in the plan (what it replaces, why the stack can't do
+  it). Test-only tools run ad hoc (e.g. `uv run --with`) rather than becoming project dependencies.
+
+Rationale: fewer moving parts to update, and the scheduled sync stays fast and reliable.
+
+### V. Respect External APIs and Secrets
+
+- Last.fm and Spotify calls MUST be cached in SQLite, resumable after interruption, and
+  rate-limited. A rerun MUST only fetch what is missing.
+- Dashboard pages MUST NOT call external APIs on page load; they read the database (images are
+  loaded by the browser from the URLs Last.fm already gave us).
+- Secrets live only in `.env` and `data/.spotify_token.json`, both gitignored, and in GitHub
+  Actions secrets. They MUST NOT appear in code, specs, logs or PRs.
+
+Rationale: keeps within API limits, makes long enrichments safe to stop, and protects the accounts.
+
+### VI. Consistent Dashboard
+
+- Colors come from the palette in `.streamlit/config.toml` (and the chart constants in
+  `dashboard/views/overview.py`); charts MUST be readable on the dark theme.
+- Each page is one module in `dashboard/views/`, registered in `dashboard/app.py`. Helpers used by
+  more than one page live in a shared module, not copied between pages.
+- Interactive elements MUST respond to a click anywhere a user would reasonably click (a whole
+  table row, a whole chart panel), not only on a small target.
+
+Rationale: the dashboard is the product; it should look and behave like one app.
+
+## Data and Privacy
+
+The repository is private and holds personal listening history. Nothing from `data/` other than
+`data/raw/` is committed. Published artifacts (screenshots, shared pages) contain only what the
+owner chooses to share.
+
+## Development Workflow
+
+1. Start from an up-to-date `main` (`git switch main && git pull`); the sync workflow commits to it
+   every 6 hours.
+2. Create a `feature/`, `fix/`, `docs/` or `chore/` branch before writing specs.
+3. Write the spec (OpenSpec or Spec Kit), get it reviewed when the workflow calls for it, then
+   implement, ticking tasks as they are done.
+4. Verify per Principle III, update the README when behaviour changes, open a PR with
+   `.github/pull_request_template.md`, and link issues with `Closes #N`.
+5. Never merge, never push to `main`, never force-push.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution takes precedence over other practices in the repo; `CLAUDE.md` holds the
+operational detail. Spec Kit plans MUST include a Constitution Check against these principles, and
+any deviation MUST be justified in the plan's Complexity Tracking. Amendments go through a
+`chore/` pull request that states the version bump: MAJOR for removing or redefining a principle,
+MINOR for adding one or materially expanding guidance, PATCH for wording.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14
