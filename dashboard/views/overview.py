@@ -15,7 +15,10 @@ from listening import config
 # Chart steps of the theme palette (see .streamlit/config.toml): iris = plays, teal = discovery.
 IRIS, TEAL = "#7F77D6", "#0E9A94"
 IRIS_RAMP = ["#1D1C34", "#2B284D", "#393567", "#484383", "#58519E", "#6B63BC", "#7F78D6", "#948FE8", "#AAA8F1", "#C2C1F7"]
+IRIS_DIM = IRIS_RAMP[2]  # unselected bars while a period is selected
 BAR = {"cornerRadiusEnd": 4, "color": IRIS}
+FREQ = {"Day": "D", "Week": "W-MON", "Month": "MS", "Year": "YS"}
+PERIOD_LENGTH = {"Week": pd.DateOffset(weeks=1), "Month": pd.DateOffset(months=1), "Year": pd.DateOffset(years=1)}
 
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 LISTENER_BUCKETS = [0, 10_000, 100_000, 1_000_000, 5_000_000, float("inf")]
@@ -91,6 +94,35 @@ with st.sidebar:
 
 in_range = data["date"].between(pd.Timestamp(start), pd.Timestamp(end))
 df = data[in_range]
+
+# ---- Over-time table, and the period clicked in its chart ------------------
+# Built from the sidebar range so the chart keeps every period while one is selected.
+freq = FREQ[grain]
+label_fmt = {"Week": "%d %b %Y", "Month": "%b %Y", "Year": "%Y"}[grain]
+over_time = (
+    df.groupby(pd.Grouper(key="played_local", freq=freq, label="left", closed="left"))
+    .agg(scrobbles=("track_key", "size"), hours=("est_minutes", lambda m: m.sum() / 60))
+    .reset_index()
+)
+# Ordinal labels keep each bar centered under its own period (a time axis offsets them by half a band).
+over_time["period"] = over_time["played_local"].dt.strftime(label_fmt)
+
+# The chart's selection from the last click is in session state before the chart is drawn.
+# Range and grain are in the key so changing either drops the selection.
+over_time_key = f"over_time-{grain}-{start}-{end}-{st.session_state.get('over_time_resets', 0)}"
+clicked = (st.session_state.get(over_time_key) or {}).get("selection", {}).get("pick") or [{}]
+match = over_time[over_time["period"] == clicked[0].get("period")]
+selected = None
+if not match.empty:
+    selected = match["period"].iloc[0]
+    period_start = match["played_local"].iloc[0]
+    period_end = period_start + PERIOD_LENGTH[grain] - pd.Timedelta(days=1)
+    start, end = max(start, period_start.date()), min(end, period_end.date())
+    df = data[data["date"].between(pd.Timestamp(start), pd.Timestamp(end))]
+# Inside a selected period, time series step by day (week or month) or month (year).
+inner_grain = grain if selected is None else ("Month" if grain == "Year" else "Day")
+inner_freq = FREQ[inner_grain]
+
 span = pd.Timestamp(end) - pd.Timestamp(start)
 prev = data[data["date"].between(pd.Timestamp(start) - span - pd.Timedelta(days=1), pd.Timestamp(start) - pd.Timedelta(days=1))]
 
@@ -110,28 +142,37 @@ for col, (label, value) in zip(st.columns(len(cur_k)), cur_k.items()):
     col.metric(label, f"{value:,.0f}", delta, help="Change vs. the previous period of equal length")
 
 # ---- Over time -------------------------------------------------------------
-freq = {"Week": "W-MON", "Month": "MS", "Year": "YS"}[grain]
-label_fmt = {"Week": "%d %b %Y", "Month": "%b %Y", "Year": "%Y"}[grain]
-over_time = (
-    df.groupby(pd.Grouper(key="played_local", freq=freq, label="left", closed="left"))
-    .agg(scrobbles=("track_key", "size"), hours=("est_minutes", lambda m: m.sum() / 60))
-    .reset_index()
-)
-# Ordinal labels keep each bar centered under its own period (a time axis offsets them by half a band).
-over_time["period"] = over_time["played_local"].dt.strftime(label_fmt)
 metric = st.segmented_control("Measure", ["scrobbles", "hours"], default="scrobbles") or "scrobbles"
+pick = alt.selection_point(name="pick", fields=["period"], on="click")
 st.altair_chart(
     alt.Chart(over_time, title=f"{metric.capitalize()} per {grain.lower()}")
-    .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4, color=IRIS)
+    .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4, cursor="pointer")
     .encode(
         x=alt.X("period:O", sort=None, title=None, scale=alt.Scale(paddingInner=0.2),
                 axis=alt.Axis(labelAngle=0, labelOverlap="greedy")),
         y=alt.Y(f"{metric}:Q", title=metric.capitalize()),
+        color=alt.condition(pick, alt.value(IRIS), alt.value(IRIS_DIM)),
         tooltip=[alt.Tooltip("period:O", title=grain), alt.Tooltip(f"{metric}:Q", format=",.0f")],
     )
+    .add_params(pick)
     .properties(height=260),
     width="stretch",
+    on_select="rerun",
+    key=over_time_key,
 )
+
+
+def show_whole_range() -> None:
+    st.session_state["over_time_resets"] = st.session_state.get("over_time_resets", 0) + 1
+
+
+if selected is None:
+    st.caption(f"Click a bar to show just that {grain.lower()}.")
+else:
+    name = f"the week of {selected}" if grain == "Week" else selected
+    note, button = st.columns([4, 1], vertical_alignment="center")
+    note.caption(f"Showing {name} only. Click the chart background or the button to show the whole range.")
+    button.button("Show whole range", on_click=show_whole_range, width="stretch")
 
 # ---- Top lists -------------------------------------------------------------
 st.subheader("Top")
@@ -185,18 +226,18 @@ with right:
     firsts = data.drop_duplicates("artist_key")[["artist_key", "artist_first_play"]]
     firsts = firsts[firsts["artist_first_play"].dt.normalize().between(pd.Timestamp(start), pd.Timestamp(end))]
     new_artists = (
-        firsts.groupby(pd.Grouper(key="artist_first_play", freq=freq, label="left", closed="left"))
+        firsts.groupby(pd.Grouper(key="artist_first_play", freq=inner_freq, label="left", closed="left"))
         .size()
         .rename("new_artists")
         .reset_index()
     )
     st.altair_chart(
-        alt.Chart(new_artists, title=f"New artists per {grain.lower()}")
+        alt.Chart(new_artists, title=f"New artists per {inner_grain.lower()}")
         .mark_line(color=TEAL, strokeWidth=2, point=alt.OverlayMarkDef(color=TEAL, size=64))
         .encode(
             x=alt.X("artist_first_play:T", title=None),
             y=alt.Y("new_artists:Q", title="Artists heard for the first time"),
-            tooltip=[alt.Tooltip("artist_first_play:T", title=grain), "new_artists"],
+            tooltip=[alt.Tooltip("artist_first_play:T", title=inner_grain), "new_artists"],
         )
         .properties(height=260),
         width="stretch",
@@ -212,7 +253,7 @@ else:
     # Small multiples: one panel per genre on a shared y-scale, so no genre needs its own hue.
     tagged = df[df["primary_genre"].notna()]
     top_genres = list(tagged["primary_genre"].value_counts().head(6).index)
-    period = pd.Grouper(key="played_local", freq=freq, label="left", closed="left")
+    period = pd.Grouper(key="played_local", freq=inner_freq, label="left", closed="left")
     per_period = tagged.groupby(period).size().rename("tagged")
     genre_time = (
         tagged[tagged["primary_genre"].isin(top_genres)]
@@ -221,7 +262,7 @@ else:
         .assign(share=lambda d: d["plays"] / d["tagged"])
     )
     y_max = float(genre_time["share"].max()) if not genre_time.empty else 1.0
-    st.caption(f"Share of tagged plays per {grain.lower()} for your top {len(top_genres)} genres (artist's top Last.fm tag). "
+    st.caption(f"Share of tagged plays per {inner_grain.lower()} for your top {len(top_genres)} genres (artist's top Last.fm tag). "
                "Click a chart to see its artists.")
     for row_start in range(0, len(top_genres), 3):
         for col, genre in zip(st.columns(3), top_genres[row_start : row_start + 3]):
@@ -230,7 +271,7 @@ else:
                 x=alt.X("played_local:T", title=None, axis=alt.Axis(tickCount=4, grid=False)),
                 y=alt.Y("share:Q", title=None, scale=alt.Scale(domain=[0, y_max]),
                         axis=alt.Axis(format="%", tickCount=3)),
-                tooltip=[alt.Tooltip("played_local:T", title=grain), alt.Tooltip("share:Q", format=".1%", title="Share"),
+                tooltip=[alt.Tooltip("played_local:T", title=inner_grain), alt.Tooltip("share:Q", format=".1%", title="Share"),
                          alt.Tooltip("plays:Q", title="Plays")],
             )
             # Invisible points with `nearest` make a click anywhere in the panel select, not just on the thin area.
