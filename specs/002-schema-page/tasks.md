@@ -28,7 +28,7 @@ Single project. Dashboard code is in `dashboard/` (entry `dashboard/app.py`, pag
 
 ## Phase 1: Setup
 
-- [ ] T001 Add `data/schema_layout.json` to `.gitignore`
+- [x] T001 Add `data/schema_layout.json` to `.gitignore`
 
 ---
 
@@ -36,8 +36,8 @@ Single project. Dashboard code is in `dashboard/` (entry `dashboard/app.py`, pag
 
 **Purpose**: the hand-written notes and the live schema read that every story uses.
 
-- [ ] T002 [P] Create `dashboard/schema_notes.py` with `TABLES` (title, source, description, column meanings for all 7 objects, from issue #8), `LINKS` (5), `LINEAGE` (5 pairs) and `DEFAULT_POSITIONS` (data-model.md)
-- [ ] T003 [P] In `dashboard/views/schema.py`, add `read_schema(db_mtime)` (cached): objects, columns with type/required/key, table row counts, over a read-only connection (data-model.md)
+- [x] T002 [P] Create `dashboard/schema_notes.py` with `TABLES` (title, source, description, column meanings for all 7 objects, from issue #8), `LINKS` (5), `LINEAGE` (5 pairs) and `DEFAULT_POSITIONS` (data-model.md)
+- [x] T003 [P] In `dashboard/views/schema.py`, add `read_schema(db_mtime)` (cached): objects, columns with type/required/key, table row counts, over a read-only connection (data-model.md)
 
 **Checkpoint**: `read_schema` returns 7 objects whose columns and counts match SQLite.
 
@@ -49,10 +49,10 @@ Single project. Dashboard code is in `dashboard/` (entry `dashboard/app.py`, pag
 
 **Independent Test**: quickstart.md scenarios 1 and 2.
 
-- [ ] T004 [US1] Create `dashboard/schema_map/map.css` and `map.js`: cards, link lines with labels, hover/focus highlight, lineage switch, zoom and fit, legend (contracts/schema-page.md); confirm the rerun behaviour noted in research.md R1
-- [ ] T005 [US1] In `dashboard/views/schema.py`, merge schema and notes into the component data (unknown tables and columns get "No description yet") and mount the component; show the "No database yet" message when there is no database
-- [ ] T006 [US1] Register `st.Page("views/schema.py", title="Schema", icon=":material/schema:", url_path="schema")` after SQL in `dashboard/app.py`
-- [ ] T007 [US1] Verify quickstart.md scenarios 1–2 in headless Chrome and cross-check columns and row counts against SQLite
+- [x] T004 [US1] Create `dashboard/schema_map/map.css` and `map.js`: cards, link lines with labels, hover/focus highlight, lineage switch, zoom and fit, legend (contracts/schema-page.md); confirm the rerun behaviour noted in research.md R1
+- [x] T005 [US1] In `dashboard/views/schema.py`, merge schema and notes into the component data (unknown tables and columns get "No description yet") and mount the component; show the "No database yet" message when there is no database
+- [x] T006 [US1] Register `st.Page("views/schema.py", title="Schema", icon=":material/schema:", url_path="schema")` after SQL in `dashboard/app.py`
+- [x] T007 [US1] Verify quickstart.md scenarios 1–2 in headless Chrome and cross-check columns and row counts against SQLite
 
 **Checkpoint**: the map is in the menu and correct.
 
@@ -64,9 +64,9 @@ Single project. Dashboard code is in `dashboard/` (entry `dashboard/app.py`, pag
 
 **Independent Test**: quickstart.md scenario 3.
 
-- [ ] T008 [US2] In `dashboard/schema_map/map.js`, drag by the whole header with pointer events, arrow-key moves, keep cards inside the map, two-click "Reset layout", and send the `layout` trigger when a move ends
-- [ ] T009 [US2] In `dashboard/views/schema.py`, load the layout file with validation and clamping, and write it atomically from the `on_layout_change` callback
-- [ ] T010 [US2] Verify quickstart.md scenario 3 in headless Chrome, including a server restart and a fresh browser context
+- [x] T008 [US2] In `dashboard/schema_map/map.js`, drag by the whole header with pointer events, arrow-key moves, keep cards inside the map, two-click "Reset layout", and send the `layout` trigger when a move ends
+- [x] T009 [US2] In `dashboard/views/schema.py`, load the layout file with validation and clamping, and write it atomically from the `on_layout_change` callback
+- [x] T010 [US2] Verify quickstart.md scenario 3 in headless Chrome, including a server restart and a fresh browser context
 
 **Checkpoint**: positions survive a restart and a new browser.
 
@@ -78,8 +78,8 @@ Single project. Dashboard code is in `dashboard/` (entry `dashboard/app.py`, pag
 
 **Independent Test**: quickstart.md scenarios 4 and 5.
 
-- [ ] T011 [US3] In `dashboard/views/schema.py`, place objects with no saved or default position in the first free grid slot below the default layout; drop links, lineage and notes that name missing tables or columns
-- [ ] T012 [US3] Verify quickstart.md scenarios 4–5 against a temporary copy of the database
+- [x] T011 [US3] In `dashboard/views/schema.py`, place objects with no saved or default position in the first free grid slot below the default layout; drop links, lineage and notes that name missing tables or columns
+- [x] T012 [US3] Verify quickstart.md scenarios 4–5 against a temporary copy of the database
 
 **Checkpoint**: schema changes show up on their own.
 
