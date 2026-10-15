@@ -27,32 +27,32 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
 
 ## Phase 1: Setup
 
-- [ ] T001 Add a `web` dependency group (`fastapi>=0.143`, `uvicorn>=0.54`, `pandas>=2.2`) and set `default-groups = ["dashboard", "web"]` in `pyproject.toml`; run `uv sync`; confirm `uv run --no-default-groups listening --help` still works without them
-- [ ] T002 [P] Add `web/node_modules/` and `web/dist/` to `.gitignore`
-- [ ] T003 [P] Scaffold `web/`: `package.json` (react 19, react-dom, react-router 8, @tanstack/react-query 5, vega 6, vega-lite 6, vega-embed 7; dev: vite 8, @vitejs/plugin-react 6, typescript 7, @types/react, @types/react-dom), `tsconfig.json` (strict), `vite.config.ts` (React plugin; dev proxy `/api` → `http://127.0.0.1:8000`), `index.html`, `src/main.tsx`; run `npm install` to create `package-lock.json`
-- [ ] T004 [P] Start `docs/streamlit-vs-typescript.md` with a "How to read this" intro and a table template: per page, the lines of the Streamlit view, the lines of the TS page + API route + shared function, the sessions spent, what was easy and what was hard in each
+- [x] T001 Add a `web` dependency group (`fastapi>=0.143`, `uvicorn>=0.54`, `pandas>=2.2`) and set `default-groups = ["dashboard", "web"]` in `pyproject.toml`; run `uv sync`; confirm `uv run --no-default-groups listening --help` still works without them
+- [x] T002 [P] Add `web/node_modules/` and `web/dist/` to `.gitignore`
+- [x] T003 [P] Scaffold `web/`: `package.json` (react 19, react-dom, react-router 8, @tanstack/react-query 5, vega 6, vega-lite 6, vega-embed 7; dev: vite 8, @vitejs/plugin-react 6, typescript 7, @types/react, @types/react-dom), `tsconfig.json` (strict), `vite.config.ts` (React plugin; dev proxy `/api` → `http://127.0.0.1:8000`), `index.html`, `src/main.tsx`; run `npm install` to create `package-lock.json`
+- [x] T004 [P] Start `docs/streamlit-vs-typescript.md` with a "How to read this" intro and a table template: per page, the lines of the Streamlit view, the lines of the TS page + API route + shared function, the sessions spent, what was easy and what was hard in each
 
 ---
 
 ## Phase 2: Foundational (blocks all stories)
 
-- [ ] T005 Write the scratch golden script `$SCRATCH/golden_overview.py`. It copies the current inline computation from `dashboard/views/overview.py` (load, range presets, over_time, the selected period, KPIs, top lists, #1 per year, heatmap, new artists, genre shares, buckets, loved, coverage). It runs that for presets {Last 30 days, Last 12 months, This year, All time} × grains {Week, Month, Year}, plus one selected period per grain (the second-to-last bar), and writes canonical JSON to `$SCRATCH/golden_before.json`. Run it **before** touching the view
-- [ ] T006 Create `src/listening/api.py`:
+- [x] T005 Write the scratch golden script `$SCRATCH/golden_overview.py`. It copies the current inline computation from `dashboard/views/overview.py` (load, range presets, over_time, the selected period, KPIs, top lists, #1 per year, heatmap, new artists, genre shares, buckets, loved, coverage). It runs that for presets {Last 30 days, Last 12 months, This year, All time} × grains {Week, Month, Year}, plus one selected period per grain (the second-to-last bar), and writes canonical JSON to `$SCRATCH/golden_before.json`. Run it **before** touching the view
+- [x] T006 Create `src/listening/api.py`:
   - a FastAPI `app` with `GET /api/health` (contracts/api.md)
   - a `no_database` 503 handler using the exact message from the contract
   - a mount for `web/dist` as static files with an SPA fallback to `index.html` for non-`/api` paths, and a plain-text hint when `web/dist` is missing
-- [ ] T007 Add a `serve` command to `src/listening/cli.py` (`--port`, default 8000; `--host`, default 127.0.0.1; `--dev` enables reload). It runs uvicorn on `listening.api:app` and imports uvicorn lazily so the sync install never needs it
-- [ ] T008 [P] Create `web/src/theme.css`: CSS custom properties for every colour in `.streamlit/config.toml` (page, surface, text, muted, line, iris, iris-strong, teal, coral, the info/success/warning tones) and the chart constants from `dashboard/views/overview.py` (`IRIS`, `TEAL`, the 10-step `IRIS_RAMP`, `IRIS_DIM`). Add base typography, spacing and radius tokens, and a dark `body` background
-- [ ] T009 [P] Create `web/src/api.ts`: a `getJson<T>(path, params)` helper that throws typed `ApiError` (`no_database`, `unreachable`, `http`) and TS types for every response shape in data-model.md
-- [ ] T010 [P] Create `web/src/components/VegaChart.tsx`. It renders a Vega-Lite spec with `vega-embed` (`actions: false`, renderer `svg`) and a shared dark config built from the theme tokens (`web/src/charts/config.ts`). It accepts `onSelect(signal, value)`, which uses `view.addSignalListener` for named point params, re-renders on spec change, and resizes to its container width
-- [ ] T011 [P] Create `web/src/components/DataTable.tsx`: columns with `kind` text, number (`toLocaleString`), percent, progress-bar (0–1), image (thumbnail) and datetime; a sticky header; a max height with scroll; an optional `onRowClick` covering the **whole row**; optional sort by clicking a header
-- [ ] T012 [P] Create the small UI components in `web/src/components/`:
+- [x] T007 Add a `serve` command to `src/listening/cli.py` (`--port`, default 8000; `--host`, default 127.0.0.1; `--dev` enables reload). It runs uvicorn on `listening.api:app` and imports uvicorn lazily so the sync install never needs it
+- [x] T008 [P] Create `web/src/theme.css`: CSS custom properties for every colour in `.streamlit/config.toml` (page, surface, text, muted, line, iris, iris-strong, teal, coral, the info/success/warning tones) and the chart constants from `dashboard/views/overview.py` (`IRIS`, `TEAL`, the 10-step `IRIS_RAMP`, `IRIS_DIM`). Add base typography, spacing and radius tokens, and a dark `body` background
+- [x] T009 [P] Create `web/src/api.ts`: a `getJson<T>(path, params)` helper that throws typed `ApiError` (`no_database`, `unreachable`, `http`) and TS types for every response shape in data-model.md
+- [x] T010 [P] Create `web/src/components/VegaChart.tsx`. It renders a Vega-Lite spec with `vega-embed` (`actions: false`, renderer `svg`) and a shared dark config built from the theme tokens (`web/src/charts/config.ts`). It accepts `onSelect(signal, value)`, which uses `view.addSignalListener` for named point params, re-renders on spec change, and resizes to its container width
+- [x] T011 [P] Create `web/src/components/DataTable.tsx`: columns with `kind` text, number (`toLocaleString`), percent, progress-bar (0–1), image (thumbnail) and datetime; a sticky header; a max height with scroll; an optional `onRowClick` covering the **whole row**; optional sort by clicking a header
+- [x] T012 [P] Create the small UI components in `web/src/components/`:
   - `Kpi.tsx` (label, value, delta coloured teal or coral, help title)
   - `Tabs.tsx`
   - `SegmentedControl.tsx`
   - `Notice.tsx` (info, warning, error in the palette's tones)
   - `PageState.tsx`, which maps `ApiError` to the "run build" or "start the data service" notices (spec edge cases)
-- [ ] T013 Create `web/src/App.tsx`:
+- [x] T013 Create `web/src/App.tsx`:
   - React Router routes `/`, `/genre`, `/sql`, `/schema`, `/playlists`
   - a sidebar nav in that order, with the same labels as Streamlit
   - placeholder pages that say "Coming in a later slice" for routes not yet built
@@ -71,7 +71,7 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
 
 ### Shared data (both apps)
 
-- [ ] T014 [US1] Create `src/listening/overview.py` by moving the logic, not rewriting it, out of `dashboard/views/overview.py`:
+- [x] T014 [US1] Create `src/listening/overview.py` by moving the logic, not rewriting it, out of `dashboard/views/overview.py`:
   - **`load_plays(db_path)`**: the current `load`, cached per mtime with `functools.lru_cache(maxsize=1)` keyed on `(path, mtime)`.
   - **Constants**: `WEEKDAYS`, `FREQ`, `PERIOD_LENGTH`, `LISTENER_BUCKETS`, `LISTENER_LABELS` and `PRESETS`.
   - **`resolve_range(data, preset, start, end)`**: the preset → `(start, end)` logic, with `start` clamped to the first day.
@@ -85,32 +85,32 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
   - **`listener_buckets(df)`**, **`loved(data, df)`** and **`coverage(df)`**.
 
   Pure functions only; no Streamlit import.
-- [ ] T015 [US1] Change `dashboard/views/overview.py` to call `listening.overview` for every computation. Keep every widget, chart spec, caption, key and layout as it is; `@st.cache_data load(db_mtime)` wraps `load_plays`. The view should then contain only UI code
-- [ ] T016 [US1] Run the golden comparison: a scratch script runs the same input grid through `listening.overview` and writes `$SCRATCH/golden_after.json`. `diff` it against `golden_before.json` and expect no differences. Then drive Streamlit on :8501 in headless Chrome:
+- [x] T015 [US1] Change `dashboard/views/overview.py` to call `listening.overview` for every computation. Keep every widget, chart spec, caption, key and layout as it is; `@st.cache_data load(db_mtime)` wraps `load_plays`. The view should then contain only UI code
+- [x] T016 [US1] Run the golden comparison: a scratch script runs the same input grid through `listening.overview` and writes `$SCRATCH/golden_after.json`. `diff` it against `golden_before.json` and expect no differences. Then drive Streamlit on :8501 in headless Chrome:
   - change the preset and grain
   - click a month bar, then "Show whole range"
   - click a genre panel and confirm `/genre` opens with the range
 
 ### API
 
-- [ ] T017 [US1] Add `GET /api/overview` to `src/listening/api.py` per contracts/api.md:
+- [x] T017 [US1] Add `GET /api/overview` to `src/listening/api.py` per contracts/api.md:
   - **Validate inputs**: `preset` ∈ {`last30`,`last12m`,`ytd`,`all`,`custom`}, `grain` ∈ {`week`,`month`,`year`}, and `start`/`end` as dates when `preset=custom`.
   - **Build the response**: call the T014 functions in the same order as the view, and serialise DataFrames to records with dates as `YYYY-MM-DD` and datetimes as ISO local.
   - **Empty data**: return `{"empty": true, "reason": …}` for no scrobbles or no plays in range.
   - **Over-time series**: `over_time` covers the range **before** the period narrows it.
   - **"#1 per year"**: covers **all data**.
-- [ ] T018 [US1] Cross-check the API against SQLite with `curl '/api/overview?preset=last12m&grain=month'` and one `period`. Its KPI values must equal `sqlite3` counts (quickstart Slice 1, step 5), and the response must arrive within 1 s on a warm server
+- [x] T018 [US1] Cross-check the API against SQLite with `curl '/api/overview?preset=last12m&grain=month'` and one `period`. Its KPI values must equal `sqlite3` counts (quickstart Slice 1, step 5), and the response must arrive within 1 s on a warm server
 
 ### Frontend
 
-- [ ] T019 [P] [US1] Create the chart spec builders in `web/src/charts/`, porting each Altair chart in `dashboard/views/overview.py` one to one:
+- [x] T019 [P] [US1] Create the chart spec builders in `web/src/charts/`, porting each Altair chart in `dashboard/views/overview.py` one to one:
   - **`overTime.ts`**: ordinal `period` x-axis, `paddingInner 0.2`, rounded top corners, a `pick` point param on `period` (click), colour `IRIS` when selected and `IRIS_DIM` otherwise, pointer cursor.
   - **`topBar.ts`**: horizontal bars, sorted by `-x`, height `max(200, 26·n)`, label limit 320.
   - **`heatmap.ts`**: rects stroked `#18181C` with width 2 and radius 2; `IRIS_RAMP` colour scale; weekdays in Mon–Sun order.
   - **`newArtists.ts`**: a teal line with points.
   - **`genrePanel.ts`**: an area with a 2 px iris line at opacity 0.35, a shared `y_max`, a `%` axis, and an invisible `nearest` point layer with a `pick` param, so a click anywhere in the panel selects.
   - **`buckets.ts`**: bars sorted by bucket order, with a `%` y-axis.
-- [ ] T020 [US1] Create `web/src/pages/Overview.tsx` with the inputs held in the URL (`preset`, `start`, `end`, `grain`, `period`, `measure`) and fetched with TanStack Query (`keepPreviousData`, so a click doesn't blank the page). Sections, in Streamlit's order:
+- [x] T020 [US1] Create `web/src/pages/Overview.tsx` with the inputs held in the URL (`preset`, `start`, `end`, `grain`, `period`, `measure`) and fetched with TanStack Query (`keepPreviousData`, so a click doesn't blank the page). Sections, in Streamlit's order:
   1. Sidebar filters: range presets as a radio group plus custom date inputs (min and max from the data), and the grain as a segmented control. Changing either clears `period`.
   2. Title and caption: `DD Mon YYYY – DD Mon YYYY · data through …`
   3. Five KPIs with deltas.
@@ -120,13 +120,13 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
   7. "When you listen" heatmap and new artists, with the new-share caption.
   8. Genres: a 3-column grid of panels; a click navigates to `/genre?genre=…&start=…&end=…` using the **effective** range. The mainstream chart, or the "run enrich" notice.
   9. Loved tracks and data quality (a progress column), and the hours note.
-- [ ] T021 [US1] Overview edge cases in `web/src/pages/Overview.tsx`:
+- [x] T021 [US1] Overview edge cases in `web/src/pages/Overview.tsx`:
   - The API is unreachable: show the data-service notice.
   - `no_database`: show the build notice.
   - `empty`, reason `no_scrobbles`: show "The database has no scrobbles yet…".
   - `empty`, reason `no_plays_in_range`: show "No scrobbles in this range."
   - A `period` in the URL that is no longer valid is dropped silently, because the API returns `selected: null`.
-- [ ] T022 [US1] Browser verification on :8000 in headless Chrome (quickstart Slice 1, steps 3–4 and 6–7):
+- [x] T022 [US1] Browser verification on :8000 in headless Chrome (quickstart Slice 1, steps 3–4 and 6–7):
   - every `dashboard-overview` living-spec scenario
   - side-by-side parity with :8501 for "Last 12 months / Month" and for one selected month
   - the 2 s and 1 s timings
@@ -138,12 +138,12 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
 
 ## Phase 4: User Story 4 – Comparison log, slice 1 (P2)
 
-- [ ] T023 [US4] Fill in the Overview row and notes in `docs/streamlit-vs-typescript.md`:
+- [x] T023 [US4] Fill in the Overview row and notes in `docs/streamlit-vs-typescript.md`:
   - line counts (`wc -l` of the view before and after, `listening/overview.py`, the API route, and `web/src` files used by the Overview)
   - sessions spent
   - what was easy and hard in each, including what Streamlit gave for free (tables, date input, caching, selection state) and what TS made possible
   - load timings from T022
-- [ ] T024 Add a "Two dashboards" section to `README.md` (how to run either app or both: build, serve, dev mode; that the numbers are shared). Note that the web group is installed by `uv sync`
+- [x] T024 Add a "Two dashboards" section to `README.md` (how to run either app or both: build, serve, dev mode; that the numbers are shared). Note that the web group is installed by `uv sync`
 - [ ] T025 Open PR 1 (Overview), stating it affects **both** apps (the Streamlit Overview now calls shared functions; no behaviour change) and listing what was checked per constitution III. Base it on `main` once PR #10 is merged
 
 **Checkpoint**: PR 1. The MVP is usable: both Overviews show the same numbers.
