@@ -34,12 +34,20 @@ Rationale: the bugs found so far (unclickable rows, unclickable charts) only sho
 
 ### IV. Few Dependencies, Existing Stack
 
-- Python 3.10+, managed with uv. The CLI uses httpx and python-dotenv; the dashboard uses
-  Streamlit, pandas and Altair.
-- A new runtime dependency MUST be justified in the plan (what it replaces, why the stack can't do
-  it). Test-only tools run ad hoc (e.g. `uv run --with`) rather than becoming project dependencies.
+- Python 3.10+, managed with uv. The CLI uses httpx and python-dotenv.
+- There are two dashboards, kept side by side so they can be compared:
+  - **Streamlit** (`dashboard/`): Streamlit, pandas and Altair, in the `dashboard` dependency group.
+  - **TypeScript** (`web/`): Vite, React, TypeScript and Vega-Lite, reading a FastAPI JSON API
+    (`src/listening/api.py`, FastAPI and uvicorn in the `web` dependency group). Node and npm are
+    build and dev tools for `web/` only; nothing outside `web/` needs them.
+- The scheduled sync MUST keep running with `--no-default-groups`, so no dashboard dependency is
+  ever needed to fetch scrobbles.
+- A new runtime dependency (Python or npm) MUST be justified in the plan (what it replaces, why the
+  stack can't do it). Test-only tools run ad hoc (e.g. `uv run --with`, `npx`) rather than becoming
+  project dependencies.
 
-Rationale: fewer moving parts to update, and the scheduled sync stays fast and reliable.
+Rationale: fewer moving parts to update, the scheduled sync stays fast and reliable, and the two
+dashboards stay directly comparable.
 
 ### V. Respect External APIs and Secrets
 
@@ -52,16 +60,24 @@ Rationale: fewer moving parts to update, and the scheduled sync stays fast and r
 
 Rationale: keeps within API limits, makes long enrichments safe to stop, and protects the accounts.
 
-### VI. Consistent Dashboard
+### VI. Consistent Dashboards
 
-- Colors come from the palette in `.streamlit/config.toml` (and the chart constants in
-  `dashboard/views/overview.py`); charts MUST be readable on the dark theme.
-- Each page is one module in `dashboard/views/`, registered in `dashboard/app.py`. Helpers used by
-  more than one page live in a shared module, not copied between pages.
+- Both dashboards use one palette: `.streamlit/config.toml` (and the chart constants in
+  `dashboard/views/overview.py`) for Streamlit, mirrored as CSS tokens in `web/` for TypeScript.
+  A palette change MUST update both. Charts MUST be readable on the dark theme.
+- Both dashboards MUST show the same numbers for the same inputs. Data work (queries,
+  aggregation, ranking) lives in shared functions in `src/listening/` that both the Streamlit
+  pages and the API call. It MUST NOT be reimplemented in a page or in TypeScript.
+- Streamlit: each page is one module in `dashboard/views/`, registered in `dashboard/app.py`.
+  TypeScript: each page is one module in `web/src/pages/`, with the same URL path as its
+  Streamlit counterpart. Helpers used by more than one page live in a shared module, not copied.
+- Every dashboard change states which app(s) it applies to (Streamlit, TypeScript or both). A
+  change to one app only is allowed; the difference is noted in `docs/streamlit-vs-typescript.md`.
 - Interactive elements MUST respond to a click anywhere a user would reasonably click (a whole
   table row, a whole chart panel), not only on a small target.
 
-Rationale: the dashboard is the product; it should look and behave like one app.
+Rationale: the dashboards are the product, and comparing them is only meaningful if the numbers
+underneath are identical.
 
 ## Data and Privacy
 
@@ -88,4 +104,4 @@ any deviation MUST be justified in the plan's Complexity Tracking. Amendments go
 `chore/` pull request that states the version bump: MAJOR for removing or redefining a principle,
 MINOR for adding one or materially expanding guidance, PATCH for wording.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-14
+**Version**: 1.1.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-15
