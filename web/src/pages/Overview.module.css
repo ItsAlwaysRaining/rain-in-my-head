@@ -1,0 +1,100 @@
+.sidebarTitle {
+  font-size: 1.25rem;
+  margin-bottom: var(--space-4);
+}
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.dates {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+}
+.dates label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.dates input {
+  background: var(--page);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-1) var(--space-2);
+}
+
+.caption {
+  margin: var(--space-3) 0 var(--space-5);
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.section {
+  margin-top: var(--space-6);
+}
+.section > h2 {
+  margin-bottom: var(--space-4);
+}
+
+.chart {
+  margin-top: var(--space-5);
+}
+
+.selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.button {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.button:hover {
+  border-color: var(--iris);
+  color: var(--iris);
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.genreGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.tableGap {
+  margin-bottom: var(--space-2);
+}
+
+.loading {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+@media (max-width: 900px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .twoCol,
+  .genreGrid {
+    grid-template-columns: 1fr;
+  }
+}
