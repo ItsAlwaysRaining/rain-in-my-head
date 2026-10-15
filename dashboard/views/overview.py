@@ -221,13 +221,14 @@ else:
         .assign(share=lambda d: d["plays"] / d["tagged"])
     )
     y_max = float(genre_time["share"].max()) if not genre_time.empty else 1.0
-    st.caption(f"Share of tagged plays per {grain.lower()} for your top {len(top_genres)} genres (artist's top Last.fm tag).")
+    st.caption(f"Share of tagged plays per {grain.lower()} for your top {len(top_genres)} genres (artist's top Last.fm tag). "
+               "Click a chart to see its artists.")
     for row_start in range(0, len(top_genres), 3):
         for col, genre in zip(st.columns(3), top_genres[row_start : row_start + 3]):
             panel = genre_time[genre_time["primary_genre"] == genre]
-            col.altair_chart(
+            clicked = col.altair_chart(
                 alt.Chart(panel, title=alt.Title(genre, anchor="start", fontSize=13))
-                .mark_area(line={"strokeWidth": 2, "color": IRIS}, color=IRIS, opacity=0.35)
+                .mark_area(line={"strokeWidth": 2, "color": IRIS}, color=IRIS, opacity=0.35, cursor="pointer")
                 .encode(
                     x=alt.X("played_local:T", title=None, axis=alt.Axis(tickCount=4, grid=False)),
                     y=alt.Y("share:Q", title=None, scale=alt.Scale(domain=[0, y_max]),
@@ -235,9 +236,16 @@ else:
                     tooltip=[alt.Tooltip("played_local:T", title=grain), alt.Tooltip("share:Q", format=".1%", title="Share"),
                              alt.Tooltip("plays:Q", title="Plays")],
                 )
+                .add_params(alt.selection_point(name="pick", on="click"))
                 .properties(height=140),
                 width="stretch",
+                on_select="rerun",
+                key=f"genre-{genre}",
             )
+            if clicked.selection.get("pick"):
+                st.switch_page("views/genre.py", query_params={
+                    "genre": genre, "start": start.isoformat(), "end": end.isoformat(),
+                })
     g_left, _ = st.columns(2)
     with g_left:
         known = df[df["artist_listeners"].notna()]
