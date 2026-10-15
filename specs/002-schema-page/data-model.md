@@ -24,6 +24,9 @@ columns that are not in the database are skipped.
 
 ## Layout file (`data/schema_layout.json`)
 
+Kept next to the database: `data/schema_layout.json` by default, or beside the file `LISTENING_DB`
+points to, so testing against a database copy never touches the real layout.
+
 ```json
 {"positions": {"scrobbles": {"x": 40, "y": 40}, "tracks": {"x": 500, "y": 40}}}
 ```

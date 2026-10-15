@@ -11,6 +11,7 @@
    "Reset layout" (click twice within 3 seconds to confirm), and a save status line.
 3. The map: one card per object, link lines, and a legend for the four data sources.
 4. No database: `st.info("No database yet. Run `uv run listening build` first.")` and nothing else.
+   A database with no tables: `st.info("The database has no tables yet. Run `uv run listening build` first.")`.
 
 ## Card
 

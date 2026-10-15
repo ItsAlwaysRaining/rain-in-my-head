@@ -18,8 +18,13 @@ step or package, and it is two-way, unlike `st.components.v1.html`.
 - A v1 custom component with a React build: needs Node and a build step, against Principle IV.
 - Altair or another chart with drag: no free dragging of rich HTML cards.
 
-**To confirm while implementing (T004)**: whether the JS default function runs again on each rerun
-(it must not reset a card mid-drag), and that a trigger value reaches the callback once per move.
+**Confirmed while implementing (T004)**: the JS default function runs again on every rerun with the
+same mount point, so `map.js` keeps one map per mount point (a `WeakMap`) and only updates it; it
+rebuilds the cards only when the schema itself changes, and ignores incoming positions mid-drag.
+The trigger value is read in the `on_layout_change` callback as
+`st.session_state["schema_map"].get("layout")`; saving there (before the rerun) lets the "Layout
+saved" status reach the page in the same run. The component is registered inside
+`st.cache_resource` so reruns do not re-register it.
 
 ## R2. Where the component's CSS and JS live
 

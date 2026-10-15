@@ -87,6 +87,8 @@ extra table, and open the Schema page.
 ### Edge Cases
 
 - No database yet: the page says to run `listening build` first, as the SQL page does.
+- The database file exists but has no tables (for example an empty file): the page says the database
+  has no tables yet and to run `listening build`.
 - The saved layout file is missing, empty or not valid: the page uses the default layout and shows
   no error; the next move saves a fresh file.
 - A saved position is off the map (for example from a smaller map size): the card is moved back

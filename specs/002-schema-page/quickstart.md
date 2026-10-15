@@ -30,7 +30,8 @@ Drive it with headless Chrome (`uv run --no-project --with playwright python <sc
 
 ## Scenario 4: stays current (US3)
 
-1. Copy the database to a temp folder, then in the copy run
+1. Copy the database to a temp folder with Python's `sqlite3` `Connection.backup()` (the `sqlite3`
+   CLI's `.backup` fails when the source is opened `-readonly`), then in the copy run
    `ALTER TABLE tracks ADD COLUMN bpm REAL; CREATE TABLE notes (id INTEGER PRIMARY KEY, body TEXT);`.
 2. Start the dashboard with `LISTENING_DB=<copy>`. `bpm` appears on Track details with
    "No description yet"; a "notes" card appears with "No description yet", "0 rows", not covering
