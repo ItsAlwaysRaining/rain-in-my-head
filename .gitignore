@@ -7,3 +7,4 @@ data/*.db
 data/*.db-*
 data/.spotify_token.json
 data/*.log
+data/schema_layout.json
