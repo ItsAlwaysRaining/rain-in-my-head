@@ -226,17 +226,19 @@ else:
     for row_start in range(0, len(top_genres), 3):
         for col, genre in zip(st.columns(3), top_genres[row_start : row_start + 3]):
             panel = genre_time[genre_time["primary_genre"] == genre]
+            base = alt.Chart(panel, title=alt.Title(genre, anchor="start", fontSize=13)).encode(
+                x=alt.X("played_local:T", title=None, axis=alt.Axis(tickCount=4, grid=False)),
+                y=alt.Y("share:Q", title=None, scale=alt.Scale(domain=[0, y_max]),
+                        axis=alt.Axis(format="%", tickCount=3)),
+                tooltip=[alt.Tooltip("played_local:T", title=grain), alt.Tooltip("share:Q", format=".1%", title="Share"),
+                         alt.Tooltip("plays:Q", title="Plays")],
+            )
+            # Invisible points with `nearest` make a click anywhere in the panel select, not just on the thin area.
+            hit = base.mark_point(opacity=0, cursor="pointer").add_params(
+                alt.selection_point(name="pick", on="click", nearest=True)
+            )
             clicked = col.altair_chart(
-                alt.Chart(panel, title=alt.Title(genre, anchor="start", fontSize=13))
-                .mark_area(line={"strokeWidth": 2, "color": IRIS}, color=IRIS, opacity=0.35, cursor="pointer")
-                .encode(
-                    x=alt.X("played_local:T", title=None, axis=alt.Axis(tickCount=4, grid=False)),
-                    y=alt.Y("share:Q", title=None, scale=alt.Scale(domain=[0, y_max]),
-                            axis=alt.Axis(format="%", tickCount=3)),
-                    tooltip=[alt.Tooltip("played_local:T", title=grain), alt.Tooltip("share:Q", format=".1%", title="Share"),
-                             alt.Tooltip("plays:Q", title="Plays")],
-                )
-                .add_params(alt.selection_point(name="pick", on="click"))
+                alt.layer(base.mark_area(line={"strokeWidth": 2, "color": IRIS}, color=IRIS, opacity=0.35), hit)
                 .properties(height=140),
                 width="stretch",
                 on_select="rerun",

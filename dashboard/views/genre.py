@@ -110,16 +110,17 @@ with left:
         row_height=56,
         height=640,
         on_select="rerun",
-        selection_mode="single-row",
+        # Cell selection makes clicking anywhere in a row pick that artist, not just its checkbox.
+        selection_mode=["single-row", "single-cell"],
         key=f"artists-{genre}-{start}-{end}",
     )
-    st.caption("Select an artist to see your songs by them.")
+    st.caption("Click an artist to see your songs by them.")
 
 with right:
-    rows = picked.selection.rows
+    rows = picked.selection.rows or [row for row, _ in picked.selection.cells]
     if not rows:
         st.subheader("Songs")
-        st.info("Select an artist on the left.")
+        st.info("Click an artist on the left.")
     else:
         artist = artists.iloc[rows[0]]
         art_col, info_col = st.columns([1, 3], vertical_alignment="center")
