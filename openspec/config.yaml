@@ -5,7 +5,7 @@ context: |
   loaded into SQLite and explored in a Streamlit dashboard. Can create Spotify playlists.
   Tech stack: Python 3.10+, managed with uv. httpx, python-dotenv; dashboard uses
   Streamlit, pandas and Altair.
-  Layout: src/listening/ (CLI `listening`, fetch/build/enrich/playlist/spotify, schema.sql),
+  Layout: src/rain_in_my_head/ (CLI `rain-in-my-head`, fetch/build/enrich/playlist/spotify, schema.sql),
   dashboard/app.py and dashboard/views/ (one module per page).
   data/raw/lastfm/YYYY-MM.jsonl is the source of truth and is appended by a scheduled
   GitHub Action; data/listening.db is rebuilt from it and gitignored.

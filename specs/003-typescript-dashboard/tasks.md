@@ -156,10 +156,10 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
 
 **Independent Test**: quickstart.md, Slice 2.
 
-- [ ] T026 [US2] Create `src/listening/genre.py` by moving `PLACEHOLDER`, `thumb`, `genres(conn)`, `genre_plays(conn, genre, start, end)`, `most_common` and `ranked` out of `dashboard/views/genre.py`. Add `songs(plays, artist_key)`, which returns the song table with each song's most common album
-- [ ] T027 [US2] Change `dashboard/views/genre.py` to call `listening.genre`, with the UI unchanged. In headless Chrome, check that it shows the same artists and songs as before for one genre and range
-- [ ] T028 [P] [US2] Create `src/listening/sql_examples.py` by moving `EXAMPLES` and the schema listing from `dashboard/views/sql.py`, plus a `run_readonly(db_path, sql) -> (columns, rows)` helper using `mode=ro`. Update `dashboard/views/sql.py` to use them
-- [ ] T029 [US2] Add `GET /api/genre`, `GET /api/genre/songs`, `GET /api/sql/meta` and `POST /api/sql` to `src/listening/api.py` per contracts/api.md. SQL errors are returned as `{error}`. The default genre is the most-played one, and the default range is all time, with the label "All time"
+- [ ] T026 [US2] Create `src/rain_in_my_head/genre.py` by moving `PLACEHOLDER`, `thumb`, `genres(conn)`, `genre_plays(conn, genre, start, end)`, `most_common` and `ranked` out of `dashboard/views/genre.py`. Add `songs(plays, artist_key)`, which returns the song table with each song's most common album
+- [ ] T027 [US2] Change `dashboard/views/genre.py` to call `rain_in_my_head.genre`, with the UI unchanged. In headless Chrome, check that it shows the same artists and songs as before for one genre and range
+- [ ] T028 [P] [US2] Create `src/rain_in_my_head/sql_examples.py` by moving `EXAMPLES` and the schema listing from `dashboard/views/sql.py`, plus a `run_readonly(db_path, sql) -> (columns, rows)` helper using `mode=ro`. Update `dashboard/views/sql.py` to use them
+- [ ] T029 [US2] Add `GET /api/genre`, `GET /api/genre/songs`, `GET /api/sql/meta` and `POST /api/sql` to `src/rain_in_my_head/api.py` per contracts/api.md. SQL errors are returned as `{error}`. The default genre is the most-played one, and the default range is all time, with the label "All time"
 - [ ] T030 [P] [US2] Create `web/src/pages/Genre.tsx`:
   - a back link to the Overview and a genre select that updates `?genre=`
   - a title and caption (range label · plays · "artists whose top Last.fm tag is …")
@@ -183,8 +183,8 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
 
 **Independent Test**: quickstart.md, Slice 3.
 
-- [ ] T034 [US3] Create `src/listening/schema_info.py`. Move `read_schema`, the layout load, save and reset logic, `MAP_W`, `MAP_H`, `CARD_W`, `GRID_X` and the default-position placement out of `dashboard/views/schema.py`. Move `dashboard/schema_notes.py` to `src/listening/schema_notes.py`, keeping a re-export at the old path if anything else imports it. Update the view to use the new module and confirm the Streamlit Schema page behaves as before (spec 002 quickstart)
-- [ ] T035 [US3] Add `GET /api/schema`, `PUT /api/schema/layout` (atomic write, 204) and `DELETE /api/schema/layout` to `src/listening/api.py`
+- [ ] T034 [US3] Create `src/rain_in_my_head/schema_info.py`. Move `read_schema`, the layout load, save and reset logic, `MAP_W`, `MAP_H`, `CARD_W`, `GRID_X` and the default-position placement out of `dashboard/views/schema.py`. Move `dashboard/schema_notes.py` to `src/rain_in_my_head/schema_notes.py`, keeping a re-export at the old path if anything else imports it. Update the view to use the new module and confirm the Streamlit Schema page behaves as before (spec 002 quickstart)
+- [ ] T035 [US3] Add `GET /api/schema`, `PUT /api/schema/layout` (atomic write, 204) and `DELETE /api/schema/layout` to `src/rain_in_my_head/api.py`
 - [ ] T036 [US3] Create `web/src/pages/Schema.tsx` and `web/src/pages/schema/` by porting `dashboard/schema_map/map.js` and `map.css` to TypeScript and React:
   - cards dragged by the whole header, and moved with the arrow keys (20 px, or 80 px with Shift)
   - link lines with labels; highlighting on hover or focus
@@ -192,9 +192,9 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
   - zoom, and fit to screen on open
   - "Reset layout" with an on-page confirmation
   - the layout saved on drag end via `PUT`
-- [ ] T037 [US3] Add the Playlists endpoints to `src/listening/api.py`:
+- [ ] T037 [US3] Add the Playlists endpoints to `src/rain_in_my_head/api.py`:
   - `GET /api/playlists/meta` and `GET /api/playlists/spotify`
-  - `POST /api/playlists/preview`, which builds the same `Spec` as `dashboard/views/playlists.py`. Move the `time_slot`, `year_discoveries` and `binged` assembly, minus its widgets, into `src/listening/playlist.py` as `preview_slot`, `preview_discoveries` and `preview_binges`, so the Streamlit view and the API share it. Update the view to use them
+  - `POST /api/playlists/preview`, which builds the same `Spec` as `dashboard/views/playlists.py`. Move the `time_slot`, `year_discoveries` and `binged` assembly, minus its widgets, into `src/rain_in_my_head/playlist.py` as `preview_slot`, `preview_discoveries` and `preview_binges`, so the Streamlit view and the API share it. Update the view to use them
   - `POST /api/playlists/create` as server-sent events, running `match_tracks` with a progress callback that yields `progress` events and then `done` or `error`
 - [ ] T038 [US3] Create `web/src/pages/Playlists.tsx`:
   - the "Playlist type" segmented control
@@ -213,11 +213,11 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] T041 [US4] Same-change test (spec US4 scenario 2): add one identical small feature to both apps (for example a "Days listened" KPI, with the computation in `listening.overview`). Record the time taken and the files touched for each in `docs/streamlit-vs-typescript.md`
+- [ ] T041 [US4] Same-change test (spec US4 scenario 2): add one identical small feature to both apps (for example a "Days listened" KPI, with the computation in `rain_in_my_head.overview`). Record the time taken and the files touched for each in `docs/streamlit-vs-typescript.md`
 - [ ] T042 [US4] Record side-by-side load timings for every page (spec US4 scenario 3) in `docs/streamlit-vs-typescript.md`
 - [ ] T043 Final pass:
   - `npx tsc --noEmit` and `npm run build` are clean
-  - `uv run --no-default-groups listening --help` still works
+  - `uv run --no-default-groups rain-in-my-head --help` still works
   - the README is up to date
   - open PR 3, stating it affects both apps
 
