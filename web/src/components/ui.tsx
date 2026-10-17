@@ -105,13 +105,13 @@ export function ErrorState({ error }: { error: unknown }) {
   if (error instanceof ApiError && error.kind === "no_database")
     return (
       <Notice>
-        No database yet. Run <code>uv run listening fetch</code> then <code>uv run listening build</code>.
+        No database yet. Run <code>uv run rain-in-my-head fetch</code> then <code>uv run rain-in-my-head build</code>.
       </Notice>
     );
   if (error instanceof ApiError && error.kind === "unreachable")
     return (
       <Notice tone="warning">
-        The data service isn't running. Start it with <code>uv run listening serve</code> (add <code>--dev</code> when using <code>npm run dev</code>).
+        The data service isn't running. Start it with <code>uv run rain-in-my-head serve</code> (add <code>--dev</code> when using <code>npm run dev</code>).
       </Notice>
     );
   return <Notice tone="error">{error instanceof Error ? error.message : String(error)}</Notice>;

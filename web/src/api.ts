@@ -1,4 +1,4 @@
-// Typed access to the JSON API (src/listening/api.py). Shapes follow
+// Typed access to the JSON API (src/rain_in_my_head/api.py). Shapes follow
 // specs/003-typescript-dashboard/data-model.md; dates are local "YYYY-MM-DD".
 
 export type ApiErrorKind = "no_database" | "unreachable" | "http";
