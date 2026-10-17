@@ -1,15 +1,16 @@
 // Shared Vega-Lite config: the dark theme for every chart. Colours are the tokens in theme.css.
 import type { Config } from "vega-lite";
 
-export const IRIS = "#7F77D6";
-export const TEAL = "#0E9A94";
-export const IRIS_RAMP = ["#1D1C34", "#2B284D", "#393567", "#484383", "#58519E", "#6B63BC", "#7F78D6", "#948FE8", "#AAA8F1", "#C2C1F7"];
-export const IRIS_DIM = IRIS_RAMP[2]; // unselected bars while a period is selected
-export const PAGE = "#18181C";
+export const RAIN = "#05A0CF";
+export const NIGHT = "#736EE1";
+export const BOLT = "#B39105";
+export const RAIN_RAMP = ["#104F81", "#176396", "#1C77AC", "#238BC1", "#2BA0D6", "#32B6EB", "#51CBF9", "#8BDDFB", "#BDEDFD", "#F0FBFE"];
+export const RAIN_DIM = RAIN_RAMP[2]; // unselected bars while a period is selected
+export const PAGE = "#141A2A";
 
-const TEXT = "#E4E4EA";
-const MUTED = "#AAAAB4";
-const GRID = "#2E2E36";
+const TEXT = "#E2E7F0";
+const MUTED = "#A6AEC2";
+const GRID = "#283049";
 const FONT = '"Source Sans 3", "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 export const chartConfig: Config = {
@@ -32,7 +33,7 @@ export const chartConfig: Config = {
   },
   axisX: { grid: false },
   legend: { labelColor: MUTED, titleColor: MUTED, labelFontSize: 12, titleFontSize: 12, titleFontWeight: 400 },
-  range: { category: [IRIS, TEAL, "#CD6153"], ramp: IRIS_RAMP },
-  bar: { color: IRIS },
-  line: { color: IRIS },
+  range: { category: [RAIN, NIGHT, BOLT], ramp: RAIN_RAMP },
+  bar: { color: RAIN },
+  line: { color: RAIN },
 };

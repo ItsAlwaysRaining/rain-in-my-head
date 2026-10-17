@@ -1,21 +1,22 @@
 /* Schema map: a dotted canvas you scroll and zoom; each table is a card dragged by its header.
    Colors are the dashboard palette from .streamlit/config.toml (dark theme only). */
 :host, .schema-map {
-  --page: #18181C;
-  --dot: #2C2C36;
-  --card: #202030;
-  --card-head: #26263A;
-  --text: #E4E4EA;
-  --muted: #AAAAB4;
-  --line: #4C4C54;
-  --link: #6E6E7A;
-  --iris: #9995E4;
-  --iris-strong: #B2B0F7;
-  --history: #7F77D6;
-  --details: #0E9A94;
-  --spotify: #CD6153;
-  --unknown: #AAAAB4;
-  --hot: #FEC0B6;
+  --page: #141A2A;
+  --dot: #262E45;
+  --card: #1C2238;
+  --card-head: #232A44;
+  --text: #E2E7F0;
+  --muted: #A6AEC2;
+  --line: #3E4760;
+  --link: #6A7390;
+  --night: #8C9FE0;
+  --night-strong: #A9B8F2;
+  --history: #05A0CF;
+  --details: #736EE1;
+  --spotify: #B39105;
+  --unknown: #A6AEC2;
+  --hot: #FFEB6B;
+  --coral: #FF8A80;
   --font: "Source Sans Pro", "Source Sans 3", system-ui, sans-serif;
   --mono: "Source Code Pro", ui-monospace, "SF Mono", Menlo, monospace;
 }
@@ -27,20 +28,20 @@
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .swatch { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; display: inline-block; }
-.swatch.sq { border-radius: 2px; background: none; border: 1.5px dashed var(--iris); }
+.swatch.sq { border-radius: 2px; background: none; border: 1.5px dashed var(--night); }
 
 button, .toggle {
   font: inherit; font-size: 14px; color: var(--text); background: var(--card); border: 1px solid var(--line);
   border-radius: 8px; padding: 4px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
 }
-button:hover, .toggle:hover { border-color: var(--iris); }
-button:focus-visible, .toggle:focus-within, .card-head:focus-visible { outline: 2px solid var(--iris-strong); outline-offset: 2px; }
-button.warn { border-color: var(--hot); color: var(--hot); }
+button:hover, .toggle:hover { border-color: var(--night); }
+button:focus-visible, .toggle:focus-within, .card-head:focus-visible { outline: 2px solid var(--night-strong); outline-offset: 2px; }
+button.warn { border-color: var(--coral); color: var(--coral); }
 .zoom { display: inline-flex; align-items: center; gap: 4px; }
 .zoom output { min-width: 4ch; text-align: center; font-variant-numeric: tabular-nums; font-size: 14px; }
-.toggle input { margin: 0; accent-color: var(--iris); }
+.toggle input { margin: 0; accent-color: var(--night); }
 .status { font-size: 13px; color: var(--muted); }
-.status.bad { color: var(--hot); }
+.status.bad { color: var(--coral); }
 
 .viewport {
   overflow: auto; height: max(480px, calc(100vh - 340px)); border: 1px solid var(--line); border-radius: 8px;
@@ -52,7 +53,7 @@ button.warn { border-color: var(--hot); color: var(--hot); }
 svg.links { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
 
 .link { fill: none; stroke: var(--link); stroke-width: 1.6; }
-.link.lineage { stroke: var(--iris); stroke-dasharray: 5 5; opacity: .7; }
+.link.lineage { stroke: var(--night); stroke-dasharray: 5 5; opacity: .7; }
 .end { fill: var(--card); stroke: var(--link); stroke-width: 1.6; }
 .end.many { fill: var(--link); }
 .link-label { font: 600 11px var(--font); fill: var(--muted); paint-order: stroke; stroke: var(--page); stroke-width: 5px; stroke-linejoin: round; }
@@ -60,11 +61,11 @@ g.rel.hot .link { stroke: var(--hot); stroke-width: 2.4; }
 g.rel.hot .end { stroke: var(--hot); }
 g.rel.hot .end.many { fill: var(--hot); }
 g.rel.hot .link-label { fill: var(--text); }
-g.rel.lineage.hot .link { stroke: var(--iris-strong); opacity: 1; stroke-width: 2.2; }
+g.rel.lineage.hot .link { stroke: var(--night-strong); opacity: 1; stroke-width: 2.2; }
 .links.dim g.rel:not(.hot) { opacity: .25; }
 
 .card { position: absolute; width: 300px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 18px rgb(0 0 0 / .35); }
-.card.view { border-style: dashed; border-color: var(--iris); }
+.card.view { border-style: dashed; border-color: var(--night); }
 .card.dragging { box-shadow: 0 14px 36px rgb(0 0 0 / .55); }
 .card-head {
   display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; background: var(--card-head);
@@ -90,7 +91,7 @@ g.rel.lineage.hot .link { stroke: var(--iris-strong); opacity: 1; stroke-width: 
 .coldesc { grid-column: 1 / -1; font-size: 12.5px; color: var(--muted); }
 .badge { font-family: var(--font); font-size: 10px; font-weight: 700; letter-spacing: .06em; padding: 0 5px; border-radius: 4px; border: 1px solid currentColor; }
 .badge.key { color: var(--hot); }
-.badge.link { color: var(--iris-strong); }
+.badge.link { color: var(--night-strong); }
 .opt { font-family: var(--font); font-weight: 400; font-size: 11px; color: var(--muted); }
 
 @media (prefers-reduced-motion: no-preference) { .link, .end { transition: stroke .15s, opacity .15s; } }

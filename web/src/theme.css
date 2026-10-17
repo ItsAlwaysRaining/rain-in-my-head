@@ -2,28 +2,33 @@
    constants in dashboard/views/overview.py; change both together (constitution VI). */
 :root {
   /* Surfaces and text */
-  --page: #18181c;
-  --surface: #202030; /* --iris-surface: sidebar, table headers */
-  --surface-raised: #26263a;
-  --text: #e4e4ea;
-  --text-muted: #aaaab4;
-  --line: #4c4c54;
+  --page: #141a2a;
+  --surface: #1c2238; /* --night-surface: sidebar, table headers */
+  --surface-raised: #232a44;
+  --text: #e2e7f0;
+  --text-muted: #a6aec2;
+  --line: #3e4760;
+  --divider: #262e45; /* table row rules, map dots */
 
-  /* Accents */
-  --iris: #9995e4;
-  --iris-strong: #b2b0f7;
-  --teal: #5aa8a2;
-  --teal-text: #78c0ba;
-  --teal-bg: #142524;
-  --coral: #fec0b6;
-  --coral-text: #ffd2ca;
-  --coral-bg: #2f1c19;
+  /* Accents: base carries dark text; strong is the hover / neon glow step */
+  --night: #8c9fe0;
+  --night-strong: #a9b8f2;
+  --night-soft: #2c3866;
+  --rain: #5cc8f0;
+  --rain-strong: #7fdbff;
+  --rain-surface: #12263a;
+  --bolt: #f2de5c;
+  --bolt-strong: #ffeb6b;
+  --bolt-surface: #24221a;
+  --coral: #ff8a80; /* errors and warnings only, never a chart series */
+  --coral-strong: #ffa59c;
+  --coral-surface: #2e1c22;
 
-  /* Chart steps (OKLCH L≈0.62): iris = plays, teal = discovery */
-  --chart-iris: #7f77d6;
-  --chart-teal: #0e9a94;
-  --chart-coral: #cd6153;
-  --chart-iris-dim: #393567;
+  /* Chart steps (OKLCH L 0.48–0.67, C ≥ 0.10): rain = plays, night = discovery */
+  --chart-rain: #05a0cf;
+  --chart-night: #736ee1;
+  --chart-bolt: #b39105;
+  --chart-dim: #1c77ac;
 
   /* Type, spacing, shape */
   --font: "Source Sans 3", "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -76,7 +81,7 @@ h3 {
 }
 
 a {
-  color: var(--iris-strong);
+  color: var(--rain-strong);
 }
 
 code {

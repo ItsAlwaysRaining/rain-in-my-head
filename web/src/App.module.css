@@ -33,10 +33,10 @@
   font-size: 0.9rem;
 }
 .navLink:hover {
-  background: #2a2a40;
+  background: var(--surface-raised);
 }
 .navActive {
-  background: #34344c;
+  background: var(--night-soft);
   font-weight: 600;
 }
 .navIcon {
