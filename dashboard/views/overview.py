@@ -10,11 +10,11 @@ from rain_in_my_head import config
 from rain_in_my_head import overview as ov
 
 
-# Chart steps of the theme palette (see .streamlit/config.toml): iris = plays, teal = discovery.
-IRIS, TEAL = "#7F77D6", "#0E9A94"
-IRIS_RAMP = ["#1D1C34", "#2B284D", "#393567", "#484383", "#58519E", "#6B63BC", "#7F78D6", "#948FE8", "#AAA8F1", "#C2C1F7"]
-IRIS_DIM = IRIS_RAMP[2]  # unselected bars while a period is selected
-BAR = {"cornerRadiusEnd": 4, "color": IRIS}
+# Chart steps of the theme palette (see .streamlit/config.toml): rain = plays, night = discovery.
+RAIN, NIGHT = "#05A0CF", "#736EE1"
+RAIN_RAMP = ["#104F81", "#176396", "#1C77AC", "#238BC1", "#2BA0D6", "#32B6EB", "#51CBF9", "#8BDDFB", "#BDEDFD", "#F0FBFE"]
+RAIN_DIM = RAIN_RAMP[2]  # unselected bars while a period is selected
+BAR = {"cornerRadiusEnd": 4, "color": RAIN}
 
 
 @st.cache_data
@@ -94,7 +94,7 @@ st.altair_chart(
         x=alt.X("period:O", sort=None, title=None, scale=alt.Scale(paddingInner=0.2),
                 axis=alt.Axis(labelAngle=0, labelOverlap="greedy")),
         y=alt.Y(f"{metric}:Q", title=metric.capitalize()),
-        color=alt.condition(pick, alt.value(IRIS), alt.value(IRIS_DIM)),
+        color=alt.condition(pick, alt.value(RAIN), alt.value(RAIN_DIM)),
         tooltip=[alt.Tooltip("period:O", title=grain), alt.Tooltip(f"{metric}:Q", format=",.0f")],
     )
     .add_params(pick)
@@ -145,11 +145,11 @@ with left:
     heat = ov.heatmap(df)
     st.altair_chart(
         alt.Chart(heat, title="When you listen")
-        .mark_rect(stroke="#18181C", strokeWidth=2, cornerRadius=2)
+        .mark_rect(stroke="#141A2A", strokeWidth=2, cornerRadius=2)
         .encode(
             x=alt.X("hour:O", title="Hour of day"),
             y=alt.Y("weekday_name:O", sort=ov.WEEKDAYS, title=None, axis=alt.Axis(labelOverlap=False)),
-            color=alt.Color("plays:Q", title="Plays", scale=alt.Scale(range=IRIS_RAMP)),
+            color=alt.Color("plays:Q", title="Plays", scale=alt.Scale(range=RAIN_RAMP)),
             tooltip=["weekday_name", "hour", "plays"],
         )
         .properties(height=260),
@@ -161,7 +161,7 @@ with right:
     new_artists = ov.new_artists(data, start, end, inner_grain)
     st.altair_chart(
         alt.Chart(new_artists, title=f"New artists per {inner_grain.lower()}")
-        .mark_line(color=TEAL, strokeWidth=2, point=alt.OverlayMarkDef(color=TEAL, size=64))
+        .mark_line(color=NIGHT, strokeWidth=2, point=alt.OverlayMarkDef(color=NIGHT, size=64))
         .encode(
             x=alt.X("artist_first_play:T", title=None),
             y=alt.Y("new_artists:Q", title="Artists heard for the first time"),
@@ -197,7 +197,7 @@ else:
                 alt.selection_point(name="pick", on="click", nearest=True)
             )
             clicked = col.altair_chart(
-                alt.layer(base.mark_area(line={"strokeWidth": 2, "color": IRIS}, color=IRIS, opacity=0.35), hit)
+                alt.layer(base.mark_area(line={"strokeWidth": 2, "color": RAIN}, color=RAIN, opacity=0.35), hit)
                 .properties(height=140),
                 width="stretch",
                 on_select="rerun",

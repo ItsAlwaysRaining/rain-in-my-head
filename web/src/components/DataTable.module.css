@@ -25,7 +25,7 @@
 
 .table td {
   padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid #2a2a32;
+  border-bottom: 1px solid var(--divider);
   vertical-align: middle;
 }
 
@@ -47,10 +47,10 @@
   cursor: pointer;
 }
 .clickable:hover td {
-  background: #23233a;
+  background: var(--surface-raised);
 }
 .selected td {
-  background: #2b284d;
+  background: var(--night-soft);
 }
 
 .progress {
@@ -62,14 +62,14 @@
   flex: 1;
   height: 6px;
   min-width: 60px;
-  background: #2b284d;
+  background: var(--night-soft);
   border-radius: 3px;
   overflow: hidden;
 }
 .bar > span {
   display: block;
   height: 100%;
-  background: var(--iris);
+  background: var(--rain);
 }
 .progressLabel {
   min-width: 3.5em;

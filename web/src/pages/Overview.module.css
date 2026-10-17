@@ -62,8 +62,8 @@
   white-space: nowrap;
 }
 .button:hover {
-  border-color: var(--iris);
-  color: var(--iris);
+  border-color: var(--night);
+  color: var(--night);
 }
 
 .twoCol {

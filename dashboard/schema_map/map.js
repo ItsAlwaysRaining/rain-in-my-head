@@ -6,7 +6,7 @@ const SOURCES = {
   history: { label: "Last.fm listening history", color: "var(--history)" },
   details: { label: "Last.fm track & artist details", color: "var(--details)" },
   spotify: { label: "Spotify", color: "var(--spotify)" },
-  view: { label: "View (a saved query)", color: "var(--iris)" },
+  view: { label: "View (a saved query)", color: "var(--night)" },
 };
 const NS = "http://www.w3.org/2000/svg";
 const instances = new WeakMap();
