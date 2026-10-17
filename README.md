@@ -1,6 +1,6 @@
-# Listening analytics
+# Rain in My Head
 
-Personal listening history from Last.fm (scrobbled from Spotify), stored in SQLite and explored in a Streamlit dashboard.
+Personal listening history from Last.fm (scrobbled from Spotify), stored in SQLite and explored in two dashboards. Formerly `spotify-music-analysis`. See [Renamed from spotify-music-analysis](#renamed-from-spotify-music-analysis).
 
 - `data/raw/lastfm/YYYY-MM.jsonl` holds every scrobble. It's the source of truth, committed to git and appended to by GitHub Actions every 6 hours.
 - `data/listening.db` is a SQLite database rebuilt from the raw files. It's gitignored.
@@ -18,10 +18,10 @@ If "hide recent listening" is enabled on your Last.fm profile, turn it off. The 
 ## Usage
 
 ```sh
-uv run listening fetch      # first run backfills your whole account, then only new scrobbles
-uv run listening build      # load raw JSONL into SQLite (safe to rerun)
-uv run listening enrich     # Last.fm durations, listener counts and genre tags; resumable, --limit N
-uv run listening stats      # counts, enrichment coverage, suspicious scrobble bursts
+uv run rain-in-my-head fetch      # first run backfills your whole account, then only new scrobbles
+uv run rain-in-my-head build      # load raw JSONL into SQLite (safe to rerun)
+uv run rain-in-my-head enrich     # Last.fm durations, listener counts and genre tags; resumable, --limit N
+uv run rain-in-my-head stats      # counts, enrichment coverage, suspicious scrobble bursts
 uv run streamlit run dashboard/app.py
 ```
 
@@ -29,18 +29,18 @@ The first `enrich` makes about one call per unique track and two per unique arti
 
 ## Two dashboards
 
-There are two dashboards over the same database, kept side by side to compare them. They show the same numbers because both use the functions in `src/listening/` (for example `overview.py`).
+There are two dashboards over the same database, kept side by side to compare them. They show the same numbers because both use the functions in `src/rain_in_my_head/` (for example `overview.py`).
 
 | | Streamlit | TypeScript |
 |---|---|---|
-| Code | `dashboard/` | `web/` (Vite + React) and its JSON API, `src/listening/api.py` |
-| Run | `uv run streamlit run dashboard/app.py` | `cd web && npm install && npm run build`, then `uv run listening serve` |
+| Code | `dashboard/` | `web/` (Vite + React) and its JSON API, `src/rain_in_my_head/api.py` |
+| Run | `uv run streamlit run dashboard/app.py` | `cd web && npm install && npm run build`, then `uv run rain-in-my-head serve` |
 | Open | http://localhost:8501 | http://localhost:8000 |
 | Pages | Overview, Genre, SQL, Schema, Playlists | Overview so far; the other pages are being added |
 
 Both can run at the same time. `uv sync` installs what both need (the `dashboard` and `web` groups). The TypeScript app also needs Node 22 or newer.
 
-To work on the TypeScript app with hot reload, run `uv run listening serve --dev` (API only) and `npm run dev` in `web/`, then open http://localhost:5173.
+To work on the TypeScript app with hot reload, run `uv run rain-in-my-head serve --dev` (API only) and `npm run dev` in `web/`, then open http://localhost:5173.
 
 [docs/streamlit-vs-typescript.md](docs/streamlit-vs-typescript.md) records how building each page went in each app.
 
@@ -66,7 +66,27 @@ You can also open **Genre** from the sidebar and pick any genre from the dropdow
 1. Push this repo to a **private** GitHub repository. It contains your listening history.
 2. Add the repo secrets `LASTFM_API_KEY` and `LASTFM_USER` (Settings → Secrets and variables → Actions).
 3. Run the "Sync scrobbles" workflow once by hand from the Actions tab. After that it runs every 6 hours.
-4. Locally: `git pull && uv run listening build && uv run listening enrich` to refresh the database.
+4. Locally: `git pull && uv run rain-in-my-head build && uv run rain-in-my-head enrich` to refresh the database.
+
+## Renamed from spotify-music-analysis
+
+The project was called `spotify-music-analysis`, with a package and command called `listening`. It is now `rain-in-my-head` everywhere: the repository, the `rain-in-my-head` command and the `src/rain_in_my_head/` package. The database is still `data/listening.db`, and the `LISTENING_DB` and `LISTENING_RAW_DIR` settings keep their names, so no data moves.
+
+One-off steps on a machine with an existing clone:
+
+1. `git pull`, then `uv sync`. This removes the old `listening` command and installs `rain-in-my-head`.
+2. Check the remote: `git remote -v` should show `ItsAlwaysRaining/rain-in-my-head`. If it doesn't, run `git remote set-url origin https://github.com/ItsAlwaysRaining/rain-in-my-head.git`. GitHub redirects the old URL either way.
+3. Optionally move the folder to match. Close any Claude Code session in it first. Claude's project memory is stored under a folder named after the clone's path, so move that too:
+
+   ```sh
+   cd ~/Documents/claude_projects
+   mv spotify-music-analysis rain-in-my-head
+   mv ~/.claude/projects/-Users-oliver-Documents-claude-projects-spotify-music-analysis \
+      ~/.claude/projects/-Users-oliver-Documents-claude-projects-rain-in-my-head
+   cd rain-in-my-head && uv sync   # .venv records the old path
+   ```
+
+4. Optionally rename the Spotify app at developer.spotify.com/dashboard → your app → **Settings** → **Edit**. Spotify identifies the app by its client ID, so `.env` and the saved login don't change.
 
 ## Notes
 
@@ -83,22 +103,22 @@ One-time setup (Spotify requires the app owner to have **Premium**):
 
 1. Go to developer.spotify.com/dashboard → **Create app**. Use any name. Add the redirect URI `http://127.0.0.1:8888/callback` (Spotify rejects `localhost`) and tick **Web API**.
 2. Copy the **Client ID** into `.env` as `SPOTIFY_CLIENT_ID=...`. No client secret is needed (PKCE login).
-3. Run `uv run listening spotify-login` and approve in the browser. The token is saved to `data/.spotify_token.json`, which is gitignored.
+3. Run `uv run rain-in-my-head spotify-login` and approve in the browser. The token is saved to `data/.spotify_token.json`, which is gitignored.
 
 Then use the **Playlists** page in the dashboard, or the CLI:
 
 ```sh
-uv run listening playlist --days fri --hours 17-19 --dry-run        # preview the ranking
-uv run listening playlist --days fri --hours 17-19                  # create "Fridays 5pm–7pm"
-uv run listening playlist --days weekends --hours 22-2 --since 2024-01-01 --size 30 --min-plays 2
+uv run rain-in-my-head playlist --days fri --hours 17-19 --dry-run        # preview the ranking
+uv run rain-in-my-head playlist --days fri --hours 17-19                  # create "Fridays 5pm–7pm"
+uv run rain-in-my-head playlist --days weekends --hours 22-2 --since 2024-01-01 --size 30 --min-plays 2
 
 # songs first heard in a given year: most played that year (default) or most played since (--rank-by ever)
-uv run listening discoveries --year 2019 --dry-run
-uv run listening discoveries --year 2019 --rank-by ever --chronological
+uv run rain-in-my-head discoveries --year 2019 --dry-run
+uv run rain-in-my-head discoveries --year 2019 --rank-by ever --chronological
 
 # songs you binged (8+ plays within 7 days by default), oldest binge first; --dry-run lists every binge with dates
-uv run listening binges --dry-run
-uv run listening binges --since 2023 --min-plays 10 --order newest   # or --order biggest
+uv run rain-in-my-head binges --dry-run
+uv run rain-in-my-head binges --since 2023 --min-plays 10 --order newest   # or --order biggest
 ```
 
 Hours are local time, and the end hour is exclusive. Playlists are private by default. Spotify matches are cached in the `spotify_matches` table, so each track is only searched once.

@@ -22,7 +22,7 @@ jobs:
       - uses: astral-sh/setup-uv@v6
 
       - name: Fetch new scrobbles from Last.fm
-        run: uv run --no-default-groups listening fetch
+        run: uv run --no-default-groups rain-in-my-head fetch
         env:
           LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
           LASTFM_USER: ${{ secrets.LASTFM_USER }}
