@@ -29,7 +29,7 @@ class LastfmClient:
         self._min_interval = 1.0 / requests_per_second
         self._max_retries = max_retries
         self._last_request = 0.0
-        self._http = httpx.Client(timeout=30, headers={"User-Agent": "listening-analytics/0.1"})
+        self._http = httpx.Client(timeout=30, headers={"User-Agent": "rain-in-my-head/0.1"})
 
     def _throttle(self) -> None:
         wait = self._min_interval - (time.monotonic() - self._last_request)

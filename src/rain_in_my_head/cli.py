@@ -1,4 +1,4 @@
-"""Command line entry point: `listening fetch | build | enrich | stats`."""
+"""Command line entry point: `rain-in-my-head fetch | build | enrich | stats`."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ def cmd_enrich(args) -> None:
 
 def cmd_stats(args) -> None:
     if not config.DB_PATH.exists():
-        raise SystemExit("No database yet. Run `listening build` first.")
+        raise SystemExit("No database yet. Run `rain-in-my-head build` first.")
     conn = sqlite3.connect(config.DB_PATH)
     q = lambda sql: conn.execute(sql).fetchall()  # noqa: E731
 
@@ -202,13 +202,13 @@ def cmd_serve(args) -> None:
         import uvicorn  # in the `web` dependency group, so the sync install never needs it
     except ImportError:
         raise SystemExit("The dashboard API needs the web group: run `uv sync`.")
-    print(f"Listening dashboard (TypeScript): http://{args.host}:{args.port}")
+    print(f"Rain in My Head (TypeScript dashboard): http://{args.host}:{args.port}")
     uvicorn.run("rain_in_my_head.api:app", host=args.host, port=args.port, reload=args.dev,
                 reload_dirs=[str(Path(__file__).parent)] if args.dev else None)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="listening", description="Last.fm listening analytics")
+    parser = argparse.ArgumentParser(prog="rain-in-my-head", description="Personal listening analytics from Last.fm scrobbles")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("fetch", help="append new scrobbles to data/raw/lastfm/").set_defaults(func=cmd_fetch)
     sub.add_parser("build", help="load raw scrobbles into SQLite").set_defaults(func=cmd_build)

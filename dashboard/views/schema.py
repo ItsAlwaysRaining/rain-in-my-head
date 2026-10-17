@@ -153,7 +153,7 @@ def build_data(schema: list[dict], saved: dict[str, dict]) -> dict:
 
 
 if not config.DB_PATH.exists():
-    st.info("No database yet. Run `uv run listening build` first.")
+    st.info("No database yet. Run `uv run rain-in-my-head build` first.")
     st.stop()
 
 st.caption(
@@ -163,7 +163,7 @@ st.caption(
 
 schema = read_schema(config.DB_PATH.stat().st_mtime)
 if not schema:
-    st.info("The database has no tables yet. Run `uv run listening build` first.")
+    st.info("The database has no tables yet. Run `uv run rain-in-my-head build` first.")
     st.stop()
 names = {o["name"] for o in schema}
 

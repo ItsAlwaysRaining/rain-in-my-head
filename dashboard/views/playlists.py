@@ -20,7 +20,7 @@ from rain_in_my_head.playlist import (
 st.title("Playlists")
 
 if not config.DB_PATH.exists():
-    st.info("No database yet. Run `uv run listening build` first.")
+    st.info("No database yet. Run `uv run rain-in-my-head build` first.")
     st.stop()
 
 conn = sqlite3.connect(config.DB_PATH, timeout=30)
@@ -195,7 +195,7 @@ st.subheader("Create on Spotify")
 if not config.SPOTIFY_TOKEN_PATH.exists():
     st.info(
         "Connect Spotify once from the terminal: add `SPOTIFY_CLIENT_ID` to `.env`, then run "
-        "`uv run listening spotify-login`. See the README for creating the Spotify app."
+        "`uv run rain-in-my-head spotify-login`. See the README for creating the Spotify app."
     )
     st.stop()
 

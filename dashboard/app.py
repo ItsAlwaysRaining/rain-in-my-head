@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-st.set_page_config(page_title="Listening", page_icon=":material/graphic_eq:", layout="wide")
+st.set_page_config(page_title="Rain in My Head", page_icon=":material/graphic_eq:", layout="wide")
 st.navigation([
     st.Page("views/overview.py", title="Overview", icon=":material/bar_chart:", default=True),
     st.Page("views/genre.py", title="Genre", icon=":material/category:", url_path="genre"),
