@@ -7,7 +7,7 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 
-from listening import config
+from rain_in_my_head import config
 
 st.title("SQL")
 
@@ -55,7 +55,7 @@ def _connect() -> sqlite3.Connection:
 
 
 if not config.DB_PATH.exists():
-    st.info("No database yet. Run `uv run listening build` first.")
+    st.info("No database yet. Run `uv run rain-in-my-head build` first.")
     st.stop()
 
 with st.expander("Tables and columns — start with `v_plays` (one row per play, everything joined)"):

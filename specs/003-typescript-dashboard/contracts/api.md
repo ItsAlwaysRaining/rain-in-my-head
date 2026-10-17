@@ -1,15 +1,15 @@
 # Contract: Dashboard JSON API
 
-The API is served by `uv run listening serve` (default port 8000). All routes are under `/api` and return JSON. Dates are local `YYYY-MM-DD`; datetimes are ISO local with no zone. Field shapes are listed in [data-model.md](../data-model.md).
+The API is served by `uv run rain-in-my-head serve` (default port 8000). All routes are under `/api` and return JSON. Dates are local `YYYY-MM-DD`; datetimes are ISO local with no zone. Field shapes are listed in [data-model.md](../data-model.md).
 
 ## Common errors
 
 | Status | Body | When |
 |---|---|---|
-| 503 | `{"error": "no_database", "message": "No database yet. Run \`uv run listening fetch\` then \`uv run listening build\`."}` | `data/listening.db` missing |
+| 503 | `{"error": "no_database", "message": "No database yet. Run \`uv run rain-in-my-head fetch\` then \`uv run rain-in-my-head build\`."}` | `data/listening.db` missing |
 | 422 | FastAPI validation detail | bad parameter type or value |
 
-When the frontend cannot reach `/api` at all, it shows "The data service isn't running. Start it with `uv run listening serve`."
+When the frontend cannot reach `/api` at all, it shows "The data service isn't running. Start it with `uv run rain-in-my-head serve`."
 
 ## Slice 1
 

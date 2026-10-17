@@ -1,5 +1,5 @@
 // Overview: the TypeScript twin of dashboard/views/overview.py. Every number comes from
-// /api/overview (listening.overview); this file only decides how it looks.
+// /api/overview (rain_in_my_head.overview); this file only decides how it looks.
 // Behaviour follows openspec/specs/dashboard-overview/spec.md.
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
@@ -90,7 +90,7 @@ export default function Overview() {
         </div>
       </Sidebar>
 
-      <h1>Listening</h1>
+      <h1>Rain in My Head</h1>
       {query.error ? (
         <div className={styles.section}>
           <ErrorState error={query.error} />
@@ -100,7 +100,7 @@ export default function Overview() {
       ) : data.empty && data.reason === "no_scrobbles" ? (
         <div className={styles.section}>
           <Notice>
-            The database has no scrobbles yet. Run <code>uv run listening fetch</code> and <code>uv run listening build</code>.
+            The database has no scrobbles yet. Run <code>uv run rain-in-my-head fetch</code> and <code>uv run rain-in-my-head build</code>.
           </Notice>
         </div>
       ) : (
@@ -223,7 +223,7 @@ function OverviewBody({
         <h2>Genres and mainstream-ness</h2>
         {data.genres === null ? (
           <Notice>
-            Run <code>uv run listening enrich</code> to add genres (Last.fm tags), durations and artist popularity.
+            Run <code>uv run rain-in-my-head enrich</code> to add genres (Last.fm tags), durations and artist popularity.
           </Notice>
         ) : (
           <>

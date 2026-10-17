@@ -12,7 +12,7 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from listening import config
+from rain_in_my_head import config
 
 # Last.fm's grey-star "no image" picture.
 PLACEHOLDER = "2a96cbd8b46e442fc41c2b86b821562f"
@@ -65,14 +65,14 @@ def ranked(df: pd.DataFrame, key: str, name: str) -> pd.DataFrame:
 
 if not config.DB_PATH.exists():
     st.title("Genre")
-    st.info("No database yet. Run `uv run listening fetch` then `uv run listening build`.")
+    st.info("No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`.")
     st.stop()
 
 mtime = config.DB_PATH.stat().st_mtime
 all_genres = genres(mtime)
 if not all_genres:
     st.title("Genre")
-    st.info("Run `uv run listening enrich` to add genres (Last.fm tags).")
+    st.info("Run `uv run rain-in-my-head enrich` to add genres (Last.fm tags).")
     st.stop()
 
 params = st.query_params

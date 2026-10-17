@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- `data/listening.db` has been built (`uv run listening build`) and ideally enriched.
+- `data/listening.db` has been built (`uv run rain-in-my-head build`) and ideally enriched.
 - Node 22+ and npm installed.
 - `uv sync` installs the `web` group, which is a default group.
 
@@ -11,10 +11,10 @@
 ```sh
 uv run streamlit run dashboard/app.py          # Streamlit  → http://localhost:8501
 cd web && npm install && npm run build && cd ..
-uv run listening serve                          # TypeScript → http://localhost:8000
+uv run rain-in-my-head serve                          # TypeScript → http://localhost:8000
 ```
 
-Development with hot reload: run `uv run listening serve --dev` (API only) and `npm run dev` in `web/` (http://localhost:5173, which proxies `/api`).
+Development with hot reload: run `uv run rain-in-my-head serve --dev` (API only) and `npm run dev` in `web/` (http://localhost:5173, which proxies `/api`).
 
 ## Validation scenarios
 

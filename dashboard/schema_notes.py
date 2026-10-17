@@ -29,7 +29,7 @@ TABLES: dict[str, dict] = {
     "tracks": {
         "title": "Track details",
         "source": "details",
-        "description": "Extra facts about each track, looked up on Last.fm by listening enrich. "
+        "description": "Extra facts about each track, looked up on Last.fm by rain-in-my-head enrich. "
                        "Only some tracks have been looked up so far.",
         "columns": {
             "track_key": "Which track this is",
@@ -44,7 +44,7 @@ TABLES: dict[str, dict] = {
     "artists": {
         "title": "Artist details",
         "source": "details",
-        "description": "Extra facts about each artist, looked up on Last.fm by listening enrich.",
+        "description": "Extra facts about each artist, looked up on Last.fm by rain-in-my-head enrich.",
         "columns": {
             "artist_key": "Which artist this is",
             "name": "Artist name as Last.fm spells it",

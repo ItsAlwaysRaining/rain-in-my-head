@@ -1,6 +1,6 @@
-"""JSON API for the TypeScript dashboard (web/). Run: uv run listening serve
+"""JSON API for the TypeScript dashboard (web/). Run: uv run rain-in-my-head serve
 
-Every number comes from the same functions the Streamlit pages use (listening.overview, ...), so the
+Every number comes from the same functions the Streamlit pages use (rain_in_my_head.overview, ...), so the
 two dashboards always agree. Also serves the built frontend from web/dist. Contract:
 specs/003-typescript-dashboard/contracts/api.md
 """
@@ -15,14 +15,14 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
-from listening import config
-from listening import overview as ov
+from rain_in_my_head import config
+from rain_in_my_head import overview as ov
 
 WEB_DIST = config.ROOT / "web" / "dist"
-NO_DATABASE = "No database yet. Run `uv run listening fetch` then `uv run listening build`."
+NO_DATABASE = "No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`."
 PRESET_NAMES = {"last30": "Last 30 days", "last12m": "Last 12 months", "ytd": "This year", "all": "All time", "custom": "Custom"}
 
-app = FastAPI(title="Listening", docs_url="/api/docs", openapi_url="/api/openapi.json")
+app = FastAPI(title="Rain in My Head", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 
 class NoDatabase(Exception):

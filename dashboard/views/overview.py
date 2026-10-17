@@ -6,8 +6,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from listening import config
-from listening import overview as ov
+from rain_in_my_head import config
+from rain_in_my_head import overview as ov
 
 
 # Chart steps of the theme palette (see .streamlit/config.toml): iris = plays, teal = discovery.
@@ -37,13 +37,13 @@ def top_bar(counts: pd.DataFrame, field: str, title: str) -> alt.Chart:
 
 
 if not config.DB_PATH.exists():
-    st.title("Listening")
-    st.info("No database yet. Run `uv run listening fetch` then `uv run listening build`.")
+    st.title("Rain in My Head")
+    st.info("No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`.")
     st.stop()
 
 data = load(config.DB_PATH.stat().st_mtime)
 if data.empty:
-    st.info("The database has no scrobbles yet. Run `uv run listening fetch` and `uv run listening build`.")
+    st.info("The database has no scrobbles yet. Run `uv run rain-in-my-head fetch` and `uv run rain-in-my-head build`.")
     st.stop()
 
 # ---- Sidebar filters -------------------------------------------------------
@@ -71,7 +71,7 @@ df = ov.in_range(data, start, end)
 inner_grain = ov.inner_grain(grain, selected)
 prev = ov.previous(data, start, end)
 
-st.title("Listening")
+st.title("Rain in My Head")
 st.caption(f"{start:%d %b %Y} – {end:%d %b %Y} · data through {data['played_local'].max():%d %b %Y %H:%M}")
 
 if df.empty:
@@ -172,11 +172,11 @@ with right:
     )
     st.caption(f"{ov.new_share(df):.0%} of plays in this range were artists you first heard that same year.")
 
-# ---- Genres & mainstream (need `listening enrich`) -------------------------
+# ---- Genres & mainstream (need `rain-in-my-head enrich`) -------------------
 st.subheader("Genres and mainstream-ness")
 genres = ov.genre_shares(df, inner_grain)
 if genres is None:
-    st.info("Run `uv run listening enrich` to add genres (Last.fm tags), durations and artist popularity.")
+    st.info("Run `uv run rain-in-my-head enrich` to add genres (Last.fm tags), durations and artist popularity.")
 else:
     # Small multiples: one panel per genre on a shared y-scale, so no genre needs its own hue.
     top_genres, y_max, genre_time = genres

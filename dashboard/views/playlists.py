@@ -10,9 +10,9 @@ from datetime import timedelta
 import pandas as pd
 import streamlit as st
 
-from listening import config
-from listening.build import connect
-from listening.playlist import (
+from rain_in_my_head import config
+from rain_in_my_head.build import connect
+from rain_in_my_head.playlist import (
     BINGE_ORDERS, WEEKDAY_FULL, Slot, binge_tracks, binges, discoveries, format_span, match_tracks,
     order_binge_episodes, order_binge_tracks, rank_tracks,
 )
@@ -20,7 +20,7 @@ from listening.playlist import (
 st.title("Playlists")
 
 if not config.DB_PATH.exists():
-    st.info("No database yet. Run `uv run listening build` first.")
+    st.info("No database yet. Run `uv run rain-in-my-head build` first.")
     st.stop()
 
 conn = sqlite3.connect(config.DB_PATH, timeout=30)
@@ -195,14 +195,14 @@ st.subheader("Create on Spotify")
 if not config.SPOTIFY_TOKEN_PATH.exists():
     st.info(
         "Connect Spotify once from the terminal: add `SPOTIFY_CLIENT_ID` to `.env`, then run "
-        "`uv run listening spotify-login`. See the README for creating the Spotify app."
+        "`uv run rain-in-my-head spotify-login`. See the README for creating the Spotify app."
     )
     st.stop()
 
 name = st.text_input("Playlist name", spec.name, key=f"name_{spec.name}")
 public = st.toggle("Public playlist", value=False)
 if st.button("Create playlist", type="primary"):
-    from listening.spotify import SpotifyAuthError, SpotifyClient
+    from rain_in_my_head.spotify import SpotifyAuthError, SpotifyClient
 
     try:
         client = SpotifyClient(config.spotify_client_id(), config.SPOTIFY_TOKEN_PATH)

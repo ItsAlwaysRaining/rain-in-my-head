@@ -1,4 +1,4 @@
-# Listening Analytics Constitution
+# Rain in My Head Constitution
 
 ## Core Principles
 
@@ -6,8 +6,8 @@
 
 - `data/raw/lastfm/YYYY-MM.jsonl` is append-only. Code MUST NOT rewrite or delete existing lines.
 - `data/listening.db` MUST be fully rebuildable from the raw files plus cached API lookups
-  (`listening build`, `listening enrich`). It stays gitignored.
-- Schema changes go in `src/listening/schema.sql` and MUST apply cleanly to an existing database
+  (`rain-in-my-head build`, `rain-in-my-head enrich`). It stays gitignored.
+- Schema changes go in `src/rain_in_my_head/schema.sql` and MUST apply cleanly to an existing database
   on the next `build`. A change that needs the database deleted MUST say so in its spec.
 
 Rationale: the history is personal and irreplaceable; everything derived from it can be rebuilt.
@@ -38,7 +38,7 @@ Rationale: the bugs found so far (unclickable rows, unclickable charts) only sho
 - There are two dashboards, kept side by side so they can be compared:
   - **Streamlit** (`dashboard/`): Streamlit, pandas and Altair, in the `dashboard` dependency group.
   - **TypeScript** (`web/`): Vite, React, TypeScript and Vega-Lite, reading a FastAPI JSON API
-    (`src/listening/api.py`, FastAPI and uvicorn in the `web` dependency group). Node and npm are
+    (`src/rain_in_my_head/api.py`, FastAPI and uvicorn in the `web` dependency group). Node and npm are
     build and dev tools for `web/` only; nothing outside `web/` needs them.
 - The scheduled sync MUST keep running with `--no-default-groups`, so no dashboard dependency is
   ever needed to fetch scrobbles.
@@ -66,7 +66,7 @@ Rationale: keeps within API limits, makes long enrichments safe to stop, and pro
   `dashboard/views/overview.py`) for Streamlit, mirrored as CSS tokens in `web/` for TypeScript.
   A palette change MUST update both. Charts MUST be readable on the dark theme.
 - Both dashboards MUST show the same numbers for the same inputs. Data work (queries,
-  aggregation, ranking) lives in shared functions in `src/listening/` that both the Streamlit
+  aggregation, ranking) lives in shared functions in `src/rain_in_my_head/` that both the Streamlit
   pages and the API call. It MUST NOT be reimplemented in a page or in TypeScript.
 - Streamlit: each page is one module in `dashboard/views/`, registered in `dashboard/app.py`.
   TypeScript: each page is one module in `web/src/pages/`, with the same URL path as its
@@ -104,4 +104,4 @@ any deviation MUST be justified in the plan's Complexity Tracking. Amendments go
 `chore/` pull request that states the version bump: MAJOR for removing or redefining a principle,
 MINOR for adding one or materially expanding guidance, PATCH for wording.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-15
+**Version**: 1.1.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-16

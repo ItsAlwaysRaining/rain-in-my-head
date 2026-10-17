@@ -107,7 +107,7 @@ def _save_token(path: Path, data: dict, previous: dict | None = None) -> dict:
 class SpotifyClient:
     def __init__(self, client_id: str, token_path: Path, requests_per_second: float = 5.0):
         if not token_path.exists():
-            raise SpotifyAuthError("Not logged in to Spotify. Run `uv run listening spotify-login` first.")
+            raise SpotifyAuthError("Not logged in to Spotify. Run `uv run rain-in-my-head spotify-login` first.")
         self.client_id = client_id
         self.token_path = token_path
         self._token = json.loads(token_path.read_text())
@@ -123,7 +123,7 @@ class SpotifyClient:
                 "client_id": self.client_id,
             })
             if resp.status_code == 400:
-                raise SpotifyAuthError("Spotify login expired. Run `uv run listening spotify-login` again.")
+                raise SpotifyAuthError("Spotify login expired. Run `uv run rain-in-my-head spotify-login` again.")
             resp.raise_for_status()
             self._token = _save_token(self.token_path, resp.json(), self._token)
         return self._token["access_token"]
