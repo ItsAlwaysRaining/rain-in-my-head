@@ -12,7 +12,7 @@ from datetime import date
 import pandas as pd
 import streamlit as st
 
-from listening import config
+from rain_in_my_head import config
 
 # Last.fm's grey-star "no image" picture.
 PLACEHOLDER = "2a96cbd8b46e442fc41c2b86b821562f"

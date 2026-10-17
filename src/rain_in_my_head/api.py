@@ -15,8 +15,8 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 
-from listening import config
-from listening import overview as ov
+from rain_in_my_head import config
+from rain_in_my_head import overview as ov
 
 WEB_DIST = config.ROOT / "web" / "dist"
 NO_DATABASE = "No database yet. Run `uv run listening fetch` then `uv run listening build`."

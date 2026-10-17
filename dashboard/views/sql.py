@@ -7,7 +7,7 @@ import sqlite3
 import pandas as pd
 import streamlit as st
 
-from listening import config
+from rain_in_my_head import config
 
 st.title("SQL")
 

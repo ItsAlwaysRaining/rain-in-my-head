@@ -14,7 +14,7 @@ from pathlib import Path
 import streamlit as st
 
 import schema_notes as notes
-from listening import config
+from rain_in_my_head import config
 
 LAYOUT_PATH = config.DB_PATH.parent / "schema_layout.json"
 MAP_W, MAP_H = 1880, 2400

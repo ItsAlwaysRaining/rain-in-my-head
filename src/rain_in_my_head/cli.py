@@ -203,7 +203,7 @@ def cmd_serve(args) -> None:
     except ImportError:
         raise SystemExit("The dashboard API needs the web group: run `uv sync`.")
     print(f"Listening dashboard (TypeScript): http://{args.host}:{args.port}")
-    uvicorn.run("listening.api:app", host=args.host, port=args.port, reload=args.dev,
+    uvicorn.run("rain_in_my_head.api:app", host=args.host, port=args.port, reload=args.dev,
                 reload_dirs=[str(Path(__file__).parent)] if args.dev else None)
 
 

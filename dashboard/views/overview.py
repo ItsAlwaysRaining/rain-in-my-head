@@ -6,8 +6,8 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
-from listening import config
-from listening import overview as ov
+from rain_in_my_head import config
+from rain_in_my_head import overview as ov
 
 
 # Chart steps of the theme palette (see .streamlit/config.toml): iris = plays, teal = discovery.
