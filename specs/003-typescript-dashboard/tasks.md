@@ -156,23 +156,23 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
 
 **Independent Test**: quickstart.md, Slice 2.
 
-- [ ] T026 [US2] Create `src/rain_in_my_head/genre.py` by moving `PLACEHOLDER`, `thumb`, `genres(conn)`, `genre_plays(conn, genre, start, end)`, `most_common` and `ranked` out of `dashboard/views/genre.py`. Add `songs(plays, artist_key)`, which returns the song table with each song's most common album
-- [ ] T027 [US2] Change `dashboard/views/genre.py` to call `rain_in_my_head.genre`, with the UI unchanged. In headless Chrome, check that it shows the same artists and songs as before for one genre and range
-- [ ] T028 [P] [US2] Create `src/rain_in_my_head/sql_examples.py` by moving `EXAMPLES` and the schema listing from `dashboard/views/sql.py`, plus a `run_readonly(db_path, sql) -> (columns, rows)` helper using `mode=ro`. Update `dashboard/views/sql.py` to use them
-- [ ] T029 [US2] Add `GET /api/genre`, `GET /api/genre/songs`, `GET /api/sql/meta` and `POST /api/sql` to `src/rain_in_my_head/api.py` per contracts/api.md. SQL errors are returned as `{error}`. The default genre is the most-played one, and the default range is all time, with the label "All time"
-- [ ] T030 [P] [US2] Create `web/src/pages/Genre.tsx`:
+- [x] T026 [US2] Create `src/rain_in_my_head/genre.py` by moving `PLACEHOLDER`, `thumb`, `genres(conn)`, `genre_plays(conn, genre, start, end)`, `most_common` and `ranked` out of `dashboard/views/genre.py`. Add `songs(plays, artist_key)`, which returns the song table with each song's most common album
+- [x] T027 [US2] Change `dashboard/views/genre.py` to call `rain_in_my_head.genre`, with the UI unchanged. In headless Chrome, check that it shows the same artists and songs as before for one genre and range
+- [x] T028 [P] [US2] Create `src/rain_in_my_head/sql_examples.py` by moving `EXAMPLES` and the schema listing from `dashboard/views/sql.py`, plus a `run_readonly(db_path, sql) -> (columns, rows)` helper using `mode=ro`. Update `dashboard/views/sql.py` to use them
+- [x] T029 [US2] Add `GET /api/genre`, `GET /api/genre/songs`, `GET /api/sql/meta` and `POST /api/sql` to `src/rain_in_my_head/api.py` per contracts/api.md. SQL errors are returned as `{error}`. The default genre is the most-played one, and the default range is all time, with the label "All time"
+- [x] T030 [P] [US2] Create `web/src/pages/Genre.tsx`:
   - a back link to the Overview and a genre select that updates `?genre=`
   - a title and caption (range label · plays · "artists whose top Last.fm tag is …")
   - the artists table with thumbnails; a click **anywhere on a row** selects the artist
   - the selected artist's header image (174s), name and plays, and the songs table with album and thumbnails
   - the "Click an artist on the left." notice when no artist is selected
-- [ ] T031 [P] [US2] Create `web/src/pages/Sql.tsx`:
+- [x] T031 [P] [US2] Create `web/src/pages/Sql.tsx`:
   - a collapsible "Tables and columns" list
   - an examples select that loads the example into the editor
   - a query textarea with a monospace font, and a Run button (Cmd/Ctrl+Enter also runs)
   - the row count and result table, or the error notice
   - a client-side "Download CSV" that builds the CSV the way pandas `to_csv` does: header row, comma-separated, quoting fields that contain `,` `"` or a newline
-- [ ] T032 [US2] Browser verification (quickstart Slice 2) on both apps: the same genre and range give identical lists; every SQL example gives equal row counts; `DELETE` is refused; the CSV matches
+- [x] T032 [US2] Browser verification (quickstart Slice 2) on both apps: the same genre and range give identical lists; every SQL example gives equal row counts; `DELETE` is refused; the CSV matches
 - [ ] T033 [US4] Add the Genre and SQL entries to `docs/streamlit-vs-typescript.md`, then open PR 2, stating that it affects both apps
 
 ---
