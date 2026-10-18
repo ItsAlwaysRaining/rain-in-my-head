@@ -6,6 +6,7 @@ import styles from "./App.module.css";
 import { Notice } from "./components/ui";
 import Genre from "./pages/Genre";
 import Overview from "./pages/Overview";
+import Playlists from "./pages/Playlists";
 import Schema from "./pages/Schema";
 import Sql from "./pages/Sql";
 
@@ -30,12 +31,12 @@ export function Sidebar({ children }: { children: ReactNode }) {
   return slot ? createPortal(children, slot) : null;
 }
 
-function ComingSoon({ title }: { title: string }) {
+function NotFound() {
   return (
     <>
-      <h1>{title}</h1>
+      <h1>Not found</h1>
       <div style={{ marginTop: 24 }}>
-        <Notice>This page is coming in a later slice. It's available in the Streamlit dashboard meanwhile.</Notice>
+        <Notice>There's no page here. Pick one from the menu.</Notice>
       </div>
     </>
   );
@@ -79,8 +80,8 @@ export default function App() {
                   <Route path="/genre" element={<Genre />} />
                   <Route path="/sql" element={<Sql />} />
                   <Route path="/schema" element={<Schema />} />
-                  <Route path="/playlists" element={<ComingSoon title="Playlists" />} />
-                  <Route path="*" element={<ComingSoon title="Not found" />} />
+                  <Route path="/playlists" element={<Playlists />} />
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </ErrorBoundary>
             </main>

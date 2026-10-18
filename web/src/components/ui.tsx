@@ -96,7 +96,7 @@ export function RadioGroup<T extends string>({
   );
 }
 
-export function Notice({ tone = "info", children }: { tone?: "info" | "warning" | "error"; children: ReactNode }) {
+export function Notice({ tone = "info", children }: { tone?: "info" | "success" | "warning" | "error"; children: ReactNode }) {
   return <div className={`${styles.notice} ${styles[tone]}`}>{children}</div>;
 }
 

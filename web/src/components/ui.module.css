@@ -127,6 +127,10 @@
   background: var(--surface);
   color: var(--night-strong);
 }
+.success {
+  background: var(--rain-surface);
+  color: var(--rain-strong);
+}
 .warning,
 .error {
   background: var(--coral-surface);
