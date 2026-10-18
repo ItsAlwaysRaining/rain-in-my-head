@@ -1,0 +1,108 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+}
+.help {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  cursor: help;
+}
+
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.value {
+  color: var(--night-strong);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.slider input[type="range"] {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--night);
+}
+.ends {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Two range inputs stacked; only their thumbs take the pointer. */
+.range {
+  position: relative;
+  height: 20px;
+}
+.range::before {
+  content: "";
+  position: absolute;
+  inset: 8px 0;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--line) var(--lo), var(--night) var(--lo), var(--night) var(--hi), var(--line) var(--hi));
+}
+.range input[type="range"] {
+  position: absolute;
+  inset: 0;
+  appearance: none;
+  background: none;
+  pointer-events: none;
+}
+.range input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  pointer-events: auto;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--night);
+  border: 2px solid var(--page);
+  cursor: pointer;
+}
+.range input[type="range"]::-moz-range-thumb {
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--night);
+  border: 2px solid var(--page);
+  cursor: pointer;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.chip,
+.chipOn {
+  border-radius: 999px;
+  padding: 2px var(--space-3);
+  font-size: 0.875rem;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: none;
+}
+.chip:hover {
+  border-color: var(--night);
+}
+.chipOn {
+  background: var(--night-soft);
+  border-color: var(--night);
+  color: var(--night-strong);
+}

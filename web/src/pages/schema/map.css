@@ -1,0 +1,97 @@
+/* Schema map styles: generated from dashboard/schema_map/map.css with every selector scoped to
+   .schema-map (that file uses a shadow root; this app doesn't). Change both together. */
+.schema-map {
+  --page: #141A2A;
+  --dot: #262E45;
+  --card: #1C2238;
+  --card-head: #232A44;
+  --text: #E2E7F0;
+  --muted: #A6AEC2;
+  --line: #3E4760;
+  --link: #6A7390;
+  --night: #8C9FE0;
+  --night-strong: #A9B8F2;
+  --history: #05A0CF;
+  --details: #736EE1;
+  --spotify: #B39105;
+  --unknown: #A6AEC2;
+  --hot: #FFEB6B;
+  --coral: #FF8A80;
+  --font: "Source Sans Pro", "Source Sans 3", system-ui, sans-serif;
+  --mono: "Source Code Pro", ui-monospace, "SF Mono", Menlo, monospace;
+}
+.schema-map { display: flex; flex-direction: column; gap: 10px; color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.45; }
+.schema-map * { box-sizing: border-box; }
+
+.schema-map .bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.schema-map .tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.schema-map .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+.schema-map .legend span { display: inline-flex; align-items: center; gap: 6px; }
+.schema-map .swatch { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; display: inline-block; }
+.schema-map .swatch.sq { border-radius: 2px; background: none; border: 1.5px dashed var(--night); }
+
+.schema-map button, .schema-map .toggle {
+  font: inherit; font-size: 14px; color: var(--text); background: var(--card); border: 1px solid var(--line);
+  border-radius: 8px; padding: 4px 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+}
+.schema-map button:hover, .schema-map .toggle:hover { border-color: var(--night); }
+.schema-map button:focus-visible, .schema-map .toggle:focus-within, .schema-map .card-head:focus-visible { outline: 2px solid var(--night-strong); outline-offset: 2px; }
+.schema-map button.warn { border-color: var(--coral); color: var(--coral); }
+.schema-map .zoom { display: inline-flex; align-items: center; gap: 4px; }
+.schema-map .zoom output { min-width: 4ch; text-align: center; font-variant-numeric: tabular-nums; font-size: 14px; }
+.schema-map .toggle input { margin: 0; accent-color: var(--night); }
+.schema-map .status { font-size: 13px; color: var(--muted); }
+.schema-map .status.bad { color: var(--coral); }
+
+.schema-map .viewport {
+  overflow: auto; height: max(480px, calc(100vh - 340px)); border: 1px solid var(--line); border-radius: 8px;
+  background-color: var(--page);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.2px); background-size: 22px 22px;
+}
+.schema-map .stage { position: relative; }
+.schema-map .canvas { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.schema-map svg.links { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+
+.schema-map .link { fill: none; stroke: var(--link); stroke-width: 1.6; }
+.schema-map .link.lineage { stroke: var(--night); stroke-dasharray: 5 5; opacity: .7; }
+.schema-map .end { fill: var(--card); stroke: var(--link); stroke-width: 1.6; }
+.schema-map .end.many { fill: var(--link); }
+.schema-map .link-label { font: 600 11px var(--font); fill: var(--muted); paint-order: stroke; stroke: var(--page); stroke-width: 5px; stroke-linejoin: round; }
+.schema-map g.rel.hot .link { stroke: var(--hot); stroke-width: 2.4; }
+.schema-map g.rel.hot .end { stroke: var(--hot); }
+.schema-map g.rel.hot .end.many { fill: var(--hot); }
+.schema-map g.rel.hot .link-label { fill: var(--text); }
+.schema-map g.rel.lineage.hot .link { stroke: var(--night-strong); opacity: 1; stroke-width: 2.2; }
+.schema-map .links.dim g.rel:not(.hot) { opacity: .25; }
+
+.schema-map .card { position: absolute; width: 300px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 6px 18px rgb(0 0 0 / .35); }
+.schema-map .card.view { border-style: dashed; border-color: var(--night); }
+.schema-map .card.dragging { box-shadow: 0 14px 36px rgb(0 0 0 / .55); }
+.schema-map .card-head {
+  display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; background: var(--card-head);
+  border-bottom: 1px solid var(--line); border-radius: 8px 8px 0 0; cursor: grab; touch-action: none; user-select: none;
+}
+.schema-map .card.dragging .card-head { cursor: grabbing; }
+.schema-map .title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.schema-map .card h3 { margin: 0; font-size: 16px; line-height: 1.25; font-weight: 700; color: var(--text); }
+.schema-map .grip { color: var(--muted); font-size: 13px; letter-spacing: -2px; flex: none; }
+.schema-map .meta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; font-size: 12px; color: var(--muted); }
+.schema-map .sqlname { font-family: var(--mono); font-size: 12px; color: var(--text); }
+.schema-map .chip { display: inline-flex; align-items: center; gap: 5px; }
+.schema-map .count { font-variant-numeric: tabular-nums; }
+.schema-map .desc { margin: 0; padding: 8px 12px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
+.schema-map .none { font-style: italic; }
+
+.schema-map .cols { list-style: none; margin: 0; padding: 2px 0; }
+.schema-map .col { padding: 5px 12px; display: grid; grid-template-columns: 1fr auto; gap: 0 8px; }
+.schema-map .col + .col { border-top: 1px solid rgb(76 76 84 / .5); }
+.schema-map .col.hot { background: rgb(254 192 182 / .1); }
+.schema-map .colname { font-family: var(--mono); font-size: 12.5px; font-weight: 600; min-width: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; }
+.schema-map .type { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; align-self: center; font-family: var(--mono); }
+.schema-map .coldesc { grid-column: 1 / -1; font-size: 12.5px; color: var(--muted); }
+.schema-map .badge { font-family: var(--font); font-size: 10px; font-weight: 700; letter-spacing: .06em; padding: 0 5px; border-radius: 4px; border: 1px solid currentColor; }
+.schema-map .badge.key { color: var(--hot); }
+.schema-map .badge.link { color: var(--night-strong); }
+.schema-map .opt { font-family: var(--font); font-weight: 400; font-size: 11px; color: var(--muted); }
+
+@media (prefers-reduced-motion: no-preference) { .schema-map .link, .schema-map .end { transition: stroke .15s, opacity .15s; } }

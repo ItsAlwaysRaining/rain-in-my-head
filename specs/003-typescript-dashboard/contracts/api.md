@@ -51,21 +51,21 @@ SchemaResult.
 - **Response**: `204`. It writes `data/schema_layout.json` atomically, as `schema.py` does.
 
 ### `DELETE /api/schema/layout`
-Resets to the defaults and returns the new Layout.
+Saves the default positions (as Streamlit's "Reset layout" does) and returns them as `{positions}`.
 
 ### `GET /api/playlists/meta`
-`{first, last, weekdays, binge_orders}`
+`{first, last, weekdays, spans, rank_by, discovery_orders, windows, binge_orders}`: the form's bounds and option lists, from `rain_in_my_head.playlist`.
 
 ### `POST /api/playlists/preview`
 - **Body**: PlaylistRequest.
-- **Response**: PlaylistPreview, or `{warning}` for the same cases where Streamlit shows a warning.
+- **Response**: PlaylistPreview. For the cases where Streamlit shows a warning and stops, only `{title, note, warning}`.
 
 ### `GET /api/playlists/spotify`
 `{"connected": bool}` (token file present).
 
 ### `POST /api/playlists/create`
 - **Body**: CreateRequest.
-- **Response**: `text/event-stream` of `progress`, `done` and `error` events.
+- **Response**: `text/event-stream` of `progress`, `done` and `error` events. Settings that only give a warning are refused up front with `422 {detail: warning}`.
 
 ## Frontend routes
 

@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import sqlite3
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 
 import numpy as np
 import pandas as pd
@@ -243,3 +244,142 @@ def match_tracks(conn: sqlite3.Connection, client, ranked: pd.DataFrame, want: i
         if progress:
             progress(min(matched / want, 1.0), f"Matched {matched}/{want} (checked {i + 1})")
     return pd.DataFrame(out)
+
+
+# ---- Previews ------------------------------------------------------------------
+# What the Playlists page shows for each playlist type, built from the form's values. Shared by the
+# Streamlit view (which owns the widgets) and the API, so both show the same preview.
+
+SPANS = ["All time", "Last 5 years", "Last 2 years", "Custom"]
+DISCOVERY_ORDERS = ["Ranking", "Order discovered"]
+RANK_BY = {"year": "Most played that year (what hooked you)", "ever": "Most played since (the ones that stuck)"}
+BINGE_ORDER_LABELS = {"oldest": "Oldest first", "newest": "Newest first", "biggest": "Biggest binge first"}
+WINDOWS = [1, 7, 30]
+
+
+@dataclass
+class Column:
+    label: str
+    kind: str = "text"  # text | number | lift (1.2×) | date (D MMM YYYY)
+    help: str | None = None
+
+
+@dataclass
+class Preview:
+    ranked: pd.DataFrame  # one row per track, in the order to try matching on Spotify
+    size: int
+    name: str  # default playlist name
+    description: str
+    columns: dict[str, Column]  # preview table columns, in order
+    title: str | None = None  # the subheader above the preview
+    display: pd.DataFrame | None = None  # preview rows, if not simply ranked.head(size)
+    # Reorders matched tracks before creating. Matching always walks `ranked`, so a song with no
+    # Spotify match is replaced by the next-ranked one and the requested order still holds.
+    reorder: Callable[[pd.DataFrame], pd.DataFrame] | None = None
+    note: str | None = None  # info shown before the title
+    warning: str | None = None  # when set, there is nothing to preview or create
+    info: str | None = None  # info shown after the title
+    caption: str = ""  # shown just above the table
+
+    @property
+    def rows(self) -> pd.DataFrame:
+        return self.display if self.display is not None else self.ranked.head(self.size)
+
+
+def _empty(warning: str, title: str | None = None) -> Preview:
+    return Preview(pd.DataFrame(), 0, "", "", {}, title=title, warning=warning)
+
+
+def preview_slot(
+    conn: sqlite3.Connection, first: date, last: date, days: list[str], hours: tuple[int, int],
+    span: str, custom: tuple[date, date] | None, size: int, min_plays: int,
+) -> Preview:
+    if span == "All time":
+        since, until = None, None
+    elif span == "Custom":
+        since, until = custom or (first, last)
+    else:
+        since, until = last - timedelta(days=365 * int(span.split()[1])), None
+    if not days:
+        return _empty("Pick at least one day.")
+    if hours[0] == hours[1]:
+        return _empty("Pick an hour range of at least one hour.")
+
+    slot = Slot([WEEKDAY_FULL.index(d) for d in days], hours[0], hours[1], since, until)
+    ranked = rank_tracks(conn, slot, min_plays)
+    if ranked.empty:
+        return _empty("No tracks stand out in this slot. Try a wider slot or a lower minimum plays.", slot.label())
+    info = None
+    if len(ranked) < size and min_plays > 1:
+        info = f"Fewer than {size} tracks qualify. Lower **Min. plays in the slot** or widen the slot to get more."
+    columns = {
+        "artist": Column("Artist"), "track": Column("Track"),
+        "slot_plays": Column("Plays in slot", "number"),
+        "total_plays": Column("Plays overall", "number"),
+        "lift": Column("× more than usual", "lift"),
+        "last_played": Column("Last played"),
+    }
+    return Preview(ranked, size, slot.label(), slot.describe(), columns, title=slot.label(), info=info,
+                   caption=_candidates(ranked, size))
+
+
+def preview_discoveries(
+    conn: sqlite3.Connection, first: date, year: int, rank_by: str, order: str, size: int, min_plays: int,
+) -> Preview:
+    note = None
+    if year <= first.year + 1:
+        note = (f"Your Last.fm history starts {first:%B %Y}, so {year}'s \"discoveries\" include older "
+                "favourites heard for the first time *on Last.fm*.")
+    title = f"Discovered in {year}"
+    ranked = discoveries(conn, year, min_plays, rank_by)
+    if ranked.empty:
+        p = _empty("No songs qualify. Try a lower minimum plays.", title)
+        p.note = note
+        return p
+    columns = {
+        "artist": Column("Artist"), "track": Column("Track"),
+        "first_played": Column("First played", "date"),
+        "year_plays": Column(f"Plays in {year}", "number"),
+        "total_plays": Column("Plays ever", "number"),
+        "last_played": Column("Last played"),
+    }
+    desc = f"Songs I first heard in {year}, picked by {'plays that year' if rank_by == 'year' else 'plays since'}."
+    # Match in ranking order (so misses are replaced by the next best), then play in discovery order.
+    by_date = order == "Order discovered"
+    display = ranked.head(size).sort_values("first_played") if by_date else None
+    return Preview(ranked, size, title, desc + " Made from my Last.fm history.", columns, title=title,
+                   display=display, reorder=(lambda hits: hits.sort_values("first_played")) if by_date else None,
+                   note=note, caption=_candidates(ranked, size))
+
+
+def preview_binges(
+    episodes: pd.DataFrame, first: date, last: date, years: tuple[int, int], window_days: int,
+    min_plays: int, size: int, order: str,
+) -> Preview:
+    """`episodes` is binges(conn, min_plays, window_days, *years), which callers cache."""
+    ranked = binge_tracks(episodes)
+    span = str(years[0]) if years[0] == years[1] else f"{years[0]}–{years[1]}"
+    title = f"Binged songs, {span}"
+    if ranked.empty:
+        return _empty("No binges with these settings. Lower the minimum plays or widen the window.", title)
+    chosen = set(ranked.head(size)["track_key"])
+    display = episodes[episodes["track_key"].isin(chosen)].assign(
+        when=lambda d: [format_span(a, b) for a, b in zip(d["start"], d["end"])]
+    )
+    display = order_binge_episodes(display, order)
+    columns = {
+        "when": Column("When"), "artist": Column("Artist"), "track": Column("Track"),
+        "plays": Column("Plays in binge", "number"),
+        "binge_count": Column("Binges", "number", "How many separate times you binged this song"),
+        "total_plays": Column("Plays ever", "number"),
+    }
+    window = "a day" if window_days == 1 else f"{window_days} days"
+    description = f"Songs I played {min_plays}+ times within {window}, {BINGE_ORDERS[order]}. Made from my Last.fm history."
+    full_range = (years[0], years[1]) == (first.year, last.year)
+    caption = f"{len(episodes):,} binges across {len(ranked):,} songs; showing the top {min(size, len(ranked))} songs."
+    return Preview(ranked, size, "Binged" if full_range else f"Binged {span}", description, columns, title=title,
+                   display=display, reorder=lambda hits: order_binge_tracks(hits, order), caption=caption)
+
+
+def _candidates(ranked: pd.DataFrame, size: int) -> str:
+    return f"{len(ranked):,} candidate tracks; the top {min(size, len(ranked))} are shown."

@@ -11,6 +11,8 @@ export interface Column<T> {
   width?: string;
   /** Right-align a column whose kind isn't numeric (e.g. numbers drawn with `render`). */
   align?: "right";
+  /** Tooltip on the header. */
+  help?: string;
   render?: (row: T) => ReactNode;
 }
 
@@ -81,6 +83,7 @@ export function DataTable<T>({ rows, columns, maxHeight, onRowClick, selectedInd
               <th
                 key={c.key}
                 style={{ width: c.width }}
+                title={c.help}
                 className={[isNumeric(c) ? styles.num : "", sortable ? styles.sortable : ""].join(" ")}
                 onClick={sortable ? () => toggleSort(c.key) : undefined}
               >

@@ -29,14 +29,14 @@ The first `enrich` makes about one call per unique track and two per unique arti
 
 ## Two dashboards
 
-There are two dashboards over the same database, kept side by side to compare them. They show the same numbers because both use the functions in `src/rain_in_my_head/` (for example `overview.py`).
+There are two dashboards over the same database, kept side by side to compare them. They show the same numbers because both use the functions in `src/rain_in_my_head/` (`overview.py`, `genre.py`, `sql_examples.py`, `schema_info.py`, `playlist.py`). The Schema page's card layout (`data/schema_layout.json`) is shared too, so a card moved in one app is moved in the other.
 
 | | Streamlit | TypeScript |
 |---|---|---|
 | Code | `dashboard/` | `web/` (Vite + React) and its JSON API, `src/rain_in_my_head/api.py` |
 | Run | `uv run streamlit run dashboard/app.py` | `cd web && npm install && npm run build`, then `uv run rain-in-my-head serve` |
 | Open | http://localhost:8501 | http://localhost:8000 |
-| Pages | Overview, Genre, SQL, Schema, Playlists | Overview so far; the other pages are being added |
+| Pages | Overview, Genre, SQL, Schema, Playlists | The same five pages |
 
 Both can run at the same time. `uv sync` installs what both need (the `dashboard` and `web` groups). The TypeScript app also needs Node 22 or newer.
 

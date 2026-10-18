@@ -165,3 +165,131 @@ export type SqlResult = { columns: string[]; float_columns: number[]; rows: SqlC
 
 export const fetchSqlMeta = () => getJson<SqlMeta>("/api/sql/meta");
 export const runSql = (sql: string) => sendJson<SqlResult>("POST", "/api/sql", { sql });
+
+// ---- Schema ------------------------------------------------------------------
+
+export interface SchemaColumn {
+  name: string;
+  type: string;
+  required: boolean;
+  key: boolean;
+  link: boolean;
+  meaning: string | null;
+}
+
+export interface SchemaObject {
+  name: string;
+  kind: "table" | "view";
+  title: string;
+  source: string | null;
+  description: string | null;
+  rows: number | null;
+  columns: SchemaColumn[];
+}
+
+export type Point = { x: number; y: number };
+export type Positions = Record<string, Point>;
+
+export interface SchemaData {
+  objects: SchemaObject[];
+  links: { from: [string, string]; to: [string, string]; label: string }[];
+  lineage: [string, string][];
+  positions: Positions;
+  defaults: Positions;
+  size: { w: number; h: number };
+}
+
+export const fetchSchema = () => getJson<SchemaData>("/api/schema");
+export const saveSchemaLayout = (positions: Positions) => sendJson<void>("PUT", "/api/schema/layout", { positions });
+export const resetSchemaLayout = () => sendJson<{ positions: Positions }>("DELETE", "/api/schema/layout");
+
+// ---- Playlists ---------------------------------------------------------------
+
+export interface PlaylistsMeta {
+  first: string;
+  last: string;
+  weekdays: string[];
+  spans: string[];
+  rank_by: Record<"year" | "ever", string>;
+  discovery_orders: string[];
+  windows: number[];
+  binge_orders: Record<BingeOrder, string>;
+}
+
+export type PlaylistKind = "slot" | "discoveries" | "binges";
+export type BingeOrder = "oldest" | "newest" | "biggest";
+
+export interface PlaylistRequest {
+  kind: PlaylistKind;
+  size: number;
+  min_plays: number;
+  days?: string[];
+  hours?: [number, number];
+  span?: string;
+  since?: string;
+  until?: string;
+  year?: number;
+  rank_by?: "year" | "ever";
+  order?: string;
+  years?: [number, number];
+  window_days?: number;
+  binge_order?: BingeOrder;
+}
+
+export interface PreviewColumn {
+  key: string;
+  label: string;
+  kind: "text" | "number" | "lift" | "date";
+  help: string | null;
+}
+
+export interface PlaylistPreview {
+  title: string | null;
+  note: string | null;
+  warning: string | null;
+  info?: string | null;
+  caption?: string;
+  name?: string;
+  description?: string;
+  columns?: PreviewColumn[];
+  rows?: Record<string, string | number | null>[];
+  candidate_count?: number;
+}
+
+export type CreateEvent =
+  | { event: "progress"; fraction: number; message: string }
+  | { event: "done"; url: string; name: string; count: number; misses: { artist: string; track: string }[] }
+  | { event: "error"; message: string };
+
+export const fetchPlaylistsMeta = () => getJson<PlaylistsMeta>("/api/playlists/meta");
+export const fetchSpotifyStatus = () => getJson<{ connected: boolean }>("/api/playlists/spotify");
+export const previewPlaylist = (body: PlaylistRequest) => sendJson<PlaylistPreview>("POST", "/api/playlists/preview", body);
+
+/** Creates the playlist, calling `onEvent` for each server-sent event until `done` or `error`. */
+export async function createPlaylist(body: PlaylistRequest & { name: string; public: boolean }, onEvent: (e: CreateEvent) => void) {
+  let response: Response;
+  try {
+    response = await fetch("/api/playlists/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  } catch {
+    throw new ApiError("unreachable", "The data service isn't running.");
+  }
+  if (!response.ok || !response.body) {
+    const detail = await response.json().then((b) => b?.detail, () => null);
+    throw new ApiError("http", typeof detail === "string" ? detail : `Request failed (${response.status})`);
+  }
+  const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += value;
+    let end: number;
+    while ((end = buffer.indexOf("\n\n")) >= 0) {
+      const block = buffer.slice(0, end);
+      buffer = buffer.slice(end + 2);
+      const event = /^event: (.*)$/m.exec(block)?.[1];
+      const data = /^data: (.*)$/m.exec(block)?.[1];
+      if (event && data) onEvent({ event, ...JSON.parse(data) } as CreateEvent);
+    }
+  }
+}
