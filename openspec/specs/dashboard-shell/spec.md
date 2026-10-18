@@ -29,4 +29,4 @@ The icon SHALL stay recognisable as a cloud at 16×16 px on both a light and a d
 
 #### Scenario: Dark browser theme
 - **WHEN** the dashboard is open in a browser using a dark theme
-- **THEN** the cloud's outline is clearly visible against the dark tab bar at 16px
+- **THEN** the cloud's fill is clearly visible against the dark tab bar at 16px
