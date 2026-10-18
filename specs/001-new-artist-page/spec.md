@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-14
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: User description: "New artists this month: click an artist to open their page with album art, songs and play counts" (issue #5). Refined with the owner: the list defaults to the most recent month, and follows a period selected in the Overview's over-time chart; the artist page counts plays in that same period and also shows an all-time total. Updated 2026-10-18: the owner asked for the feature in both dashboards (Streamlit and TypeScript), which now sit side by side (constitution 1.1).
 

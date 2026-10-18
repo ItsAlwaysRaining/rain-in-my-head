@@ -26,6 +26,8 @@ When the frontend cannot reach `/api` at all, it shows "The data service isn't r
 | The range has no plays | `200 {"empty": true, "reason": "no_plays_in_range", "range": …}` |
 | `period` doesn't match a bar | Ignored (`selected: null`) |
 
+Added by spec 001: a non-empty result also has `new_artist_list` (`label`, `start`, `end`, `artists`). See `specs/001-new-artist-page/contracts/artist-page.md`.
+
 ## Slice 2
 
 ### `GET /api/genre?genre&start&end`
@@ -67,6 +69,11 @@ Saves the default positions (as Streamlit's "Reset layout" does) and returns the
 - **Body**: CreateRequest.
 - **Response**: `text/event-stream` of `progress`, `done` and `error` events. Settings that only give a warning are refused up front with `422 {detail: warning}`.
 
+## Spec 001: Artist page
+
+### `GET /api/artist?artist&start&end`
+One artist's header counts and songs in the period, all time without one. `200 {"found": false}` when `artist` is missing or has no plays. Full shape in `specs/001-new-artist-page/contracts/artist-page.md`.
+
 ## Frontend routes
 
 Same paths as Streamlit:
@@ -78,3 +85,4 @@ Same paths as Streamlit:
 | `/sql` | — |
 | `/schema` | — |
 | `/playlists` | — |
+| `/artist` | `artist`, `start`, `end` (spec 001); not in the menu |

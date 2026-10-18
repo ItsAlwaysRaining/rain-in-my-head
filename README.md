@@ -48,7 +48,7 @@ To work on the TypeScript app with hot reload, run `uv run rain-in-my-head serve
 
 On the **Overview**, click a bar in the "Scrobbles per month" chart (or the week, year or hours version) to show just that period. Every other figure and chart on the page then shows only that period, and the KPI changes compare it with the period of the same length just before it. The bar chart keeps every period, with the clicked bar highlighted, so you can click another one straight away.
 
-Inside a clicked month or week, the "New artists" and genre charts plot per day. Inside a clicked year, they plot per month. Clicking a genre chart opens the Genre page for the clicked period.
+Inside a clicked month or week, the "New artists" and genre charts plot per day. Inside a clicked year, they plot per month. The "New artists in …" table lists the clicked period's new artists (see [New artists and the Artist page](#new-artists-and-the-artist-page)). Clicking a genre chart opens the Genre page for the clicked period.
 
 To see the whole range again, click **Show whole range** or the chart's background. Changing the sidebar range or time grain also clears the selection. "#1 per year" always covers all years.
 
@@ -60,6 +60,14 @@ You can also open **Genre** from the sidebar and pick any genre from the dropdow
 
 - The genre needs `enrich` to have run. An artist belongs to one genre, their top Last.fm tag.
 - Album art is the cover Last.fm saved with each scrobble, so it needs no extra API calls. An artist's picture is the cover they appear with most. Last.fm's grey "no image" placeholder is hidden.
+
+## New artists and the Artist page
+
+On the **Overview**, under the "New artists per …" chart, the **New artists in …** table lists the artists you heard for the first time ever in the latest month the sidebar range reaches, most played first. If you've clicked a bar in the over-time chart, it lists that period's new artists instead.
+
+Click anywhere on an artist's row to open their **Artist** page. It shows their cover, how many times you played them in that period and in all, and every song of theirs you played in the period, most played first. The page has its own address (`/artist?artist=…&start=…&end=…`), so it can be bookmarked; without `start` and `end` it covers all time. It isn't in the menu. **Overview** at the top goes back.
+
+Both dashboards have the list and the page, with the same numbers (`src/rain_in_my_head/artist.py`). Missing album art shows a music-note placeholder, `web/public/no-art.svg`, shared by both apps.
 
 ## Scheduled sync (GitHub Actions)
 

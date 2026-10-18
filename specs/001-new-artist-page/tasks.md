@@ -81,8 +81,8 @@ No setup: no new dependencies, no schema change.
 
 **Independent Test**: quickstart.md scenarios 5–7.
 
-- [ ] T012 [US3] In both artist pages, the "Overview" back link, the placeholder for the cover and song rows, and the error states from contracts/artist-page.md (no artist, unknown artist, no plays in the period)
-- [ ] T013 [US3] Verify quickstart.md scenarios 5–7 in both apps (find an artist without art via SQLite; open `/artist` and `/artist?artist=zz-no-such-artist`)
+- [x] T012 [US3] In both artist pages, the "Overview" back link, the placeholder for the cover and song rows, and the error states from contracts/artist-page.md (no artist, unknown artist, no plays in the period)
+- [x] T013 [US3] Verify quickstart.md scenarios 5–7 in both apps (find an artist without art via SQLite; open `/artist` and `/artist?artist=zz-no-such-artist`)
 
 **Checkpoint**: all stories work.
 
@@ -90,9 +90,9 @@ No setup: no new dependencies, no schema change.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T014 [P] Add an "Artist page" section to `README.md` (where the list is, what the page shows, the period it uses, both apps) and mention it in "Filter by period"
-- [ ] T015 [P] Add `new_artist_list` and `GET /api/artist` to `specs/003-typescript-dashboard/contracts/api.md`, and an entry for this feature to `docs/streamlit-vs-typescript.md`
-- [ ] T016 Run the full quickstart.md, including scenarios 8 (same numbers in both apps) and 9 (Genre regression), plus `npx tsc --noEmit` and `npm run build`; note anything not checked for the PR
+- [x] T014 [P] Add an "Artist page" section to `README.md` (where the list is, what the page shows, the period it uses, both apps) and mention it in "Filter by period"
+- [x] T015 [P] Add `new_artist_list` and `GET /api/artist` to `specs/003-typescript-dashboard/contracts/api.md`, and an entry for this feature to `docs/streamlit-vs-typescript.md`
+- [x] T016 Run the full quickstart.md, including scenarios 8 (same numbers in both apps) and 9 (Genre regression), plus `npx tsc --noEmit` and `npm run build`; note anything not checked for the PR
 
 ---
 

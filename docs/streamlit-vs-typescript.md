@@ -31,6 +31,7 @@ Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "i
 | SQL | 80 → 42 | 266: page 144 + CSS 91 + API routes 31 | 58 (`sql_examples.py`) | About a third of a session (shared with Genre) |
 | Schema | 181 → 64 (plus the 322-line `map.js` and 97-line `map.css` component) | 539: page 62 + map port 340 + map CSS 97 + API routes 40 | 138 (`schema_info.py`) + the notes, moved | About a third of a session |
 | Playlists | 224 → 143 | 659: page 314 + CSS 114 + API routes 140 + form controls 91 (`Form.tsx`, CSS 108 more) | 141 added to `playlist.py` (the preview builders) | About half a session |
+| Artist + new-artists list (spec 001) | 104: page 67 + Overview table 35 + menu entry 2 | 237: page 88 + CSS 43 + Overview table 28 + route 3 + API client 44 + API routes 31 | 113 (`artist.py`) | Built in both apps in the same session |
 
 ### Overview notes (slice 1)
 
@@ -105,6 +106,28 @@ Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "i
 **Shared**
 - The preview builders (`preview_slot`, `preview_discoveries`, `preview_binges`) were checked against the old view: a scratch script ran the old view's code with a stub Streamlit for 141 form settings (days, hours including past midnight, spans, years, orders, windows, minimum plays), and every playlist, preview, name, description, warning and note was identical.
 - The layout file is shared: a card moved in either app shows up in the other, and "Reset layout" in one resets both.
+
+### New artists and the Artist page (spec 001)
+
+The first feature built for both apps at once, after they were side by side.
+
+**Easy in Streamlit**
+- A hidden page is one `st.Page(..., visibility="hidden")`, and `st.switch_page(..., query_params=...)` opens it with its address.
+- Leaving the Overview drops the table's selection, so coming back doesn't jump straight to the artist again.
+
+**Hard in Streamlit**
+- Image columns need a URL, so the shared placeholder SVG is read from `web/public/` and passed as a `data:` URL.
+- The table is a canvas: clicking a row in a browser test means computing its position, and its cells can't be read back from the page.
+
+**Easy in TypeScript**
+- The page was mostly the Genre page's artist panel, reused: same `DataTable`, same back link, same header layout.
+- `onRowClick` on the shared table already makes the whole row the target, and the placeholder is just `/no-art.svg`.
+
+**Hard in TypeScript**
+- More files for the same thing: the API route and its types on both sides of the wire, a route, a CSS module.
+
+**Shared**
+- `rain_in_my_head.artist` reuses the Genre page's ranking helpers, so the list, the page and the Genre page pick names, art and counts the same way. Its results were checked against direct SQLite queries for three periods, with no differences.
 
 ## Same-change test
 
