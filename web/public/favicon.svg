@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Cloud: navy outline drawn as a wide stroke, Rain fill on top, so only the outer edge shows -->
+  <g fill="#141A2A" stroke="#141A2A" stroke-width="5" stroke-linejoin="round">
+    <circle cx="10" cy="19" r="4.5"/>
+    <circle cx="17" cy="14.5" r="6.5"/>
+    <circle cx="24" cy="19" r="4"/>
+    <rect x="5" y="18" width="23" height="6" rx="3"/>
+  </g>
+  <g fill="#5CC8F0">
+    <circle cx="10" cy="19" r="4.5"/>
+    <circle cx="17" cy="14.5" r="6.5"/>
+    <circle cx="24" cy="19" r="4"/>
+    <rect x="5" y="18" width="23" height="6" rx="3"/>
+  </g>
+</svg>
