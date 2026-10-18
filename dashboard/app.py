@@ -14,4 +14,6 @@ st.navigation([
     st.Page("views/sql.py", title="SQL", icon=":material/database:", url_path="sql"),
     st.Page("views/schema.py", title="Schema", icon=":material/schema:", url_path="schema"),
     st.Page("views/playlists.py", title="Playlists", icon=":material/queue_music:", url_path="playlists"),
+    # Opened from the Overview's "New artists" list, not the menu.
+    st.Page("views/artist.py", title="Artist", url_path="artist", visibility="hidden"),
 ]).run()

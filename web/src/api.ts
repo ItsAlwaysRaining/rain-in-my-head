@@ -93,6 +93,17 @@ interface OverviewBase {
   over_time: OverTimeRow[];
 }
 
+/** Missing album art, shared with Streamlit (web/public/no-art.svg). */
+export const NO_ART = "/no-art.svg";
+
+/** Artists first heard in the selected period, else the range's last month (rain_in_my_head.artist). */
+export interface NewArtistList {
+  label: string;
+  start: string;
+  end: string;
+  artists: { artist_key: string; name: string; thumb: string | null; plays: number }[];
+}
+
 export interface OverviewEmpty extends Partial<OverviewBase> {
   empty: true;
   reason: "no_scrobbles" | "no_plays_in_range";
@@ -106,6 +117,7 @@ export interface OverviewFull extends OverviewBase {
   heatmap: { weekday: string; hour: number; plays: number }[];
   new_artists: { start: string; count: number }[];
   new_share: number;
+  new_artist_list: NewArtistList;
   genres: { y_max: number; panels: GenrePanel[] } | null;
   listener_buckets: { bucket: string; share: number }[] | null;
   loved: { artist: string; track: string; plays: number }[];
@@ -152,6 +164,38 @@ export interface GenreParams {
 
 export const fetchGenre = (p: GenreParams) => getJson<Genre>("/api/genre", { ...p });
 export const fetchGenreSongs = (p: GenreParams & { artist_key: string }) => getJson<GenreSongs>("/api/genre/songs", { ...p });
+
+// ---- Artist ------------------------------------------------------------------
+
+export interface ArtistSong {
+  track_key: string;
+  name: string;
+  album: string | null;
+  thumb: string | null;
+  plays: number;
+}
+
+export type Artist =
+  | { found: false }
+  | {
+      found: true;
+      artist_key: string;
+      name: string;
+      cover: string | null;
+      /** null means all time */
+      period: { start: string; end: string; label: string } | null;
+      period_plays: number;
+      all_time_plays: number;
+      songs: ArtistSong[];
+    };
+
+export interface ArtistParams {
+  artist?: string;
+  start?: string;
+  end?: string;
+}
+
+export const fetchArtist = (p: ArtistParams) => getJson<Artist>("/api/artist", { ...p });
 
 // ---- SQL ---------------------------------------------------------------------
 

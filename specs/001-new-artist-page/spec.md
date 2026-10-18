@@ -4,9 +4,9 @@
 
 **Created**: 2026-10-14
 
-**Status**: Draft
+**Status**: Implemented
 
-**Input**: User description: "New artists this month: click an artist to open their page with album art, songs and play counts" (issue #5). Refined with the owner: the list defaults to the most recent month, and follows a period selected in the Overview's over-time chart; the artist page counts plays in that same period and also shows an all-time total.
+**Input**: User description: "New artists this month: click an artist to open their page with album art, songs and play counts" (issue #5). Refined with the owner: the list defaults to the most recent month, and follows a period selected in the Overview's over-time chart; the artist page counts plays in that same period and also shows an all-time total. Updated 2026-10-18: the owner asked for the feature in both dashboards (Streamlit and TypeScript), which now sit side by side (constitution 1.1).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -93,6 +93,10 @@ the Overview.
   range's start if later, to the range's end).
 - **FR-003**: The list MUST be titled with its period (e.g. "New artists in Oct 2026") and show, for
   each artist, album art and the number of plays in the period, sorted by plays, highest first.
+  A period that starts on the 1st and stays within one month is named by its month ("Oct 2026"),
+  even if it ends before the month does; one that starts on 1 January and stays within one year
+  is named by its year ("2026"); any other period is shown as "d Mon YYYY – d Mon YYYY". The
+  artist page names its period the same way.
 - **FR-004**: Clicking anywhere on an artist's row MUST open that artist's page for the list's
   period.
 - **FR-005**: The artist page MUST show the artist's name and album art: the cover that appears most
@@ -109,6 +113,8 @@ the Overview.
   be reloaded or bookmarked.
 - **FR-011**: The artist page MUST NOT appear as an entry in the dashboard's page menu; it is
   reached from the list.
+- **FR-012**: Both dashboards (Streamlit and TypeScript) MUST have the list and the artist page,
+  at the same address, and MUST show the same artists, songs and counts for the same period.
 
 ### Key Entities
 
@@ -127,6 +133,7 @@ the Overview.
 - **SC-003**: Every artist and song row shows an image: real album art or the placeholder (no blank
   cells).
 - **SC-004**: Clicking the name, art or count of a list row opens the artist page every time.
+- **SC-005**: For the same period and artist, the two dashboards show identical lists and counts.
 
 ## Assumptions
 

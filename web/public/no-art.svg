@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Missing album art: a music note in Night on Night Surface. Shared by both dashboards. -->
+  <rect width="64" height="64" fill="#1C2238"/>
+  <g fill="#8C9FE0">
+    <path d="M26 18 L46 14 V40 H42 V21 L30 23.5 V44 H26 Z"/>
+    <ellipse cx="22" cy="44" rx="6" ry="4.5" transform="rotate(-20 22 44)"/>
+    <ellipse cx="38" cy="40" rx="6" ry="4.5" transform="rotate(-20 38 40)"/>
+  </g>
+</svg>

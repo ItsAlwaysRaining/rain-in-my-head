@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { BrowserRouter, NavLink, Route, Routes } from "react-router";
 import styles from "./App.module.css";
 import { Notice } from "./components/ui";
+import Artist from "./pages/Artist";
 import Genre from "./pages/Genre";
 import Overview from "./pages/Overview";
 import Playlists from "./pages/Playlists";
@@ -81,6 +82,8 @@ export default function App() {
                   <Route path="/sql" element={<Sql />} />
                   <Route path="/schema" element={<Schema />} />
                   <Route path="/playlists" element={<Playlists />} />
+                  {/* Opened from the Overview's "New artists" list, not the menu. */}
+                  <Route path="/artist" element={<Artist />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </ErrorBoundary>
