@@ -15,13 +15,26 @@ export class ApiError extends Error {
 export async function getJson<T>(path: string, params: Record<string, string | undefined> = {}): Promise<T> {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) if (value) query.set(key, value);
-  const url = query.size ? `${path}?${query}` : path;
+  return request<T>(query.size ? `${path}?${query}` : path);
+}
+
+/** POST/PUT/DELETE with an optional JSON body. A 204 resolves to undefined. */
+export function sendJson<T>(method: "POST" | "PUT" | "DELETE", path: string, body?: unknown): Promise<T> {
+  return request<T>(path, {
+    method,
+    headers: body === undefined ? undefined : { "content-type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
-    response = await fetch(url);
+    response = await fetch(url, init);
   } catch {
     throw new ApiError("unreachable", "The data service isn't running.");
   }
+  if (response.status === 204) return undefined as T;
   // Vite's dev proxy answers 502/504 (or an HTML page) when the API is down.
   if ([502, 503, 504].includes(response.status) || !response.headers.get("content-type")?.includes("json")) {
     const body = await response.json().catch(() => null);
@@ -111,3 +124,44 @@ export interface OverviewParams {
 
 export const fetchOverview = (p: OverviewParams) =>
   getJson<Overview>("/api/overview", { ...p, start: p.preset === "custom" ? p.start : undefined, end: p.preset === "custom" ? p.end : undefined });
+
+// ---- Genre -------------------------------------------------------------------
+
+export interface GenreArtist {
+  artist_key: string;
+  name: string;
+  art: string | null;
+  thumb: string | null;
+  plays: number;
+}
+
+export type Genre =
+  | { genres: []; genre: null; reason: "no_tags" }
+  | { genres: string[]; genre: string; range_label: string; plays: number; artists: GenreArtist[] };
+
+export interface GenreSongs {
+  artist: { name: string; art: string | null; plays: number };
+  songs: { track_key: string; name: string; album: string | null; art: string | null; thumb: string | null; plays: number }[];
+}
+
+export interface GenreParams {
+  genre?: string;
+  start?: string;
+  end?: string;
+}
+
+export const fetchGenre = (p: GenreParams) => getJson<Genre>("/api/genre", { ...p });
+export const fetchGenreSongs = (p: GenreParams & { artist_key: string }) => getJson<GenreSongs>("/api/genre/songs", { ...p });
+
+// ---- SQL ---------------------------------------------------------------------
+
+export interface SqlMeta {
+  examples: Record<string, string>;
+  schema: { object: string; column: string; type: string }[];
+}
+
+export type SqlCell = string | number | null;
+export type SqlResult = { columns: string[]; float_columns: number[]; rows: SqlCell[][]; row_count: number } | { error: string };
+
+export const fetchSqlMeta = () => getJson<SqlMeta>("/api/sql/meta");
+export const runSql = (sql: string) => sendJson<SqlResult>("POST", "/api/sql", { sql });

@@ -9,6 +9,8 @@ export interface Column<T> {
   kind?: ColumnKind;
   /** Fixed width, e.g. "56px" for thumbnails. */
   width?: string;
+  /** Right-align a column whose kind isn't numeric (e.g. numbers drawn with `render`). */
+  align?: "right";
   render?: (row: T) => ReactNode;
 }
 
@@ -79,7 +81,7 @@ export function DataTable<T>({ rows, columns, maxHeight, onRowClick, selectedInd
               <th
                 key={c.key}
                 style={{ width: c.width }}
-                className={[isNumeric(c.kind) ? styles.num : "", sortable ? styles.sortable : ""].join(" ")}
+                className={[isNumeric(c) ? styles.num : "", sortable ? styles.sortable : ""].join(" ")}
                 onClick={sortable ? () => toggleSort(c.key) : undefined}
               >
                 {c.label}
@@ -96,7 +98,7 @@ export function DataTable<T>({ rows, columns, maxHeight, onRowClick, selectedInd
               onClick={onRowClick ? () => onRowClick(row, index) : undefined}
             >
               {columns.map((c) => (
-                <td key={c.key} className={isNumeric(c.kind) ? styles.num : ""}>
+                <td key={c.key} className={isNumeric(c) ? styles.num : ""}>
                   {cell(row, c)}
                 </td>
               ))}
@@ -108,4 +110,4 @@ export function DataTable<T>({ rows, columns, maxHeight, onRowClick, selectedInd
   );
 }
 
-const isNumeric = (kind?: ColumnKind) => kind === "number" || kind === "percent";
+const isNumeric = <T,>(c: Column<T>) => c.align === "right" || c.kind === "number" || c.kind === "percent";
