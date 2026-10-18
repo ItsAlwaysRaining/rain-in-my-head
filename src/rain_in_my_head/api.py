@@ -210,6 +210,29 @@ def genre_songs(artist_key: str, genre: str | None = None, start: date | None = 
     }
 
 
+# ---- Artist ------------------------------------------------------------------
+
+@app.get("/api/artist")
+def artist(artist: str | None = None, start: date | None = None, end: date | None = None) -> dict:
+    """One artist's page (spec 001): header counts and songs in the period, all time without one."""
+    _require_db()
+    page = ar.artist_page(config.DB_PATH, artist, start, end) if artist else None
+    if page is None:
+        return {"found": False}
+    return {
+        "found": True,
+        "artist_key": page.artist_key,
+        "name": page.name,
+        "cover": page.cover,
+        "period": None if page.period is None else {
+            "start": page.period[0].isoformat(), "end": page.period[1].isoformat(), "label": page.label,
+        },
+        "period_plays": page.period_plays,
+        "all_time_plays": page.all_time_plays,
+        "songs": _records(page.songs, {"track_key": "track_key", "name": "name", "album_name": "album", "thumb": "thumb", "plays": "plays"}),
+    }
+
+
 # ---- SQL ---------------------------------------------------------------------
 
 @app.get("/api/sql/meta")

@@ -66,10 +66,10 @@ No setup: no new dependencies, no schema change.
 
 **Independent Test**: quickstart.md scenarios 3 and 4.
 
-- [ ] T008 [US2] Add `GET /api/artist` to `src/rain_in_my_head/api.py` (contract) and `fetchArtist` to `web/src/api.ts`
-- [ ] T009 [P] [US2] Streamlit: create `dashboard/views/artist.py` per contracts/artist-page.md; register it in `dashboard/app.py` as `st.Page("views/artist.py", url_path="artist", visibility="hidden")`; make the Overview table selectable (`on_select="rerun"`, `selection_mode=["single-row", "single-cell"]`) and `st.switch_page` to it with `artist`, `start`, `end`
-- [ ] T010 [P] [US2] TypeScript: create `web/src/pages/Artist.tsx` (+ `Artist.module.css`); add the `/artist` route to `web/src/App.tsx` outside the menu; make the Overview table's rows navigate to it
-- [ ] T011 [US2] Verify quickstart.md scenarios 3–4 in both apps (click a name and an album art; check counts against SQLite and that song plays sum to the header)
+- [x] T008 [US2] Add `GET /api/artist` to `src/rain_in_my_head/api.py` (contract) and `fetchArtist` to `web/src/api.ts`
+- [x] T009 [P] [US2] Streamlit: create `dashboard/views/artist.py` per contracts/artist-page.md; register it in `dashboard/app.py` as `st.Page("views/artist.py", url_path="artist", visibility="hidden")`; make the Overview table selectable (`on_select="rerun"`, `selection_mode=["single-row", "single-cell"]`) and `st.switch_page` to it with `artist`, `start`, `end`
+- [x] T010 [P] [US2] TypeScript: create `web/src/pages/Artist.tsx` (+ `Artist.module.css`); add the `/artist` route to `web/src/App.tsx` outside the menu; make the Overview table's rows navigate to it
+- [x] T011 [US2] Verify quickstart.md scenarios 3–4 in both apps (click a name and an album art; check counts against SQLite and that song plays sum to the header)
 
 **Checkpoint**: list → artist page works end to end in both apps.
 

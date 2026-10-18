@@ -184,7 +184,7 @@ with right:
     if newbies.empty:
         st.caption("No new artists in this period.")
     else:
-        st.dataframe(
+        picked = st.dataframe(
             newbies.assign(thumb=newbies["thumb"].fillna(ar.no_art_url()))[["thumb", "name", "plays"]],
             column_config={
                 "thumb": st.column_config.ImageColumn("", width="small"),
@@ -194,7 +194,18 @@ with right:
             hide_index=True,
             row_height=56,
             height=min(420, 38 + 56 * len(newbies)),
+            on_select="rerun",
+            # Cell selection makes clicking anywhere in a row open that artist, not just its checkbox.
+            selection_mode=["single-row", "single-cell"],
+            key=f"new-artists-{list_start}-{list_end}",
         )
+        st.caption("Click an artist to see your songs by them.")
+        rows = picked.selection.rows or [row for row, _ in picked.selection.cells]
+        if rows:
+            st.switch_page("views/artist.py", query_params={
+                "artist": newbies.iloc[rows[0]]["artist_key"],
+                "start": list_start.isoformat(), "end": list_end.isoformat(),
+            })
 
 # ---- Genres & mainstream (need `rain-in-my-head enrich`) -------------------
 st.subheader("Genres and mainstream-ness")

@@ -165,6 +165,38 @@ export interface GenreParams {
 export const fetchGenre = (p: GenreParams) => getJson<Genre>("/api/genre", { ...p });
 export const fetchGenreSongs = (p: GenreParams & { artist_key: string }) => getJson<GenreSongs>("/api/genre/songs", { ...p });
 
+// ---- Artist ------------------------------------------------------------------
+
+export interface ArtistSong {
+  track_key: string;
+  name: string;
+  album: string | null;
+  thumb: string | null;
+  plays: number;
+}
+
+export type Artist =
+  | { found: false }
+  | {
+      found: true;
+      artist_key: string;
+      name: string;
+      cover: string | null;
+      /** null means all time */
+      period: { start: string; end: string; label: string } | null;
+      period_plays: number;
+      all_time_plays: number;
+      songs: ArtistSong[];
+    };
+
+export interface ArtistParams {
+  artist?: string;
+  start?: string;
+  end?: string;
+}
+
+export const fetchArtist = (p: ArtistParams) => getJson<Artist>("/api/artist", { ...p });
+
 // ---- SQL ---------------------------------------------------------------------
 
 export interface SqlMeta {

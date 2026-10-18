@@ -284,6 +284,7 @@ function OverviewBody({
 
 /** Artists first heard in the list's period (spec 001). Missing art shows the shared placeholder. */
 function NewArtists({ list }: { list: NewArtistList }) {
+  const navigate = useNavigate();
   const rows = useMemo(() => list.artists.map((a) => ({ ...a, thumb: a.thumb ?? NO_ART })), [list.artists]);
   return (
     <section className={styles.newArtists}>
@@ -299,8 +300,10 @@ function NewArtists({ list }: { list: NewArtistList }) {
             { key: "plays", label: "Plays", kind: "number" },
           ]}
           maxHeight={420}
+          onRowClick={(a) => navigate(`/artist?${new URLSearchParams({ artist: a.artist_key, start: list.start, end: list.end })}`)}
         />
       )}
+      {rows.length > 0 && <p className="caption">Click an artist to see your songs by them.</p>}
     </section>
   );
 }
