@@ -6,6 +6,7 @@ import styles from "./App.module.css";
 import { Notice } from "./components/ui";
 import Genre from "./pages/Genre";
 import Overview from "./pages/Overview";
+import Schema from "./pages/Schema";
 import Sql from "./pages/Sql";
 
 const queryClient = new QueryClient({
@@ -77,7 +78,7 @@ export default function App() {
                   <Route path="/" element={<Overview />} />
                   <Route path="/genre" element={<Genre />} />
                   <Route path="/sql" element={<Sql />} />
-                  <Route path="/schema" element={<ComingSoon title="Schema" />} />
+                  <Route path="/schema" element={<Schema />} />
                   <Route path="/playlists" element={<ComingSoon title="Playlists" />} />
                   <Route path="*" element={<ComingSoon title="Not found" />} />
                 </Routes>

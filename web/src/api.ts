@@ -165,3 +165,40 @@ export type SqlResult = { columns: string[]; float_columns: number[]; rows: SqlC
 
 export const fetchSqlMeta = () => getJson<SqlMeta>("/api/sql/meta");
 export const runSql = (sql: string) => sendJson<SqlResult>("POST", "/api/sql", { sql });
+
+// ---- Schema ------------------------------------------------------------------
+
+export interface SchemaColumn {
+  name: string;
+  type: string;
+  required: boolean;
+  key: boolean;
+  link: boolean;
+  meaning: string | null;
+}
+
+export interface SchemaObject {
+  name: string;
+  kind: "table" | "view";
+  title: string;
+  source: string | null;
+  description: string | null;
+  rows: number | null;
+  columns: SchemaColumn[];
+}
+
+export type Point = { x: number; y: number };
+export type Positions = Record<string, Point>;
+
+export interface SchemaData {
+  objects: SchemaObject[];
+  links: { from: [string, string]; to: [string, string]; label: string }[];
+  lineage: [string, string][];
+  positions: Positions;
+  defaults: Positions;
+  size: { w: number; h: number };
+}
+
+export const fetchSchema = () => getJson<SchemaData>("/api/schema");
+export const saveSchemaLayout = (positions: Positions) => sendJson<void>("PUT", "/api/schema/layout", { positions });
+export const resetSchemaLayout = () => sendJson<{ positions: Positions }>("DELETE", "/api/schema/layout");
