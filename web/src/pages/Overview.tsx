@@ -4,7 +4,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { fetchOverview, type Grain, type OverviewFull, type Preset } from "../api";
+import { fetchOverview, NO_ART, type Grain, type NewArtistList, type OverviewFull, type Preset } from "../api";
 import { Sidebar } from "../App";
 import * as charts from "../charts/overview";
 import { DataTable } from "../components/DataTable";
@@ -216,6 +216,7 @@ function OverviewBody({
         <div>
           <VegaChart spec={newSpec} />
           <p className="caption">{percent(data.new_share)} of plays in this range were artists you first heard that same year.</p>
+          <NewArtists list={data.new_artist_list} />
         </div>
       </div>
 
@@ -278,6 +279,29 @@ function OverviewBody({
         </section>
       </div>
     </div>
+  );
+}
+
+/** Artists first heard in the list's period (spec 001). Missing art shows the shared placeholder. */
+function NewArtists({ list }: { list: NewArtistList }) {
+  const rows = useMemo(() => list.artists.map((a) => ({ ...a, thumb: a.thumb ?? NO_ART })), [list.artists]);
+  return (
+    <section className={styles.newArtists}>
+      <h2>New artists in {list.label}</h2>
+      {rows.length === 0 ? (
+        <p className="caption">No new artists in this period.</p>
+      ) : (
+        <DataTable
+          rows={rows}
+          columns={[
+            { key: "thumb", label: "", kind: "image", width: "64px" },
+            { key: "name", label: "Artist" },
+            { key: "plays", label: "Plays", kind: "number" },
+          ]}
+          maxHeight={420}
+        />
+      )}
+    </section>
   );
 }
 

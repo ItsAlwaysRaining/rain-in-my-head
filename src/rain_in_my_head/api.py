@@ -21,6 +21,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
+from rain_in_my_head import artist as ar
 from rain_in_my_head import config
 from rain_in_my_head import genre as gn
 from rain_in_my_head import overview as ov
@@ -128,6 +129,7 @@ def overview(
 
     top = ov.top_lists(df)
     genres = ov.genre_shares(df, inner)
+    list_start, list_end = ar.list_period(start_, end_, selected is not None)
     result.update({
         "empty": False,
         "kpis": [{"label": label, "value": _value(value), "delta": _value(change)}
@@ -137,6 +139,12 @@ def overview(
         "heatmap": _records(ov.heatmap(df), {"weekday_name": "weekday", "hour": "hour", "plays": "plays"}),
         "new_artists": _records(ov.new_artists(data, start_, end_, inner), {"artist_first_play": "start", "new_artists": "count"}),
         "new_share": ov.new_share(df),
+        "new_artist_list": {
+            "label": ar.period_label(list_start, list_end),
+            "start": list_start.isoformat(), "end": list_end.isoformat(),
+            "artists": _records(ar.new_artists(config.DB_PATH, list_start, list_end),
+                                {"artist_key": "artist_key", "name": "name", "thumb": "thumb", "plays": "plays"}),
+        },
         "genres": None if genres is None else {
             "y_max": genres[1],
             "panels": [

@@ -6,6 +6,7 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 
+from rain_in_my_head import artist as ar
 from rain_in_my_head import config
 from rain_in_my_head import overview as ov
 
@@ -20,6 +21,11 @@ BAR = {"cornerRadiusEnd": 4, "color": RAIN}
 @st.cache_data
 def load(db_mtime: float) -> pd.DataFrame:
     return ov.load_plays(config.DB_PATH)
+
+
+@st.cache_data
+def load_new_artists(db_mtime: float, start, end) -> pd.DataFrame:
+    return ar.new_artists(config.DB_PATH, start, end)
 
 
 def top_bar(counts: pd.DataFrame, field: str, title: str) -> alt.Chart:
@@ -171,6 +177,24 @@ with right:
         width="stretch",
     )
     st.caption(f"{ov.new_share(df):.0%} of plays in this range were artists you first heard that same year.")
+
+    list_start, list_end = ar.list_period(start, end, selected is not None)
+    st.subheader(f"New artists in {ar.period_label(list_start, list_end)}")
+    newbies = load_new_artists(config.DB_PATH.stat().st_mtime, list_start, list_end)
+    if newbies.empty:
+        st.caption("No new artists in this period.")
+    else:
+        st.dataframe(
+            newbies.assign(thumb=newbies["thumb"].fillna(ar.no_art_url()))[["thumb", "name", "plays"]],
+            column_config={
+                "thumb": st.column_config.ImageColumn("", width="small"),
+                "name": "Artist",
+                "plays": st.column_config.NumberColumn("Plays", format="%d"),
+            },
+            hide_index=True,
+            row_height=56,
+            height=min(420, 38 + 56 * len(newbies)),
+        )
 
 # ---- Genres & mainstream (need `rain-in-my-head enrich`) -------------------
 st.subheader("Genres and mainstream-ness")

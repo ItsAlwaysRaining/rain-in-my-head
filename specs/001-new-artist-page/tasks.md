@@ -51,10 +51,10 @@ No setup: no new dependencies, no schema change.
 
 **Independent Test**: quickstart.md scenarios 1 and 2.
 
-- [ ] T004 [US1] In `src/rain_in_my_head/api.py`, add `new_artist_list` to `/api/overview` (contract); add its types to `web/src/api.ts`
-- [ ] T005 [P] [US1] Streamlit: in `dashboard/views/overview.py`, show the table under the "New artists per …" chart, titled "New artists in <label>", with art (placeholder where missing), artist and plays; a short message when there are none
-- [ ] T006 [P] [US1] TypeScript: the same table in `web/src/pages/Overview.tsx`
-- [ ] T007 [US1] Verify quickstart.md scenarios 1–2 in both apps in headless Chrome
+- [x] T004 [US1] In `src/rain_in_my_head/api.py`, add `new_artist_list` to `/api/overview` (contract); add its types to `web/src/api.ts`
+- [x] T005 [P] [US1] Streamlit: in `dashboard/views/overview.py`, show the table under the "New artists per …" chart, titled "New artists in <label>", with art (placeholder where missing), artist and plays; a short message when there are none
+- [x] T006 [P] [US1] TypeScript: the same table in `web/src/pages/Overview.tsx`
+- [x] T007 [US1] Verify quickstart.md scenarios 1–2 in both apps in headless Chrome
 
 **Checkpoint**: the list works and follows the selected period in both apps.
 
