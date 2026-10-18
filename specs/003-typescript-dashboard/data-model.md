@@ -57,6 +57,6 @@ There are no database changes. The entities below are the inputs and results tha
 ## Playlists (slice 3)
 
 - **PlaylistRequest**: `kind` (`slot` \| `discoveries` \| `binges`) plus the same options as the Streamlit form.
-- **PlaylistPreview**: `{name, description, columns, rows, candidate_count, notes}`, produced by the existing [playlist.py](../../src/listening/playlist.py) functions.
+- **PlaylistPreview**: `{title, note, warning, info, caption, name, description, columns: [{key, label, kind, help}], rows, candidate_count}`, produced by `preview_slot`, `preview_discoveries` and `preview_binges` in [playlist.py](../../src/rain_in_my_head/playlist.py). `kind` is `text`, `number`, `lift` (shown as `12.3×`) or `date` (shown as `11 Jan 2025`). `note` comes before the title, `info` after it.
 - **CreateRequest**: PlaylistRequest plus `name` and `public`.
 - **Create** streams events: `progress {fraction, message}`* then `done {url, count, misses: [{artist, track}]}` or `error {message}`.
