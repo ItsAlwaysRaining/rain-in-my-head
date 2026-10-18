@@ -4,7 +4,9 @@ import { createPortal } from "react-dom";
 import { BrowserRouter, NavLink, Route, Routes } from "react-router";
 import styles from "./App.module.css";
 import { Notice } from "./components/ui";
+import Genre from "./pages/Genre";
 import Overview from "./pages/Overview";
+import Sql from "./pages/Sql";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 60_000, retry: false, refetchOnWindowFocus: false } },
@@ -73,8 +75,8 @@ export default function App() {
               <ErrorBoundary>
                 <Routes>
                   <Route path="/" element={<Overview />} />
-                  <Route path="/genre" element={<ComingSoon title="Genre" />} />
-                  <Route path="/sql" element={<ComingSoon title="SQL" />} />
+                  <Route path="/genre" element={<Genre />} />
+                  <Route path="/sql" element={<Sql />} />
                   <Route path="/schema" element={<ComingSoon title="Schema" />} />
                   <Route path="/playlists" element={<ComingSoon title="Playlists" />} />
                   <Route path="*" element={<ComingSoon title="Not found" />} />

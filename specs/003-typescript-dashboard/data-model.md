@@ -40,13 +40,13 @@ There are no database changes. The entities below are the inputs and results tha
 - **GenreResult**:
   - `genres` (all, ordered by plays) and `genre`
   - `range_label`, `plays`
-  - `artists: [{artist_key, name, art, plays}]`
-  - per artist on request: `songs: [{track_key, name, album, art, plays}]`
+  - `artists: [{artist_key, name, art, thumb, plays}]` (`thumb` is the 64s image for table rows)
+  - per artist on request: `songs: [{track_key, name, album, art, thumb, plays}]`
 
 ## SQL (slice 2)
 
 - **SqlRequest**: `sql` text.
-- **SqlResult**: `{columns: [name], rows: [[value]], row_count}` or `{error}`. The connection is read-only.
+- **SqlResult**: `{columns: [name], float_columns: [index], rows: [[value]], row_count}` or `{error}`. The connection is read-only.
 - The schema list and the examples come from shared constants, so both apps show the same ones.
 
 ## Schema (slice 3)

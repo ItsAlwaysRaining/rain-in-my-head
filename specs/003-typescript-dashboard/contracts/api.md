@@ -29,17 +29,17 @@ When the frontend cannot reach `/api` at all, it shows "The data service isn't r
 ## Slice 2
 
 ### `GET /api/genre?genre&start&end`
-Returns GenreResult without songs.
+Returns GenreResult without songs. An unknown or missing `genre` falls back to the most-played one. When nothing is tagged yet: `200 {"genres": [], "genre": null, "reason": "no_tags"}`.
 
 ### `GET /api/genre/songs?genre&start&end&artist_key`
-`{artist: {name, art, plays}, songs: [...]}`
+`{artist: {name, art, plays}, songs: [...]}`, where `art` is the 174s image. `404` when that artist has no plays in the genre and range.
 
 ### `GET /api/sql/meta`
 `{examples: {title: sql}, schema: [{object, column, type}]}`
 
 ### `POST /api/sql`
 - **Body**: `{"sql": "..."}`
-- **Response**: `200` SqlResult. SQL errors are returned as `200 {"error": "..."}`, matching Streamlit's inline message.
+- **Response**: `200` SqlResult, including `float_columns` (indexes of float columns, so the page can write `72.0` as pandas does). SQL errors are returned as `200 {"error": "..."}`, matching Streamlit's inline message.
 
 ## Slice 3
 

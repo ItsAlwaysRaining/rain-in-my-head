@@ -14,9 +14,12 @@ from typing import Literal
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from pydantic import BaseModel
 
 from rain_in_my_head import config
+from rain_in_my_head import genre as gn
 from rain_in_my_head import overview as ov
+from rain_in_my_head import sql_examples as sq
 
 WEB_DIST = config.ROOT / "web" / "dist"
 NO_DATABASE = "No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`."
@@ -140,6 +143,84 @@ def overview(
         "coverage": _records(ov.coverage(df), {"Check": "check", "Coverage": "coverage"}),
     })
     return result
+
+
+# ---- Genre -------------------------------------------------------------------
+
+def _genre_view(genre: str | None, start: date | None, end: date | None):
+    """The genre (asked for, else the most played), its range and plays, as the Streamlit page resolves them."""
+    _require_db()
+    all_genres = gn.genres(config.DB_PATH)
+    if not all_genres:
+        return all_genres, None, None, None, None
+    chosen = genre if genre in all_genres else all_genres[0]
+    start_ = start.isoformat() if start else None
+    end_ = (end or date.today()).isoformat()
+    plays = gn.genre_plays(config.DB_PATH, chosen, start_ or gn.ALL_TIME_START, end_)
+    return all_genres, chosen, start_, end_, plays
+
+
+@app.get("/api/genre")
+def genre(genre: str | None = None, start: date | None = None, end: date | None = None) -> dict:
+    all_genres, chosen, start_, end_, plays = _genre_view(genre, start, end)
+    if chosen is None:
+        return {"genres": [], "genre": None, "reason": "no_tags"}
+    return {
+        "genres": all_genres,
+        "genre": chosen,
+        "range_label": gn.range_label(start_, end_),
+        "plays": len(plays),
+        "artists": [] if plays.empty else _records(
+            gn.artists(plays), {"artist_key": "artist_key", "name": "name", "art": "art", "thumb": "thumb", "plays": "plays"}
+        ),
+    }
+
+
+@app.get("/api/genre/songs")
+def genre_songs(artist_key: str, genre: str | None = None, start: date | None = None, end: date | None = None) -> dict:
+    _, chosen, _, _, plays = _genre_view(genre, start, end)
+    if chosen is None or plays.empty or artist_key not in set(plays["artist_key"]):
+        raise HTTPException(404, "No plays by that artist in this genre and range")
+    artist = gn.artists(plays).set_index("artist_key").loc[artist_key]
+    return {
+        "artist": {
+            "name": artist["name"],
+            "art": None if pd.isna(artist["art"]) else gn.thumb(artist["art"], "174s"),
+            "plays": _value(artist["plays"]),
+        },
+        "songs": _records(
+            gn.songs(plays, artist_key),
+            {"track_key": "track_key", "name": "name", "album_name": "album", "art": "art", "thumb": "thumb", "plays": "plays"},
+        ),
+    }
+
+
+# ---- SQL ---------------------------------------------------------------------
+
+@app.get("/api/sql/meta")
+def sql_meta() -> dict:
+    _require_db()
+    return {"examples": sq.EXAMPLES, "schema": sq.schema(config.DB_PATH).to_dict("records")}
+
+
+class SqlRequest(BaseModel):
+    sql: str
+
+
+@app.post("/api/sql")
+def sql(body: SqlRequest) -> dict:
+    _require_db()
+    try:
+        result = sq.run_readonly(config.DB_PATH, body.sql)
+    except Exception as e:  # shown on the page, as Streamlit does
+        return {"error": str(e)}
+    return {
+        "columns": [str(c) for c in result.columns],
+        # So the page can write floats as pandas does (12.0, not 12) in tables and CSV.
+        "float_columns": [i for i, t in enumerate(result.dtypes) if pd.api.types.is_float_dtype(t)],
+        "rows": [[_value(v) for v in row] for row in result.astype(object).itertuples(index=False)],
+        "row_count": len(result),
+    }
 
 
 # ---- Built frontend ----------------------------------------------------------

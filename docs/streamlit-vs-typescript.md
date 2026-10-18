@@ -27,8 +27,8 @@ Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "i
 | Page | Streamlit lines | TS lines (page + charts + API route) | Shared function lines | Effort (TS) |
 |---|---|---|---|---|
 | Overview | 356 → 245 (data work moved out; widgets and charts only) | 592: page 284 + CSS 100 + chart specs 137 + API route 71 | 227 (`listening/overview.py`) | About 1 session |
-| Genre | | | | |
-| SQL | | | | |
+| Genre | 146 → 105 | 291: page 165 + CSS 76 + API routes 50 | 83 (`genre.py`) | About a third of a session |
+| SQL | 80 → 42 | 266: page 144 + CSS 91 + API routes 31 | 58 (`sql_examples.py`) | About a third of a session (shared with Genre) |
 | Schema | | | | |
 | Playlists | | | | |
 
@@ -56,6 +56,30 @@ Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "i
 
 **Shared**
 - Moving the maths into `listening/overview.py` was mechanical. A golden comparison of 24 input combinations was byte-identical before and after, so both apps provably show the same numbers.
+
+### Genre and SQL notes (slice 2)
+
+**Easy in Streamlit**
+- Clicking anywhere on a row to pick an artist is one argument: `selection_mode=["single-row", "single-cell"]`.
+- Image columns, the expander, the select with a placeholder and `st.download_button` are all built in. The SQL page is 42 lines.
+- `st.error(str(e))` is the whole error-handling story.
+
+**Hard in Streamlit**
+- The selected artist lives in the dataframe's widget state, so the key has to include the genre and range to reset it. It can't go in the URL.
+- No keyboard shortcut to run a query; the button is the only way.
+
+**Easy in TypeScript**
+- The whole-row click and the selected-row highlight were already in `DataTable` from slice 1, so the Genre page was mostly layout.
+- Cmd/Ctrl+Enter to run, a sortable result table and an explicit "None" for NULLs took a few lines each.
+- The songs list is its own request, so picking an artist doesn't refetch the artist list.
+
+**Hard in TypeScript**
+- The CSV had to be rebuilt by hand to match pandas `to_csv`: quoting only fields that hold a comma, quote or newline, and writing NULL as empty. JSON also drops the `.0` from floats (`72.0` arrives as `72`), so the API now sends which columns are floats, and the page writes them back the pandas way. The CSV for a test query with commas, quotes, newlines, NULLs and whole-number floats is byte-identical to pandas.
+- SQL result columns can repeat (`SELECT a, a`), so rows are keyed by position, not name.
+- Lazy-loaded thumbnails look missing in a screenshot taken straight after load; Streamlit's canvas table doesn't do this.
+
+**Shared**
+- `genre.py` and `sql_examples.py` were moved, not rewritten. A scratch script ran the old view's functions (from `main`) and the new module over 6 genres × 3 ranges, and 51 artists' song lists: all identical. Every SQL example gives the same row count through the API as directly in SQLite.
 
 ## Same-change test
 
