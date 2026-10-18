@@ -37,9 +37,9 @@ No setup: no new dependencies, no schema change.
 
 **Purpose**: the shared data functions and the placeholder image both apps use.
 
-- [ ] T001 Create `src/rain_in_my_head/artist.py` with `period_label`, `list_period`, `new_artists(db_path, start, end)` and `artist_page(db_path, artist_key, start, end)` per data-model.md, reusing `ranked`, `most_common`, `thumb` and `PLACEHOLDER` from `rain_in_my_head.genre`
-- [ ] T002 [P] Create `web/public/no-art.svg` (music note, Night `#8C9FE0` on Night Surface `#1C2238`) and check it at 64px
-- [ ] T003 Cross-check `new_artists` for the latest month and `artist_page` for one artist against the SQLite queries in quickstart.md
+- [x] T001 Create `src/rain_in_my_head/artist.py` with `period_label`, `list_period`, `new_artists(db_path, start, end)` and `artist_page(db_path, artist_key, start, end)` per data-model.md, reusing `ranked`, `most_common`, `thumb` and `PLACEHOLDER` from `rain_in_my_head.genre`
+- [x] T002 [P] Create `web/public/no-art.svg` (music note, Night `#8C9FE0` on Night Surface `#1C2238`) and check it at 64px
+- [x] T003 Cross-check `new_artists` for the latest month and `artist_page` for one artist against the SQLite queries in quickstart.md
 
 **Checkpoint**: shared functions return the right rows.
 
@@ -82,7 +82,7 @@ No setup: no new dependencies, no schema change.
 **Independent Test**: quickstart.md scenarios 5–7.
 
 - [ ] T012 [US3] In both artist pages, the "Overview" back link, the placeholder for the cover and song rows, and the error states from contracts/artist-page.md (no artist, unknown artist, no plays in the period)
-- [ ] T013 [US3] Verify quickstart.md scenarios 5–7 in both apps (find an artist without art via SQLite; open `/artist` and `/artist?artist=nobody`)
+- [ ] T013 [US3] Verify quickstart.md scenarios 5–7 in both apps (find an artist without art via SQLite; open `/artist` and `/artist?artist=zz-no-such-artist`)
 
 **Checkpoint**: all stories work.
 
