@@ -101,7 +101,7 @@ happens after the owner merges.
 
 - [ ] T027 [US3] Claude, once the owner says the PR is merged: `gh repo rename rain-in-my-head --repo ItsAlwaysRaining/spotify-music-analysis --yes`, then `gh repo edit ItsAlwaysRaining/rain-in-my-head --description "Personal listening history from Last.fm, explored in two dashboards"`. Run `git remote set-url origin https://github.com/ItsAlwaysRaining/rain-in-my-head.git` if needed, then check `git remote -v`, `git fetch`, and that the old URL redirects (research §6)
 - [ ] T028 [US3] Claude: check the next "Sync scrobbles" run succeeds (`gh run list --workflow sync.yml --limit 1`), or ask the owner whether to trigger one with `gh workflow run sync.yml`
-- [ ] T029 [US3] Claude: on `feature/new-artist-page`, merge `main` and update spec 001's `src/listening/` and `listening` command references to the new names. Commit there (research §5)
+- [x] T029 [US3] Claude: on `feature/new-artist-page`, merge `main` and update spec 001's `src/listening/` and `listening` command references to the new names. Commit there (research §5). Done without the merge: the names were updated on the branch, which then reached `main` in #23
 - [ ] T030 [US3] Owner: close this Claude session, move the folder and Claude's memory folder, run `uv sync` and reopen the folder (README rename section, research §7). Confirm a new session recalls the "Data sources" memory
 - [ ] T031 [US3] Owner: rename the Spotify developer app (research §8). Confirm a playlist dry run still works
 
