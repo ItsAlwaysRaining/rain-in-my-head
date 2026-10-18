@@ -7,18 +7,24 @@ specs/003-typescript-dashboard/contracts/api.md
 
 from __future__ import annotations
 
+import functools
+import json
 import math
+import queue
+import sqlite3
+import threading
 from datetime import date
 from typing import Literal
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 from rain_in_my_head import config
 from rain_in_my_head import genre as gn
 from rain_in_my_head import overview as ov
+from rain_in_my_head import playlist as pl
 from rain_in_my_head import schema_info as si
 from rain_in_my_head import sql_examples as sq
 
@@ -260,6 +266,142 @@ def reset_schema_layout() -> dict:
     defaults = si.default_positions(names)
     _save_layout(defaults, set(names))
     return {"positions": defaults}
+
+
+# ---- Playlists ---------------------------------------------------------------
+
+def _connect() -> sqlite3.Connection:
+    _require_db()
+    return sqlite3.connect(config.DB_PATH, timeout=30)
+
+
+def _play_bounds(conn: sqlite3.Connection) -> tuple[date, date]:
+    first, last = conn.execute("SELECT MIN(date(played_local)), MAX(date(played_local)) FROM v_plays").fetchone()
+    return pd.Timestamp(first).date(), pd.Timestamp(last).date()
+
+
+@functools.lru_cache(maxsize=16)
+def _binges(db_mtime: float, min_plays: int, window_days: int, since: int, until: int) -> pd.DataFrame:
+    with sqlite3.connect(config.DB_PATH, timeout=30) as conn:
+        return pl.binges(conn, min_plays, window_days, since, until)
+
+
+@app.get("/api/playlists/meta")
+def playlists_meta() -> dict:
+    with _connect() as conn:
+        first, last = _play_bounds(conn)
+    return {
+        "first": first.isoformat(), "last": last.isoformat(),
+        "weekdays": pl.WEEKDAY_FULL, "spans": pl.SPANS, "rank_by": pl.RANK_BY,
+        "discovery_orders": pl.DISCOVERY_ORDERS, "windows": pl.WINDOWS,
+        "binge_orders": pl.BINGE_ORDER_LABELS,
+    }
+
+
+@app.get("/api/playlists/spotify")
+def playlists_spotify() -> dict:
+    return {"connected": config.SPOTIFY_TOKEN_PATH.exists()}
+
+
+class PlaylistRequest(BaseModel):
+    kind: Literal["slot", "discoveries", "binges"]
+    size: int = 50
+    min_plays: int
+    # Time slot
+    days: list[str] = ["Friday"]
+    hours: tuple[int, int] = (17, 19)
+    span: str = "All time"
+    since: date | None = None
+    until: date | None = None
+    # Discoveries
+    year: int | None = None
+    rank_by: Literal["year", "ever"] = "year"
+    order: str = "Ranking"
+    # Binges
+    years: tuple[int, int] | None = None
+    window_days: Literal[1, 7, 30] = 7
+    binge_order: Literal["oldest", "newest", "biggest"] = "oldest"
+
+
+def _preview(body: PlaylistRequest) -> pl.Preview:
+    with _connect() as conn:
+        first, last = _play_bounds(conn)
+        if body.kind == "slot":
+            if body.span not in pl.SPANS or any(d not in pl.WEEKDAY_FULL for d in body.days):
+                raise HTTPException(422, "Unknown span or weekday")
+            custom = (body.since or first, body.until or last) if body.span == "Custom" else None
+            return pl.preview_slot(conn, first, last, body.days, body.hours, body.span, custom, body.size, body.min_plays)
+        if body.kind == "discoveries":
+            year = body.year if body.year is not None else max(first.year, last.year - 1)
+            return pl.preview_discoveries(conn, first, year, body.rank_by, body.order, body.size, body.min_plays)
+    years = body.years or (first.year, last.year)
+    episodes = _binges(config.DB_PATH.stat().st_mtime, body.min_plays, body.window_days, *years)
+    return pl.preview_binges(episodes, first, last, years, body.window_days, body.min_plays, body.size, body.binge_order)
+
+
+@app.post("/api/playlists/preview")
+def playlists_preview(body: PlaylistRequest) -> dict:
+    p = _preview(body)
+    result = {"title": p.title, "note": p.note, "warning": p.warning}
+    if p.warning:
+        return result
+    return {
+        **result,
+        "info": p.info, "caption": p.caption, "name": p.name, "description": p.description,
+        "columns": [{"key": k, "label": c.label, "kind": c.kind, "help": c.help} for k, c in p.columns.items()],
+        "rows": _records(p.rows, {k: k for k in p.columns}),
+        "candidate_count": len(p.ranked),
+    }
+
+
+class CreateRequest(PlaylistRequest):
+    name: str
+    public: bool = False
+
+
+def _event(kind: str, data: dict) -> str:
+    return f"event: {kind}\ndata: {json.dumps(data)}\n\n"
+
+
+@app.post("/api/playlists/create")
+def playlists_create(body: CreateRequest) -> StreamingResponse:
+    """Matches tracks on Spotify and creates the playlist, streaming progress as server-sent events."""
+    p = _preview(body)
+    if p.warning:
+        raise HTTPException(422, p.warning)
+    events: queue.Queue[str | None] = queue.Queue()
+
+    def work() -> None:
+        from rain_in_my_head.build import connect
+        from rain_in_my_head.spotify import SpotifyAuthError, SpotifyClient
+
+        try:
+            client = SpotifyClient(config.spotify_client_id(), config.SPOTIFY_TOKEN_PATH)
+            conn = connect(config.DB_PATH)  # ensures the spotify_matches cache table exists
+            events.put(_event("progress", {"fraction": 0.0, "message": "Matching tracks on Spotify…"}))
+            matched = pl.match_tracks(conn, client, p.ranked, p.size,
+                                      progress=lambda f, msg: events.put(_event("progress", {"fraction": f, "message": msg})))
+            hits = matched[matched["spotify_uri"].notna()]
+            if p.reorder:
+                hits = p.reorder(hits)
+            url = client.create_playlist(body.name, p.description, list(hits["spotify_uri"]), public=body.public)
+            misses = matched[matched["spotify_uri"].isna()]
+            events.put(_event("done", {"url": url, "name": body.name, "count": len(hits),
+                                       "misses": _records(misses, {"artist": "artist", "track": "track"})}))
+        except (SpotifyAuthError, SystemExit) as e:
+            events.put(_event("error", {"message": str(e)}))
+        except Exception as e:  # anything else still ends the stream with a message
+            events.put(_event("error", {"message": f"{type(e).__name__}: {e}"}))
+        finally:
+            events.put(None)
+
+    threading.Thread(target=work, daemon=True).start()
+
+    def stream():
+        while (item := events.get()) is not None:
+            yield item
+
+    return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
 
 
 # ---- Built frontend ----------------------------------------------------------
