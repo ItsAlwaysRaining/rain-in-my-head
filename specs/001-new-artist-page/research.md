@@ -8,7 +8,7 @@ checking.
 - **Decision**: a new `dashboard/lastfm_art.py`, imported by pages as `from lastfm_art import ...`.
 - **Rationale**: Streamlit adds the entry script's folder (`dashboard/`) to `sys.path`. Checked with
   a throwaway app: a page under `views/` imported a module beside `app.py` without errors.
-- **Alternatives considered**: `src/listening/` (would make the CLI package carry dashboard-only
+- **Alternatives considered**: `src/rain_in_my_head/` (would make the CLI package carry dashboard-only
   code); a `views/_common.py` (Streamlit treats files in `views/` as page candidates, which is
   confusing).
 

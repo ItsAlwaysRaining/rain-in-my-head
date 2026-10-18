@@ -27,7 +27,7 @@ test suite.
 
 **Target Platform**: local Streamlit server (`uv run streamlit run dashboard/app.py`), desktop browser
 
-**Project Type**: single project: CLI package `src/listening/` + Streamlit dashboard `dashboard/`
+**Project Type**: single project: CLI package `src/rain_in_my_head/` + Streamlit dashboard `dashboard/`
 
 **Performance Goals**: pages render in about the same time as today; the artist query touches one
 artist's rows (indexed on `artist_key`)

@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- `data/listening.db` built (`uv run listening build`).
+- `data/listening.db` built (`uv run rain-in-my-head build`).
 - Google Chrome installed (Playwright drives it with `channel="chrome"`; nothing is added to the
   project).
 
