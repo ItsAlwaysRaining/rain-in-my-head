@@ -173,7 +173,7 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
   - the row count and result table, or the error notice
   - a client-side "Download CSV" that builds the CSV the way pandas `to_csv` does: header row, comma-separated, quoting fields that contain `,` `"` or a newline
 - [x] T032 [US2] Browser verification (quickstart Slice 2) on both apps: the same genre and range give identical lists; every SQL example gives equal row counts; `DELETE` is refused; the CSV matches
-- [ ] T033 [US4] Add the Genre and SQL entries to `docs/streamlit-vs-typescript.md`, then open PR 2, stating that it affects both apps
+- [x] T033 [US4] Add the Genre and SQL entries to `docs/streamlit-vs-typescript.md`, then open PR 2, stating that it affects both apps
 
 ---
 
