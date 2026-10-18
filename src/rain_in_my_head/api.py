@@ -13,12 +13,13 @@ from typing import Literal
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from pydantic import BaseModel
 
 from rain_in_my_head import config
 from rain_in_my_head import genre as gn
 from rain_in_my_head import overview as ov
+from rain_in_my_head import schema_info as si
 from rain_in_my_head import sql_examples as sq
 
 WEB_DIST = config.ROOT / "web" / "dist"
@@ -221,6 +222,44 @@ def sql(body: SqlRequest) -> dict:
         "rows": [[_value(v) for v in row] for row in result.astype(object).itertuples(index=False)],
         "row_count": len(result),
     }
+
+
+# ---- Schema ------------------------------------------------------------------
+
+def _schema() -> list[dict]:
+    _require_db()
+    return si.read_schema(config.DB_PATH)
+
+
+@app.get("/api/schema")
+def schema() -> dict:
+    return si.build_data(_schema(), si.load_layout(si.layout_path(config.DB_PATH)))
+
+
+class Layout(BaseModel):
+    positions: dict[str, dict]
+
+
+def _save_layout(positions: dict, names: set[str]) -> None:
+    try:
+        si.save_layout(si.layout_path(config.DB_PATH), positions, names)
+    except OSError as e:
+        raise HTTPException(500, f"Couldn't save the layout: {e.strerror}")
+
+
+@app.put("/api/schema/layout", status_code=204)
+def save_schema_layout(body: Layout) -> Response:
+    _save_layout(body.positions, {o["name"] for o in _schema()})
+    return Response(status_code=204)
+
+
+@app.delete("/api/schema/layout")
+def reset_schema_layout() -> dict:
+    """Saves the default positions (as Streamlit's "Reset layout" does) and returns them."""
+    names = [o["name"] for o in _schema()]
+    defaults = si.default_positions(names)
+    _save_layout(defaults, set(names))
+    return {"positions": defaults}
 
 
 # ---- Built frontend ----------------------------------------------------------
