@@ -29,7 +29,7 @@ The first `enrich` makes about one call per unique track and two per unique arti
 
 ## Two dashboards
 
-There are two dashboards over the same database, kept side by side to compare them. They show the same numbers because both use the functions in `src/rain_in_my_head/` (`overview.py`, `genre.py`, `sql_examples.py`, `schema_info.py`, `playlist.py`). The Schema page's card layout (`data/schema_layout.json`) is shared too, so a card moved in one app is moved in the other.
+There are two dashboards over the same database, kept side by side to compare them. They show the same numbers because both use the functions in `src/rain_in_my_head/` (`overview.py`, `genre.py`, `sql_examples.py`, `schema_info.py`, `playlist.py`). The Schema page's card layout (`data/schema_layout.json`) is shared too, so a card moved in one app is moved in the other. The browser-tab icon is shared as well: both apps use `web/public/favicon.svg`.
 
 | | Streamlit | TypeScript |
 |---|---|---|
