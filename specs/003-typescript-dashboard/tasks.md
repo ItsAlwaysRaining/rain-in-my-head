@@ -183,20 +183,20 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
 
 **Independent Test**: quickstart.md, Slice 3.
 
-- [ ] T034 [US3] Create `src/rain_in_my_head/schema_info.py`. Move `read_schema`, the layout load, save and reset logic, `MAP_W`, `MAP_H`, `CARD_W`, `GRID_X` and the default-position placement out of `dashboard/views/schema.py`. Move `dashboard/schema_notes.py` to `src/rain_in_my_head/schema_notes.py`, keeping a re-export at the old path if anything else imports it. Update the view to use the new module and confirm the Streamlit Schema page behaves as before (spec 002 quickstart)
-- [ ] T035 [US3] Add `GET /api/schema`, `PUT /api/schema/layout` (atomic write, 204) and `DELETE /api/schema/layout` to `src/rain_in_my_head/api.py`
-- [ ] T036 [US3] Create `web/src/pages/Schema.tsx` and `web/src/pages/schema/` by porting `dashboard/schema_map/map.js` and `map.css` to TypeScript and React:
+- [x] T034 [US3] Create `src/rain_in_my_head/schema_info.py`. Move `read_schema`, the layout load, save and reset logic, `MAP_W`, `MAP_H`, `CARD_W`, `GRID_X` and the default-position placement out of `dashboard/views/schema.py`. Move `dashboard/schema_notes.py` to `src/rain_in_my_head/schema_notes.py`, keeping a re-export at the old path if anything else imports it. Update the view to use the new module and confirm the Streamlit Schema page behaves as before (spec 002 quickstart)
+- [x] T035 [US3] Add `GET /api/schema`, `PUT /api/schema/layout` (atomic write, 204) and `DELETE /api/schema/layout` to `src/rain_in_my_head/api.py`
+- [x] T036 [US3] Create `web/src/pages/Schema.tsx` and `web/src/pages/schema/` by porting `dashboard/schema_map/map.js` and `map.css` to TypeScript and React:
   - cards dragged by the whole header, and moved with the arrow keys (20 px, or 80 px with Shift)
   - link lines with labels; highlighting on hover or focus
   - the "Show how views are built" toggle
   - zoom, and fit to screen on open
   - "Reset layout" with an on-page confirmation
   - the layout saved on drag end via `PUT`
-- [ ] T037 [US3] Add the Playlists endpoints to `src/rain_in_my_head/api.py`:
+- [x] T037 [US3] Add the Playlists endpoints to `src/rain_in_my_head/api.py`:
   - `GET /api/playlists/meta` and `GET /api/playlists/spotify`
   - `POST /api/playlists/preview`, which builds the same `Spec` as `dashboard/views/playlists.py`. Move the `time_slot`, `year_discoveries` and `binged` assembly, minus its widgets, into `src/rain_in_my_head/playlist.py` as `preview_slot`, `preview_discoveries` and `preview_binges`, so the Streamlit view and the API share it. Update the view to use them
   - `POST /api/playlists/create` as server-sent events, running `match_tracks` with a progress callback that yields `progress` events and then `done` or `error`
-- [ ] T038 [US3] Create `web/src/pages/Playlists.tsx`:
+- [x] T038 [US3] Create `web/src/pages/Playlists.tsx`:
   - the "Playlist type" segmented control
   - one form per type with the same controls, defaults and help text as Streamlit: days multi-select, hour range, span radio and custom dates, length and minimum-plays sliders, year select, rank-by and order radios, years range, window radio, binge order
   - the same warnings and info notices
@@ -207,14 +207,14 @@ description: "Tasks for the TypeScript dashboard alongside Streamlit"
   - layout shared across both apps
   - the same time-slot, discoveries and binges previews in both apps
   - one real private playlist created from :8000
-- [ ] T040 [US4] Add the Schema and Playlists entries to `docs/streamlit-vs-typescript.md`
+- [x] T040 [US4] Add the Schema and Playlists entries to `docs/streamlit-vs-typescript.md`
 
 ---
 
 ## Phase 7: Polish & cross-cutting
 
 - [ ] T041 [US4] Same-change test (spec US4 scenario 2): add one identical small feature to both apps (for example a "Days listened" KPI, with the computation in `rain_in_my_head.overview`). Record the time taken and the files touched for each in `docs/streamlit-vs-typescript.md`
-- [ ] T042 [US4] Record side-by-side load timings for every page (spec US4 scenario 3) in `docs/streamlit-vs-typescript.md`
+- [x] T042 [US4] Record side-by-side load timings for every page (spec US4 scenario 3) in `docs/streamlit-vs-typescript.md`
 - [ ] T043 Final pass:
   - `npx tsc --noEmit` and `npm run build` are clean
   - `uv run --no-default-groups rain-in-my-head --help` still works

@@ -29,8 +29,8 @@ Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "i
 | Overview | 356 → 245 (data work moved out; widgets and charts only) | 592: page 284 + CSS 100 + chart specs 137 + API route 71 | 227 (`listening/overview.py`) | About 1 session |
 | Genre | 146 → 105 | 291: page 165 + CSS 76 + API routes 50 | 83 (`genre.py`) | About a third of a session |
 | SQL | 80 → 42 | 266: page 144 + CSS 91 + API routes 31 | 58 (`sql_examples.py`) | About a third of a session (shared with Genre) |
-| Schema | | | | |
-| Playlists | | | | |
+| Schema | 181 → 64 (plus the 322-line `map.js` and 97-line `map.css` component) | 539: page 62 + map port 340 + map CSS 97 + API routes 40 | 138 (`schema_info.py`) + the notes, moved | About a third of a session |
+| Playlists | 224 → 143 | 659: page 314 + CSS 114 + API routes 140 + form controls 91 (`Form.tsx`, CSS 108 more) | 141 added to `playlist.py` (the preview builders) | About half a session |
 
 ### Overview notes (slice 1)
 
@@ -81,6 +81,31 @@ Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "i
 **Shared**
 - `genre.py` and `sql_examples.py` were moved, not rewritten. A scratch script ran the old view's functions (from `main`) and the new module over 6 genres × 3 ranges, and 51 artists' song lists: all identical. Every SQL example gives the same row count through the API as directly in SQLite.
 
+### Schema and Playlists notes (slice 3)
+
+**Easy in Streamlit**
+- Every Playlists control is one line: `st.multiselect`, a two-thumb `st.slider`, `st.date_input` for a range, `st.toggle`, `st.progress`. The TypeScript app needed a new `Form.tsx` for the slider, range slider and day chips.
+- `st.stop()` after a warning. It is the simplest way to say "nothing more to show".
+- Progress during Spotify matching is a callback that updates a widget, in the same process.
+
+**Hard in Streamlit**
+- The Schema map already had to leave Streamlit: it is a custom component (`map.js`, `map.css`) living in a shadow root, with a trigger to send the layout back to Python. Of the five pages, it was the one Streamlit couldn't do on its own.
+- The preview logic was tangled with the widgets (each form function both drew controls and computed the playlist), so it couldn't be reused without first being pulled apart.
+
+**Easy in TypeScript**
+- The Schema map was already plain DOM code, so the port was mostly adding types. The same file now runs as a normal module, with no component bridge and no rerun to survive. Saving is a `PUT`, and the status shows the server's answer.
+- The form's state for each playlist type is kept while switching types; Streamlit forgets it.
+- Previews refetch 250 ms after the last change, so dragging a slider doesn't fire a query per step.
+
+**Hard in TypeScript**
+- Server-sent events over `POST`: `EventSource` only does `GET`, so the client reads the stream by hand and parses `event:`/`data:` blocks. On the server, `match_tracks` reports progress through a callback, so it runs in a thread that feeds a queue the response streams from.
+- A range slider is two `<input type="range">` stacked, with CSS so only the thumbs take the pointer.
+- `map.css` used `:host` (shadow DOM). In the app it is regenerated with every selector scoped to `.schema-map`, so its generic class names (`.card`, `.bar`) can't leak into other pages.
+
+**Shared**
+- The preview builders (`preview_slot`, `preview_discoveries`, `preview_binges`) were checked against the old view: a scratch script ran the old view's code with a stub Streamlit for 141 form settings (days, hours including past midnight, spans, years, orders, windows, minimum plays), and every playlist, preview, name, description, warning and note was identical.
+- The layout file is shared: a card moved in either app shows up in the other, and "Reset layout" in one resets both.
+
 ## Same-change test
 
 _Added after all pages are done: one identical small change made in both apps._
@@ -91,7 +116,11 @@ _Time until each page's figures appear, both apps, same inputs._
 
 | Page | Streamlit | TypeScript | Notes |
 |---|---|---|---|
-| Overview: open (warm server) | 0.32–0.50 s | 0.27 s | headless Chrome, same machine; until KPIs and first chart are on screen |
-| Overview: click a month | 0.22 s | 0.21 s | until the caption shows the month |
+| Overview: open (warm server) | 0.24–0.50 s | 0.27–0.35 s | until the KPIs and the first chart are on screen |
+| Overview: click a month | 0.22 s | 0.21 s | until the caption shows the month (slice 1) |
+| Genre (all time, top genre) | 0.59–0.66 s | 0.49–1.07 s | until the artist rows are on screen. The API reads the genre's plays from SQLite on every request; Streamlit caches them, so its time is steadier |
+| SQL | 0.30–0.33 s | ≤ 0.12 s | until the editor is on screen (the TS figure is the page load, the earliest the check can run) |
+| Schema | 0.26–0.29 s | ≤ 0.12 s | until the first card is on screen |
+| Playlists (time slot defaults) | 1.12–1.16 s | 1.13–1.26 s | until the preview rows are on screen; both are dominated by `rank_tracks`, which neither app caches |
 
-With the data cached, the two are equally quick. Speed is not a reason to pick either one. The full table, measured the same way for every page, comes in slice 3.
+Measured in Chrome on the owner's machine with both servers warm, three runs each (the first run after a restart is dropped). The two are about equally quick. Pages that only need the shell (SQL, Schema) appear sooner in TypeScript, because Streamlit waits for its websocket and a script run first. Speed is not a reason to pick either one.
