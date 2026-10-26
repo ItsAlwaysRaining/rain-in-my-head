@@ -128,12 +128,15 @@ class SpotifyClient:
             self._token = _save_token(self.token_path, resp.json(), self._token)
         return self._token["access_token"]
 
+    def _throttle(self) -> None:
+        wait = self._min_interval - (time.monotonic() - self._last_request)
+        if wait > 0:
+            time.sleep(wait)
+        self._last_request = time.monotonic()
+
     def request(self, method: str, path: str, **kwargs) -> dict:
         for attempt in range(6):
-            wait = self._min_interval - (time.monotonic() - self._last_request)
-            if wait > 0:
-                time.sleep(wait)
-            self._last_request = time.monotonic()
+            self._throttle()
             resp = self._http.request(
                 method, path, headers={"Authorization": f"Bearer {self._access_token()}"}, **kwargs
             )

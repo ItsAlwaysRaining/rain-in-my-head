@@ -94,29 +94,23 @@ class LastfmClient:
                 return
             page += 1
 
-    def track_info(self, artist: str, track: str) -> dict | None:
+    def _lookup(self, method: str, result_key: str, **params: Any) -> dict | None:
+        """One autocorrected lookup's result, or None if Last.fm doesn't know it."""
         try:
-            return self.call("track.getInfo", artist=artist, track=track, autocorrect=1)["track"]
+            return self.call(method, autocorrect=1, **params)[result_key]
         except LastfmError as e:
             if e.code in NOT_FOUND_ERRORS:
                 return None
             raise
+
+    def track_info(self, artist: str, track: str) -> dict | None:
+        return self._lookup("track.getInfo", "track", artist=artist, track=track)
 
     def artist_info(self, artist: str) -> dict | None:
-        try:
-            return self.call("artist.getInfo", artist=artist, autocorrect=1)["artist"]
-        except LastfmError as e:
-            if e.code in NOT_FOUND_ERRORS:
-                return None
-            raise
+        return self._lookup("artist.getInfo", "artist", artist=artist)
 
     def artist_top_tags(self, artist: str) -> list[dict]:
-        try:
-            tags = self.call("artist.getTopTags", artist=artist, autocorrect=1)["toptags"].get("tag", [])
-        except LastfmError as e:
-            if e.code in NOT_FOUND_ERRORS:
-                return []
-            raise
+        tags = (self._lookup("artist.getTopTags", "toptags", artist=artist) or {}).get("tag", [])
         return [tags] if isinstance(tags, dict) else tags
 
 

@@ -1,7 +1,8 @@
 """Cache Last.fm track/artist info and artist tags for everything in `scrobbles`.
 
-Most-played items are fetched first, results are committed in small batches, and
-anything already cached is skipped, so this can be stopped and resumed at any time.
+Most-played items are fetched first, each result is committed as soon as it arrives (so other
+tools never wait long for the write lock), and anything already cached is skipped, so this can
+be stopped and resumed at any time.
 """
 
 from __future__ import annotations
@@ -20,7 +21,7 @@ TAG_STOPLIST = {
     "awesome", "beautiful", "cool", "amazing", "albums i own", "my favorites", "spotify",
     "under 2000 listeners", "all", "music", "good",
 }
-COMMIT_EVERY = 1  # commit per item so other tools never wait long for the write lock
+PROGRESS_EVERY = 250
 
 
 def _int(value) -> int | None:
@@ -52,11 +53,9 @@ def enrich_tracks(conn: sqlite3.Connection, client: LastfmClient, limit: int | N
                 int(time.time()),
             ),
         )
-        if i % COMMIT_EVERY == 0:
-            conn.commit()
-        if i % 250 == 0:
+        conn.commit()
+        if i % PROGRESS_EVERY == 0:
             print(f"  tracks: {i}/{len(todo)}")
-    conn.commit()
     return len(todo)
 
 
@@ -74,10 +73,11 @@ def enrich_artists(conn: sqlite3.Connection, client: LastfmClient, limit: int | 
     for i, (artist_key, artist) in enumerate(todo, 1):
         info = client.artist_info(artist) or {}
         stats = info.get("stats", {})
+        weighted = ((t["name"].strip().lower(), int(t.get("count", 0))) for t in client.artist_top_tags(artist))
         tags = [
-            (artist_key, t["name"].strip().lower(), int(t.get("count", 0)))
-            for t in client.artist_top_tags(artist)
-            if int(t.get("count", 0)) >= MIN_TAG_WEIGHT and t["name"].strip().lower() not in TAG_STOPLIST
+            (artist_key, tag, weight)
+            for tag, weight in weighted
+            if weight >= MIN_TAG_WEIGHT and tag not in TAG_STOPLIST
         ][:MAX_TAGS_PER_ARTIST]
         conn.execute(
             "INSERT OR REPLACE INTO artists VALUES (?,?,?,?,?,?)",
@@ -88,11 +88,9 @@ def enrich_artists(conn: sqlite3.Connection, client: LastfmClient, limit: int | 
         )
         conn.execute("DELETE FROM artist_tags WHERE artist_key = ?", (artist_key,))
         conn.executemany("INSERT OR IGNORE INTO artist_tags VALUES (?,?,?)", tags)
-        if i % COMMIT_EVERY == 0:
-            conn.commit()
-        if i % 250 == 0:
+        conn.commit()
+        if i % PROGRESS_EVERY == 0:
             print(f"  artists: {i}/{len(todo)}")
-    conn.commit()
     return len(todo)
 
 
@@ -102,5 +100,4 @@ def enrich(client: LastfmClient, db_path: Path, limit: int | None = None) -> Non
         enrich_artists(conn, client, limit)
         enrich_tracks(conn, client, limit)
     finally:
-        conn.commit()
         conn.close()
