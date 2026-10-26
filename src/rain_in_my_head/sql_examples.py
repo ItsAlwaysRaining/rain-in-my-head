@@ -5,10 +5,12 @@ Queries run on a read-only connection, so a stray UPDATE/DELETE can't damage the
 
 from __future__ import annotations
 
-import sqlite3
+from contextlib import closing
 from pathlib import Path
 
 import pandas as pd
+
+from .build import connect_readonly
 
 EXAMPLES = {
     "Top artists this year": """SELECT artist_name, COUNT(*) AS plays, ROUND(SUM(est_minutes) / 60, 1) AS hours
@@ -35,13 +37,9 @@ FROM v_plays GROUP BY genre ORDER BY plays DESC LIMIT 30""",
 }
 
 
-def connect_readonly(db_path: Path) -> sqlite3.Connection:
-    return sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
-
-
 def schema(db_path: Path) -> pd.DataFrame:
     """Every table and view with its columns: `object` ("name (kind)"), `column`, `type`."""
-    with connect_readonly(db_path) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         objects = conn.execute(
             "SELECT name, type FROM sqlite_master WHERE type IN ('table', 'view') ORDER BY type DESC, name"
         ).fetchall()
@@ -54,5 +52,5 @@ def schema(db_path: Path) -> pd.DataFrame:
 
 def run_readonly(db_path: Path, sql: str) -> pd.DataFrame:
     """The query's result. Raises the database's error for invalid SQL or an attempted write."""
-    with connect_readonly(db_path) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         return pd.read_sql(sql, conn)

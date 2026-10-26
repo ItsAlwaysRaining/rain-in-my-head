@@ -34,6 +34,8 @@ def cmd_enrich(args) -> None:
 
 
 def cmd_stats(args) -> None:
+    from .build import MIN_PLAYED_AT
+
     if not config.DB_PATH.exists():
         raise SystemExit("No database yet. Run `rain-in-my-head build` first.")
     conn = sqlite3.connect(config.DB_PATH)
@@ -43,7 +45,7 @@ def cmd_stats(args) -> None:
         "SELECT COUNT(*), date(MIN(played_at),'unixepoch'), date(MAX(played_at),'unixepoch') FROM scrobbles"
     )[0]
     print(f"Scrobbles: {n}  ({first} → {last})")
-    (bad,), = q("SELECT COUNT(*) FROM scrobbles WHERE played_at < 946684800")
+    (bad,), = q(f"SELECT COUNT(*) FROM scrobbles WHERE played_at < {MIN_PLAYED_AT}")
     if bad:
         print(f"  {bad} have placeholder timestamps before 2000 and are excluded from v_plays/dashboard")
     (tracks, artists), = q("SELECT COUNT(DISTINCT track_key), COUNT(DISTINCT artist_key) FROM scrobbles")
@@ -57,11 +59,11 @@ def cmd_stats(args) -> None:
 
     # Same track scrobbled 20+ times within 5 minutes is almost certainly junk.
     bursts = q(
-        """SELECT datetime(MIN(played_at),'unixepoch'), artist_name, track_name, MAX(n) FROM (
+        f"""SELECT datetime(MIN(played_at),'unixepoch'), artist_name, track_name, MAX(n) FROM (
              SELECT played_at, artist_name, track_name, track_key,
                     COUNT(*) OVER (PARTITION BY track_key ORDER BY played_at
                                    RANGE BETWEEN CURRENT ROW AND 300 FOLLOWING) AS n
-             FROM scrobbles WHERE played_at >= 946684800)
+             FROM scrobbles WHERE played_at >= {MIN_PLAYED_AT})
            WHERE n >= 20 GROUP BY track_key, played_at / 3600 ORDER BY 4 DESC LIMIT 10"""
     )
     if bursts:

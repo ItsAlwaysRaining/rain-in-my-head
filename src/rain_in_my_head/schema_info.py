@@ -10,12 +10,12 @@ from __future__ import annotations
 import json
 import math
 import os
-import sqlite3
 import tempfile
 from contextlib import closing
 from pathlib import Path
 
 from rain_in_my_head import schema_notes as notes
+from rain_in_my_head.build import connect_readonly
 
 MAP_W, MAP_H = 1880, 2400
 CARD_W = 300
@@ -32,7 +32,7 @@ def _quote(name: str) -> str:
 
 def read_schema(db_path: Path) -> list[dict]:
     """Tables and views with their columns, and row counts for tables."""
-    with closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         objects = conn.execute(
             "SELECT name, type FROM sqlite_master"
             " WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' ORDER BY name"

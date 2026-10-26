@@ -12,9 +12,15 @@ from pathlib import Path
 
 import pandas as pd
 
+from .build import MIN_PLAYED_AT
+
 # Last.fm's grey-star "no image" picture.
 PLACEHOLDER = "2a96cbd8b46e442fc41c2b86b821562f"
 ALL_TIME_START = "2000-01-01"
+# The columns every play list here reads from `scrobbles s` (also used by rain_in_my_head.artist).
+PLAY_COLUMNS = f"""s.artist_key, s.artist_name, s.track_key, s.track_name, s.album_name,
+    date(s.played_at, 'unixepoch', 'localtime') AS day,
+    CASE WHEN s.image_url LIKE '%{PLACEHOLDER}%' THEN NULL ELSE s.image_url END AS image_url"""
 
 
 def thumb(url: str, size: str = "64s") -> str:
@@ -36,14 +42,13 @@ def genre_plays(db_path: Path, genre: str, start: str, end: str) -> pd.DataFrame
     """One row per play of an artist whose primary genre is `genre`, between ISO dates `start` and `end`."""
     with sqlite3.connect(db_path) as conn:
         return pd.read_sql(
-            """SELECT s.artist_key, s.artist_name, s.track_key, s.track_name, s.album_name,
-                      CASE WHEN s.image_url LIKE ? THEN NULL ELSE s.image_url END AS image_url
-               FROM scrobbles s JOIN v_artist_genre g USING (artist_key)
-               WHERE g.primary_genre = ?
-                 AND s.played_at >= 946684800  -- same placeholder-timestamp cut as v_plays
-                 AND date(s.played_at, 'unixepoch', 'localtime') BETWEEN ? AND ?""",
+            f"""SELECT {PLAY_COLUMNS}
+                FROM scrobbles s JOIN v_artist_genre g USING (artist_key)
+                WHERE g.primary_genre = ?
+                  AND s.played_at >= {MIN_PLAYED_AT}
+                  AND date(s.played_at, 'unixepoch', 'localtime') BETWEEN ? AND ?""",
             conn,
-            params=(f"%{PLACEHOLDER}%", genre, start, end),
+            params=(genre, start, end),
         )
 
 
