@@ -306,11 +306,6 @@ def _connect() -> sqlite3.Connection:
     return sqlite3.connect(config.DB_PATH, timeout=30)
 
 
-def _play_bounds(conn: sqlite3.Connection) -> tuple[date, date]:
-    first, last = conn.execute("SELECT MIN(date(played_local)), MAX(date(played_local)) FROM v_plays").fetchone()
-    return pd.Timestamp(first).date(), pd.Timestamp(last).date()
-
-
 @functools.lru_cache(maxsize=16)
 def _binges(db_mtime: float, min_plays: int, window_days: int, since: int, until: int) -> pd.DataFrame:
     with sqlite3.connect(config.DB_PATH, timeout=30) as conn:
@@ -320,7 +315,7 @@ def _binges(db_mtime: float, min_plays: int, window_days: int, since: int, until
 @app.get("/api/playlists/meta")
 def playlists_meta() -> dict:
     with _connect() as conn:
-        first, last = _play_bounds(conn)
+        first, last = pl.play_bounds(conn)
     return {
         "first": first.isoformat(), "last": last.isoformat(),
         "weekdays": pl.WEEKDAY_FULL, "spans": pl.SPANS, "rank_by": pl.RANK_BY,
@@ -356,7 +351,7 @@ class PlaylistRequest(BaseModel):
 
 def _preview(body: PlaylistRequest) -> pl.Preview:
     with _connect() as conn:
-        first, last = _play_bounds(conn)
+        first, last = pl.play_bounds(conn)
         if body.kind == "slot":
             if body.span not in pl.SPANS or any(d not in pl.WEEKDAY_FULL for d in body.days):
                 raise HTTPException(422, "Unknown span or weekday")
@@ -410,13 +405,10 @@ def playlists_create(body: CreateRequest) -> StreamingResponse:
             client = SpotifyClient(config.spotify_client_id(), config.SPOTIFY_TOKEN_PATH)
             conn = connect(config.DB_PATH)  # ensures the spotify_matches cache table exists
             events.put(_event("progress", {"fraction": 0.0, "message": "Matching tracks on Spotify…"}))
-            matched = pl.match_tracks(conn, client, p.ranked, p.size,
-                                      progress=lambda f, msg: events.put(_event("progress", {"fraction": f, "message": msg})))
-            hits = matched[matched["spotify_uri"].notna()]
-            if p.reorder:
-                hits = p.reorder(hits)
-            url = client.create_playlist(body.name, p.description, list(hits["spotify_uri"]), public=body.public)
-            misses = matched[matched["spotify_uri"].isna()]
+            url, hits, misses = pl.create_on_spotify(
+                conn, client, p.ranked, p.size, body.name, p.description, p.reorder, public=body.public,
+                progress=lambda f, msg: events.put(_event("progress", {"fraction": f, "message": msg})),
+            )
             events.put(_event("done", {"url": url, "name": body.name, "count": len(hits),
                                        "misses": _records(misses, {"artist": "artist", "track": "track"})}))
         except (SpotifyAuthError, SystemExit) as e:
