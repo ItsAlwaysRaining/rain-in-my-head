@@ -4,17 +4,16 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { fetchSqlMeta, runSql, type SqlCell } from "../api";
 import { DataTable, type Column } from "../components/DataTable";
-import { ErrorState, Notice } from "../components/ui";
+import { ErrorState, Loading, Notice } from "../components/ui";
+import { formatCount } from "../format";
 import styles from "./Sql.module.css";
-
-const count = new Intl.NumberFormat("en-GB");
 
 /** A cell as pandas prints it: floats keep their ".0" (JSON drops it). */
 const show = (value: SqlCell, isFloat: boolean) =>
   value === null ? "" : isFloat && typeof value === "number" && Number.isInteger(value) ? value.toFixed(1) : String(value);
 
 /** The CSV pandas `to_csv(index=False)` writes: fields quoted only when they hold a comma, quote or newline. */
-export function toCsv(columns: string[], rows: SqlCell[][], floats: Set<number>): string {
+function toCsv(columns: string[], rows: SqlCell[][], floats: Set<number>): string {
   const field = (text: string) => (/[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text);
   const lines = [columns.map(field), ...rows.map((row) => row.map((v, i) => field(show(v, floats.has(i)))))];
   return lines.map((line) => line.join(",")).join("\n") + "\n";
@@ -45,7 +44,7 @@ export default function Sql() {
           <ErrorState error={meta.error} />
         </div>
       ) : !meta.data ? (
-        <p className="caption">Loading…</p>
+        <Loading />
       ) : (
         <div className={styles.stack}>
           <details className={styles.expander}>
@@ -132,7 +131,7 @@ function Result({ columns, floatColumns, rows, rowCount }: { columns: string[]; 
 
   return (
     <div className={styles.stack}>
-      <p className="caption">{count.format(rowCount)} rows</p>
+      <p className="caption">{formatCount(rowCount)} rows</p>
       <DataTable rows={records} columns={tableColumns} maxHeight={480} sortable />
       <div>
         <button className={styles.secondary} onClick={() => download("query.csv", toCsv(columns, rows, floats))}>

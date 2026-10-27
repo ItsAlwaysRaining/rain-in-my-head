@@ -27,13 +27,17 @@ export function sendJson<T>(method: "POST" | "PUT" | "DELETE", path: string, bod
   });
 }
 
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  let response: Response;
+/** fetch(), with a network failure reported as the service being down. */
+async function reach(url: string, init?: RequestInit): Promise<Response> {
   try {
-    response = await fetch(url, init);
+    return await fetch(url, init);
   } catch {
     throw new ApiError("unreachable", "The data service isn't running.");
   }
+}
+
+async function request<T>(url: string, init?: RequestInit): Promise<T> {
+  const response = await reach(url, init);
   if (response.status === 204) return undefined as T;
   // Vite's dev proxy answers 502/504 (or an HTML page) when the API is down.
   if ([502, 503, 504].includes(response.status) || !response.headers.get("content-type")?.includes("json")) {
@@ -311,12 +315,7 @@ export const previewPlaylist = (body: PlaylistRequest) => sendJson<PlaylistPrevi
 
 /** Creates the playlist, calling `onEvent` for each server-sent event until `done` or `error`. */
 export async function createPlaylist(body: PlaylistRequest & { name: string; public: boolean }, onEvent: (e: CreateEvent) => void) {
-  let response: Response;
-  try {
-    response = await fetch("/api/playlists/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
-  } catch {
-    throw new ApiError("unreachable", "The data service isn't running.");
-  }
+  const response = await reach("/api/playlists/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   if (!response.ok || !response.body) {
     const detail = await response.json().then((b) => b?.detail, () => null);
     throw new ApiError("http", typeof detail === "string" ? detail : `Request failed (${response.status})`);

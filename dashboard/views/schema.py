@@ -6,6 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import streamlit as st
+from shared import require_db
 
 from rain_in_my_head import config
 from rain_in_my_head import schema_info as si
@@ -35,16 +36,13 @@ def build_data(schema: list[dict], saved: dict[str, dict]) -> dict:
     return {**si.build_data(schema, saved), "status": st.session_state.get("schema_status", "")}
 
 
-if not config.DB_PATH.exists():
-    st.info("No database yet. Run `uv run rain-in-my-head build` first.")
-    st.stop()
-
+mtime = require_db()
 st.caption(
     "Every table and view in `listening.db`. Drag a card by its header to move it; "
     "the layout is saved for next time. Hover over a card to see what it links to."
 )
 
-schema = read_schema(config.DB_PATH.stat().st_mtime)
+schema = read_schema(mtime)
 if not schema:
     st.info("The database has no tables yet. Run `uv run rain-in-my-head build` first.")
     st.stop()

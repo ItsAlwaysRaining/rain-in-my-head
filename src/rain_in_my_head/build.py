@@ -8,6 +8,8 @@ import sqlite3
 from pathlib import Path
 
 SCHEMA = Path(__file__).with_name("schema.sql")
+# Plays before 2000-01-01 are old imports with placeholder timestamps; v_plays (schema.sql) leaves them out too.
+MIN_PLAYED_AT = 946684800
 
 # Version tags that shouldn't split a song's play count, e.g. "Song - Remastered 2011",
 # "Song (feat. X)", "Song - Radio Edit". Live versions are left as distinct tracks.
@@ -42,6 +44,11 @@ def connect(db_path: Path) -> sqlite3.Connection:
         pass  # switching modes needs a moment with no other connections; it sticks once set
     conn.executescript(SCHEMA.read_text())
     return conn
+
+
+def connect_readonly(db_path: Path) -> sqlite3.Connection:
+    """A connection that can't write, so a stray UPDATE/DELETE can't damage the database."""
+    return sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
 
 
 def build(raw_dir: Path, db_path: Path) -> int:

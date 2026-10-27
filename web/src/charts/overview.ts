@@ -2,16 +2,15 @@
 // dashboard/views/overview.py so the two dashboards start out looking alike.
 import type { TopLevelSpec } from "vega-lite";
 import type { GenrePanel, InnerGrain, NamePlays, OverTimeRow } from "../api";
+import { capitalize } from "../format";
 import { RAIN, RAIN_DIM, RAIN_RAMP, PAGE, NIGHT } from "./config";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const LISTENER_LABELS = ["<10k", "10k–100k", "100k–1M", "1M–5M", "5M+"];
 const BAR = { type: "bar", cornerRadiusEnd: 4, color: RAIN } as const;
 
-const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1);
-
 /** "YYYY-MM-DD" as local midnight; a bare date would be read as UTC and could show the day before. */
-export const localDates = <T extends { start: string }>(rows: T[]) =>
+const localDates = <T extends { start: string }>(rows: T[]) =>
   rows.map((r) => ({ ...r, start: r.start.length === 10 ? `${r.start}T00:00:00` : r.start }));
 
 export function overTime(rows: OverTimeRow[], measure: "scrobbles" | "hours", grain: string, selected: string | null): TopLevelSpec {

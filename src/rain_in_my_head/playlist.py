@@ -20,6 +20,21 @@ import pandas as pd
 WEEKDAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 WEEKDAY_FULL = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 SHRINK = 10  # pseudo-plays pulling each track's lift toward 1
+CREDIT = "Made from my Last.fm history."
+
+# Playlist orders for binges. Songs binged more than once sit at their first binge when
+# oldest-first and at their most recent binge when newest-first.
+BINGE_ORDERS = {
+    "oldest": "in the order I binged them",
+    "newest": "most recent binges first",
+    "biggest": "biggest binges first",
+}
+
+
+def play_bounds(conn: sqlite3.Connection) -> tuple[date, date]:
+    """The first and last local day with a play."""
+    first, last = conn.execute("SELECT MIN(date(played_local)), MAX(date(played_local)) FROM v_plays").fetchone()
+    return pd.Timestamp(first).date(), pd.Timestamp(last).date()
 
 
 @dataclass
@@ -44,7 +59,7 @@ class Slot:
         span = ""
         if self.since or self.until:
             span = f", {self.since or 'start'} to {self.until or 'now'}"
-        return f"Tracks distinctive to {self.label()}{span}. Made from my Last.fm history."
+        return f"Tracks distinctive to {self.label()}{span}. {CREDIT}"
 
 
 def _h(hour: int) -> str:
@@ -111,6 +126,11 @@ def discoveries(conn: sqlite3.Connection, year: int, min_plays: int = 2, rank_by
     metric = "year_plays" if rank_by == "year" else "total_plays"
     df = df[df[metric] >= min_plays]
     return df.sort_values([metric, "first_played"], ascending=[False, True]).reset_index(drop=True)
+
+
+def discoveries_description(year: int, rank_by: str) -> str:
+    picked = "plays that year" if rank_by == "year" else "plays since"
+    return f"Songs I first heard in {year}, picked by {picked}. {CREDIT}"
 
 
 def binges(
@@ -180,13 +200,9 @@ def binge_tracks(episodes: pd.DataFrame) -> pd.DataFrame:
     return tracks.sort_values(["peak_plays", "first_binge"], ascending=[False, True]).reset_index(drop=True)
 
 
-# Playlist orders for binges. Songs binged more than once sit at their first binge when
-# oldest-first and at their most recent binge when newest-first.
-BINGE_ORDERS = {
-    "oldest": "in the order I binged them",
-    "newest": "most recent binges first",
-    "biggest": "biggest binges first",
-}
+def binges_description(min_plays: int, window_days: int, order: str) -> str:
+    window = "a day" if window_days == 1 else f"{window_days} days"
+    return f"Songs I played {min_plays}+ times within {window}, {BINGE_ORDERS[order]}. {CREDIT}"
 
 
 def order_binge_tracks(tracks: pd.DataFrame, order: str) -> pd.DataFrame:
@@ -244,6 +260,23 @@ def match_tracks(conn: sqlite3.Connection, client, ranked: pd.DataFrame, want: i
         if progress:
             progress(min(matched / want, 1.0), f"Matched {matched}/{want} (checked {i + 1})")
     return pd.DataFrame(out)
+
+
+def create_on_spotify(
+    conn: sqlite3.Connection, client, ranked: pd.DataFrame, size: int, name: str, description: str,
+    reorder: Callable[[pd.DataFrame], pd.DataFrame] | None = None, public: bool = False, progress=None,
+) -> tuple[str, pd.DataFrame, pd.DataFrame]:
+    """Match `ranked` on Spotify until `size` tracks match, then create the playlist.
+
+    Returns (playlist URL, the tracks added, the tracks with no match). Matching walks the
+    ranking, so a miss is replaced by the next-ranked track; `reorder` then sets the play order.
+    """
+    matched = match_tracks(conn, client, ranked, size, progress)
+    hits = matched[matched["spotify_uri"].notna()]
+    if reorder:
+        hits = reorder(hits)
+    url = client.create_playlist(name, description, list(hits["spotify_uri"]), public=public)
+    return url, hits, matched[matched["spotify_uri"].isna()]
 
 
 # ---- Previews ------------------------------------------------------------------
@@ -343,11 +376,10 @@ def preview_discoveries(
         "total_plays": Column("Plays ever", "number"),
         "last_played": Column("Last played"),
     }
-    desc = f"Songs I first heard in {year}, picked by {'plays that year' if rank_by == 'year' else 'plays since'}."
     # Match in ranking order (so misses are replaced by the next best), then play in discovery order.
     by_date = order == "Order discovered"
     display = ranked.head(size).sort_values("first_played") if by_date else None
-    return Preview(ranked, size, title, desc + " Made from my Last.fm history.", columns, title=title,
+    return Preview(ranked, size, title, discoveries_description(year, rank_by), columns, title=title,
                    display=display, reorder=(lambda hits: hits.sort_values("first_played")) if by_date else None,
                    note=note, caption=_candidates(ranked, size))
 
@@ -373,11 +405,10 @@ def preview_binges(
         "binge_count": Column("Binges", "number", "How many separate times you binged this song"),
         "total_plays": Column("Plays ever", "number"),
     }
-    window = "a day" if window_days == 1 else f"{window_days} days"
-    description = f"Songs I played {min_plays}+ times within {window}, {BINGE_ORDERS[order]}. Made from my Last.fm history."
     full_range = (years[0], years[1]) == (first.year, last.year)
     caption = f"{len(episodes):,} binges across {len(ranked):,} songs; showing the top {min(size, len(ranked))} songs."
-    return Preview(ranked, size, "Binged" if full_range else f"Binged {span}", description, columns, title=title,
+    return Preview(ranked, size, "Binged" if full_range else f"Binged {span}",
+                   binges_description(min_plays, window_days, order), columns, title=title,
                    display=display, reorder=lambda hits: order_binge_tracks(hits, order), caption=caption)
 
 

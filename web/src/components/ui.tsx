@@ -1,16 +1,17 @@
-// Small building blocks: KPI, tabs, segmented control, notices, and the page-level error states.
+// Small building blocks: KPI, tabs, segmented control, radios, notices, the back link, and the
+// page-level loading and error states.
 import { useState, type ReactNode } from "react";
+import { Link } from "react-router";
 import { ApiError } from "../api";
+import { formatCount } from "../format";
 import styles from "./ui.module.css";
-
-const numberFormat = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 });
 
 export function Kpi({ label, value, delta, help }: { label: string; value: number; delta: number | null; help?: string }) {
   const rounded = delta === null ? null : Math.round(delta * 100);
   return (
     <div className={styles.kpi} title={help}>
       <div className={styles.kpiLabel}>{label}</div>
-      <div className={styles.kpiValue}>{numberFormat.format(value)}</div>
+      <div className={styles.kpiValue}>{formatCount(value)}</div>
       {rounded !== null && (
         <div className={`${styles.delta} ${delta! < 0 ? styles.down : styles.up}`}>
           {delta! < 0 ? "↓" : "↑"} {rounded > 0 ? "+" : ""}
@@ -98,6 +99,19 @@ export function RadioGroup<T extends string>({
 
 export function Notice({ tone = "info", children }: { tone?: "info" | "success" | "warning" | "error"; children: ReactNode }) {
   return <div className={`${styles.notice} ${styles[tone]}`}>{children}</div>;
+}
+
+/** The "← Overview" link at the top of the pages opened from the Overview. */
+export function BackToOverview() {
+  return (
+    <Link to="/" className={styles.back}>
+      ← Overview
+    </Link>
+  );
+}
+
+export function Loading({ text = "Loading…" }: { text?: string }) {
+  return <p className="caption">{text}</p>;
 }
 
 /** The message for a failed request: missing database, API not running, or anything else. */

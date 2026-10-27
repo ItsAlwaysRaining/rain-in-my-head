@@ -2,13 +2,13 @@
 // (rain_in_my_head.genre). Opened from an Overview genre panel with ?genre=&start=&end=.
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { fetchGenre, fetchGenreSongs, type GenreArtist, type GenreParams } from "../api";
+import { artistColumns, songColumns } from "../components/columns";
 import { DataTable } from "../components/DataTable";
-import { ErrorState, Notice } from "../components/ui";
+import { BackToOverview, ErrorState, Loading, Notice } from "../components/ui";
+import { formatCount } from "../format";
 import styles from "./Genre.module.css";
-
-const count = new Intl.NumberFormat("en-GB");
 
 /** Python's str.title(): "hip-hop" -> "Hip-Hop". */
 const title = (s: string) => s.replace(/[a-z]+/gi, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase());
@@ -36,7 +36,7 @@ export default function Genre() {
         </div>
       </>
     );
-  if (!data) return <p className="caption">Loading…</p>;
+  if (!data) return <Loading />;
   if (data.genre === null)
     return (
       <>
@@ -52,9 +52,7 @@ export default function Genre() {
   const range = { genre: data.genre, start: asked.start, end: asked.end };
   return (
     <>
-      <Link to="/" className={styles.back}>
-        ← Overview
-      </Link>
+      <BackToOverview />
       <label className={styles.select}>
         Genre
         <select
@@ -75,7 +73,7 @@ export default function Genre() {
 
       <h1 className={styles.title}>{title(data.genre)}</h1>
       <p className="caption">
-        {data.range_label} · {count.format(data.plays)} plays · artists whose top Last.fm tag is “{data.genre}”
+        {data.range_label} · {formatCount(data.plays)} plays · artists whose top Last.fm tag is “{data.genre}”
       </p>
 
       {data.artists.length === 0 ? (
@@ -96,17 +94,7 @@ function Columns({ artists, range }: { artists: GenreArtist[]; range: GenreParam
     <div className={styles.columns}>
       <section>
         <h2 className={styles.subheader}>Artists</h2>
-        <DataTable
-          rows={artists}
-          columns={[
-            { key: "thumb", label: "", kind: "image", width: "64px" },
-            { key: "name", label: "Artist" },
-            { key: "plays", label: "Plays", kind: "number" },
-          ]}
-          maxHeight={640}
-          onRowClick={(_, i) => setPicked(i)}
-          selectedIndex={picked}
-        />
+        <DataTable rows={artists} columns={artistColumns()} maxHeight={640} onRowClick={(_, i) => setPicked(i)} selectedIndex={picked} />
         <p className={`caption ${styles.hint}`}>Click an artist to see your songs by them.</p>
       </section>
 
@@ -140,26 +128,11 @@ function Songs({ artist, range }: { artist: GenreArtist; range: GenreParams & { 
         <div>
           <h2 className={styles.subheader}>{artist.name}</h2>
           <p className="caption">
-            {count.format(artist.plays)} plays in {range.genre}
+            {formatCount(artist.plays)} plays in {range.genre}
           </p>
         </div>
       </div>
-      {query.error ? (
-        <ErrorState error={query.error} />
-      ) : !data ? (
-        <p className="caption">Loading…</p>
-      ) : (
-        <DataTable
-          rows={data.songs}
-          columns={[
-            { key: "thumb", label: "", kind: "image", width: "64px" },
-            { key: "name", label: "Song" },
-            { key: "album", label: "Album" },
-            { key: "plays", label: "Plays", kind: "number" },
-          ]}
-          maxHeight={520}
-        />
-      )}
+      {query.error ? <ErrorState error={query.error} /> : !data ? <Loading /> : <DataTable rows={data.songs} columns={songColumns()} maxHeight={520} />}
     </>
   );
 }

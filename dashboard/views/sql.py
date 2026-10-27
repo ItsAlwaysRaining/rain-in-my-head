@@ -4,12 +4,10 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
+from shared import require_db
 
 from rain_in_my_head import config
 from rain_in_my_head import sql_examples as sq
-from rain_in_my_head.sql_examples import EXAMPLES
-
-st.title("SQL")
 
 
 @st.cache_data
@@ -17,16 +15,15 @@ def schema(db_mtime: float) -> pd.DataFrame:
     return sq.schema(config.DB_PATH)
 
 
-if not config.DB_PATH.exists():
-    st.info("No database yet. Run `uv run rain-in-my-head build` first.")
-    st.stop()
+st.title("SQL")
+mtime = require_db()
 
 with st.expander("Tables and columns — start with `v_plays` (one row per play, everything joined)"):
-    st.dataframe(schema(config.DB_PATH.stat().st_mtime), hide_index=True, width="stretch", height=350)
+    st.dataframe(schema(mtime), hide_index=True, width="stretch", height=350)
 
-example = st.selectbox("Examples", list(EXAMPLES), index=None, placeholder="Load an example query…")
+example = st.selectbox("Examples", list(sq.EXAMPLES), index=None, placeholder="Load an example query…")
 if example and st.session_state.get("loaded_example") != example:
-    st.session_state["sql"] = EXAMPLES[example]
+    st.session_state["sql"] = sq.EXAMPLES[example]
     st.session_state["loaded_example"] = example
 
 sql = st.text_area("Query", key="sql", height=200, placeholder="SELECT * FROM v_plays ORDER BY played_at DESC LIMIT 20")

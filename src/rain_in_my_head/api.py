@@ -30,7 +30,6 @@ from rain_in_my_head import schema_info as si
 from rain_in_my_head import sql_examples as sq
 
 WEB_DIST = config.ROOT / "web" / "dist"
-NO_DATABASE = "No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`."
 PRESET_NAMES = {"last30": "Last 30 days", "last12m": "Last 12 months", "ytd": "This year", "all": "All time", "custom": "Custom"}
 
 app = FastAPI(title="Rain in My Head", docs_url="/api/docs", openapi_url="/api/openapi.json")
@@ -42,7 +41,7 @@ class NoDatabase(Exception):
 
 @app.exception_handler(NoDatabase)
 def _no_database(request: Request, exc: NoDatabase) -> JSONResponse:
-    return JSONResponse({"error": "no_database", "message": NO_DATABASE}, status_code=503)
+    return JSONResponse({"error": "no_database", "message": config.NO_DATABASE}, status_code=503)
 
 
 def _require_db() -> None:
@@ -67,8 +66,10 @@ def _value(v):
     return v
 
 
-def _records(df: pd.DataFrame, columns: dict[str, str]) -> list[dict]:
-    """Rows of `df` as dicts, keeping and renaming only `columns` (source -> output name)."""
+def _records(df: pd.DataFrame, columns: dict[str, str] | list[str]) -> list[dict]:
+    """Rows of `df` as dicts, keeping only `columns`: a list keeps names, a dict renames (source -> output)."""
+    if isinstance(columns, list):
+        columns = {c: c for c in columns}
     return [
         {out: _value(row[src]) for src, out in columns.items()}
         for row in df[list(columns)].astype(object).to_dict("records")
@@ -134,7 +135,7 @@ def overview(
         "empty": False,
         "kpis": [{"label": label, "value": _value(value), "delta": _value(change)}
                  for label, (value, change) in ov.kpis(df, ov.previous(data, start_, end_)).items()],
-        "top": {k: _records(v, {"name": "name", "plays": "plays"}) for k, v in top.items()},
+        "top": {k: _records(v, ["name", "plays"]) for k, v in top.items()},
         "top_per_year": _records(ov.top_per_year(data), {"year": "year", "artist_name": "artist", "plays": "plays", "share": "share"}),
         "heatmap": _records(ov.heatmap(df), {"weekday_name": "weekday", "hour": "hour", "plays": "plays"}),
         "new_artists": _records(ov.new_artists(data, start_, end_, inner), {"artist_first_play": "start", "new_artists": "count"}),
@@ -143,7 +144,7 @@ def overview(
             "label": ar.period_label(list_start, list_end),
             "start": list_start.isoformat(), "end": list_end.isoformat(),
             "artists": _records(ar.new_artists(config.DB_PATH, list_start, list_end),
-                                {"artist_key": "artist_key", "name": "name", "thumb": "thumb", "plays": "plays"}),
+                                ["artist_key", "name", "thumb", "plays"]),
         },
         "genres": None if genres is None else {
             "y_max": genres[1],
@@ -153,7 +154,7 @@ def overview(
                 for g in genres[0]
             ],
         },
-        "listener_buckets": None if genres is None else _records(ov.listener_buckets(df), {"bucket": "bucket", "share": "share"}),
+        "listener_buckets": None if genres is None else _records(ov.listener_buckets(df), ["bucket", "share"]),
         "loved": _records(ov.loved(data, df), {"artist_name": "artist", "track_name": "track", "plays": "plays"}),
         "coverage": _records(ov.coverage(df), {"Check": "check", "Coverage": "coverage"}),
     })
@@ -186,7 +187,7 @@ def genre(genre: str | None = None, start: date | None = None, end: date | None 
         "range_label": gn.range_label(start_, end_),
         "plays": len(plays),
         "artists": [] if plays.empty else _records(
-            gn.artists(plays), {"artist_key": "artist_key", "name": "name", "art": "art", "thumb": "thumb", "plays": "plays"}
+            gn.artists(plays), ["artist_key", "name", "art", "thumb", "plays"]
         ),
     }
 
@@ -306,11 +307,6 @@ def _connect() -> sqlite3.Connection:
     return sqlite3.connect(config.DB_PATH, timeout=30)
 
 
-def _play_bounds(conn: sqlite3.Connection) -> tuple[date, date]:
-    first, last = conn.execute("SELECT MIN(date(played_local)), MAX(date(played_local)) FROM v_plays").fetchone()
-    return pd.Timestamp(first).date(), pd.Timestamp(last).date()
-
-
 @functools.lru_cache(maxsize=16)
 def _binges(db_mtime: float, min_plays: int, window_days: int, since: int, until: int) -> pd.DataFrame:
     with sqlite3.connect(config.DB_PATH, timeout=30) as conn:
@@ -320,7 +316,7 @@ def _binges(db_mtime: float, min_plays: int, window_days: int, since: int, until
 @app.get("/api/playlists/meta")
 def playlists_meta() -> dict:
     with _connect() as conn:
-        first, last = _play_bounds(conn)
+        first, last = pl.play_bounds(conn)
     return {
         "first": first.isoformat(), "last": last.isoformat(),
         "weekdays": pl.WEEKDAY_FULL, "spans": pl.SPANS, "rank_by": pl.RANK_BY,
@@ -356,7 +352,7 @@ class PlaylistRequest(BaseModel):
 
 def _preview(body: PlaylistRequest) -> pl.Preview:
     with _connect() as conn:
-        first, last = _play_bounds(conn)
+        first, last = pl.play_bounds(conn)
         if body.kind == "slot":
             if body.span not in pl.SPANS or any(d not in pl.WEEKDAY_FULL for d in body.days):
                 raise HTTPException(422, "Unknown span or weekday")
@@ -380,7 +376,7 @@ def playlists_preview(body: PlaylistRequest) -> dict:
         **result,
         "info": p.info, "caption": p.caption, "name": p.name, "description": p.description,
         "columns": [{"key": k, "label": c.label, "kind": c.kind, "help": c.help} for k, c in p.columns.items()],
-        "rows": _records(p.rows, {k: k for k in p.columns}),
+        "rows": _records(p.rows, list(p.columns)),
         "candidate_count": len(p.ranked),
     }
 
@@ -410,15 +406,12 @@ def playlists_create(body: CreateRequest) -> StreamingResponse:
             client = SpotifyClient(config.spotify_client_id(), config.SPOTIFY_TOKEN_PATH)
             conn = connect(config.DB_PATH)  # ensures the spotify_matches cache table exists
             events.put(_event("progress", {"fraction": 0.0, "message": "Matching tracks on Spotify…"}))
-            matched = pl.match_tracks(conn, client, p.ranked, p.size,
-                                      progress=lambda f, msg: events.put(_event("progress", {"fraction": f, "message": msg})))
-            hits = matched[matched["spotify_uri"].notna()]
-            if p.reorder:
-                hits = p.reorder(hits)
-            url = client.create_playlist(body.name, p.description, list(hits["spotify_uri"]), public=body.public)
-            misses = matched[matched["spotify_uri"].isna()]
+            url, hits, misses = pl.create_on_spotify(
+                conn, client, p.ranked, p.size, body.name, p.description, p.reorder, public=body.public,
+                progress=lambda f, msg: events.put(_event("progress", {"fraction": f, "message": msg})),
+            )
             events.put(_event("done", {"url": url, "name": body.name, "count": len(hits),
-                                       "misses": _records(misses, {"artist": "artist", "track": "track"})}))
+                                       "misses": _records(misses, ["artist", "track"])}))
         except (SpotifyAuthError, SystemExit) as e:
             events.put(_event("error", {"message": str(e)}))
         except Exception as e:  # anything else still ends the stream with a message

@@ -136,3 +136,17 @@
   background: var(--coral-surface);
   color: var(--coral-strong);
 }
+
+.back {
+  display: inline-flex;
+  gap: var(--space-2);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.9rem;
+  padding: var(--space-1) var(--space-2);
+  margin-left: calc(-1 * var(--space-2));
+  border-radius: var(--radius);
+}
+.back:hover {
+  background: var(--surface-raised);
+}

@@ -6,20 +6,16 @@ import sqlite3
 
 import pandas as pd
 import streamlit as st
+from shared import require_db
 
 from rain_in_my_head import config
 from rain_in_my_head import playlist as pl
 from rain_in_my_head.build import connect
 
 st.title("Playlists")
-
-if not config.DB_PATH.exists():
-    st.info("No database yet. Run `uv run rain-in-my-head build` first.")
-    st.stop()
-
+mtime = require_db()
 conn = sqlite3.connect(config.DB_PATH, timeout=30)
-first, last = conn.execute("SELECT MIN(date(played_local)), MAX(date(played_local)) FROM v_plays").fetchone()
-first, last = pd.Timestamp(first).date(), pd.Timestamp(last).date()
+first, last = pl.play_bounds(conn)
 
 kind = st.segmented_control(
     "Playlist type", ["Time slot", "Discoveries by year", "Binged songs"], default="Time slot"
@@ -74,7 +70,7 @@ def binged() -> pl.Preview:
     with c2:
         size = st.slider("Playlist length", 10, 100, 50, step=5)
         order = st.radio("Playlist order", list(pl.BINGE_ORDERS), horizontal=True, format_func=pl.BINGE_ORDER_LABELS.get)
-    episodes = load_binges(min_plays, window_days, years[0], years[1], config.DB_PATH.stat().st_mtime)
+    episodes = load_binges(min_plays, window_days, years[0], years[1], mtime)
     return pl.preview_binges(episodes, first, last, years, window_days, min_plays, size, order)
 
 
@@ -104,7 +100,6 @@ if spec.warning:
     st.stop()
 if spec.info:
     st.info(spec.info)
-ranked, size = spec.ranked, spec.size
 st.caption(spec.caption)
 st.dataframe(spec.rows[list(spec.columns)], column_config={k: column_config(c) for k, c in spec.columns.items()},
              hide_index=True, width="stretch")
@@ -127,17 +122,15 @@ if st.button("Create playlist", type="primary"):
         client = SpotifyClient(config.spotify_client_id(), config.SPOTIFY_TOKEN_PATH)
         conn = connect(config.DB_PATH)  # ensures the spotify_matches cache table exists
         bar = st.progress(0.0, "Matching tracks on Spotify…")
-        matched = pl.match_tracks(conn, client, ranked, size, progress=lambda f, msg: bar.progress(f, msg))
-        hits = matched[matched["spotify_uri"].notna()]
-        if spec.reorder:
-            hits = spec.reorder(hits)
-        url = client.create_playlist(name, spec.description, list(hits["spotify_uri"]), public=public)
+        url, hits, misses = pl.create_on_spotify(
+            conn, client, spec.ranked, spec.size, name, spec.description, spec.reorder, public=public,
+            progress=lambda f, msg: bar.progress(f, msg),
+        )
     except (SpotifyAuthError, SystemExit) as e:
         st.error(str(e))
     else:
         bar.empty()
         st.success(f"Created **{name}** with {len(hits)} tracks: [open in Spotify]({url})")
-        misses = matched[matched["spotify_uri"].isna()]
         if not misses.empty:
             with st.expander(f"{len(misses)} tracks had no Spotify match and were skipped"):
                 st.dataframe(misses[["artist", "track"]], hide_index=True, width="stretch")

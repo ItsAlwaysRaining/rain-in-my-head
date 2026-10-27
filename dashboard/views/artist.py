@@ -9,6 +9,7 @@ from __future__ import annotations
 from datetime import date
 
 import streamlit as st
+from shared import fit_height, require_db, thumb_table
 
 from rain_in_my_head import artist as ar
 from rain_in_my_head import config
@@ -27,15 +28,11 @@ def load(db_mtime: float, artist: str, start: date | None, end: date | None) -> 
 
 
 st.page_link("views/overview.py", label="Overview", icon=":material/arrow_back:")
-
-if not config.DB_PATH.exists():
-    st.title("Artist")
-    st.info("No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`.")
-    st.stop()
+mtime = require_db("Artist")
 
 params = st.query_params
 key = params.get("artist")
-page = load(config.DB_PATH.stat().st_mtime, key, parse(params.get("start")), parse(params.get("end"))) if key else None
+page = load(mtime, key, parse(params.get("start")), parse(params.get("end"))) if key else None
 if page is None:
     st.title("Artist")
     st.info("No plays found for this artist. Open one from the “New artists” list on the Overview.")
@@ -53,15 +50,8 @@ st.subheader("Songs")
 if page.songs.empty:
     st.info(f"No plays by {page.name} in {page.label}.")
 else:
-    st.dataframe(
-        page.songs.assign(thumb=page.songs["thumb"].fillna(ar.no_art_url()))[["thumb", "name", "album_name", "plays"]],
-        column_config={
-            "thumb": st.column_config.ImageColumn("", width="small"),
-            "name": "Song",
-            "album_name": "Album",
-            "plays": st.column_config.NumberColumn("Plays", format="%d"),
-        },
-        hide_index=True,
-        row_height=56,
-        height=min(640, 38 + 56 * len(page.songs)),
+    thumb_table(
+        page.songs.assign(thumb=page.songs["thumb"].fillna(ar.no_art_url())),
+        {"name": "Song", "album_name": "Album"},
+        height=fit_height(len(page.songs), 640),
     )

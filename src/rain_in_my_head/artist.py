@@ -18,14 +18,11 @@ import pandas as pd
 
 from rain_in_my_head import config
 from rain_in_my_head import genre as gn
+from rain_in_my_head.build import MIN_PLAYED_AT
+from rain_in_my_head.genre import PLAY_COLUMNS
 
 # Missing-art image for both dashboards: the TypeScript app serves it as /no-art.svg.
 NO_ART_PATH = config.ROOT / "web" / "public" / "no-art.svg"
-# Same placeholder-timestamp cut as v_plays (2000-01-01).
-MIN_PLAYED_AT = 946684800
-PLAY_COLUMNS = f"""s.artist_key, s.artist_name, s.track_key, s.track_name, s.album_name,
-    date(s.played_at, 'unixepoch', 'localtime') AS day,
-    CASE WHEN s.image_url LIKE '%{gn.PLACEHOLDER}%' THEN NULL ELSE s.image_url END AS image_url"""
 
 
 @cache
