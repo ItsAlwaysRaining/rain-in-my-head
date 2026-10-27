@@ -1,4 +1,4 @@
-// Schema: the TypeScript twin of dashboard/views/schema.py. The map itself is pages/schema/map.ts,
+// Schema: the "Database schema" card on the Analyst page, the TypeScript twin of dashboard/views/schema.py. The map itself is pages/schema/map.ts,
 // a port of the Streamlit component; the layout is saved through the API to the same
 // schema_layout.json, so both dashboards show cards in the same places.
 import { useQuery } from "@tanstack/react-query";
@@ -33,30 +33,21 @@ export default function Schema() {
     });
   }, [data]);
 
-  return (
+  return query.error ? (
+    <ErrorState error={query.error} />
+  ) : !data ? (
+    <Loading />
+  ) : !data.objects.length ? (
+    <Notice>
+      The database has no tables yet. Run <code>uv run rain-in-my-head build</code> first.
+    </Notice>
+  ) : (
     <>
-      <h1>Schema</h1>
-      {query.error ? (
-        <div style={{ marginTop: 24 }}>
-          <ErrorState error={query.error} />
-        </div>
-      ) : !data ? (
-        <Loading />
-      ) : !data.objects.length ? (
-        <div style={{ marginTop: 24 }}>
-          <Notice>
-            The database has no tables yet. Run <code>uv run rain-in-my-head build</code> first.
-          </Notice>
-        </div>
-      ) : (
-        <>
-          <p className="caption" style={{ margin: "12px 0 16px" }}>
+      <p className="caption" style={{ margin: "0 0 16px" }}>
             Every table and view in <code>listening.db</code>. Drag a card by its header to move it; the layout is saved for next time. Hover over a card to see
-            what it links to.
-          </p>
-          <div ref={root} />
-        </>
-      )}
+        what it links to.
+      </p>
+      <div ref={root} />
     </>
   );
 }
