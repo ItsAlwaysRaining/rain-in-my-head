@@ -30,3 +30,11 @@ For every change:
 PRs are merged with a merge commit (squash is off), so every commit on the branch stays in main's history: keep commits small and clearly described.
 
 Never push to `main` or force-push. The sync workflow's own commits to `main` are expected.
+
+## Hosting and infrastructure
+
+The site is hosted on Vercel (Hobby) with visitor data in Neon, both on free plans with no card (constitution VII). Everything is declared with OpenTofu in `infra/`.
+
+- Change hosting settings only by editing `infra/` in a PR. Never change them in the Vercel or Neon dashboards.
+- Never ask for, print or commit secret values (tokens, passphrases, connection strings). The owner sets them as GitHub or Vercel secrets.
+- `data/cache/` is committed and append-only, like `data/raw/`. `data/public.db` is built in CI and never committed.

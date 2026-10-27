@@ -5,8 +5,12 @@
 ### I. Raw Scrobbles Are the Source of Truth
 
 - `data/raw/lastfm/YYYY-MM.jsonl` is append-only. Code MUST NOT rewrite or delete existing lines.
-- `data/listening.db` MUST be fully rebuildable from the raw files plus cached API lookups
-  (`rain-in-my-head build`, `rain-in-my-head enrich`). It stays gitignored.
+- `data/cache/*.jsonl` holds every Last.fm lookup (`rain-in-my-head enrich`). It is committed and
+  append-only too: a lookup that is redone is appended, and the last line for a key wins.
+- `data/listening.db` MUST be fully rebuildable from the raw files plus `data/cache/`
+  (`rain-in-my-head build`). It stays gitignored.
+- `data/public.db`, the two-year copy the hosted site serves, is built from `data/listening.db`
+  (`rain-in-my-head publish`). It is never committed and never contains plays outside its window.
 - Schema changes go in `src/rain_in_my_head/schema.sql` and MUST apply cleanly to an existing database
   on the next `build`. A change that needs the database deleted MUST say so in its spec.
 
@@ -39,7 +43,10 @@ Rationale: the bugs found so far (unclickable rows, unclickable charts) only sho
   - **Streamlit** (`dashboard/`): Streamlit, pandas and Altair, in the `dashboard` dependency group.
   - **TypeScript** (`web/`): Vite, React, TypeScript and Vega-Lite, reading a FastAPI JSON API
     (`src/rain_in_my_head/api.py`, FastAPI and uvicorn in the `web` dependency group). Node and npm are
-    build and dev tools for `web/` only; nothing outside `web/` needs them.
+    build and dev tools for `web/` only; outside `web/`, only CI may run the Vercel CLI (via `npx`).
+- Hosting is Vercel (the TypeScript app and the API as one Python function) and Neon Postgres (visitor
+  data only). Infrastructure is declared with OpenTofu in `infra/` and changes only through it; a
+  setting changed by hand in a dashboard is drift to be fixed. OpenTofu is a tool, not a dependency.
 - The scheduled sync MUST keep running with `--no-default-groups`, so no dashboard dependency is
   ever needed to fetch scrobbles.
 - A new runtime dependency (Python or npm) MUST be justified in the plan (what it replaces, why the
@@ -51,12 +58,14 @@ dashboards stay directly comparable.
 
 ### V. Respect External APIs and Secrets
 
-- Last.fm and Spotify calls MUST be cached in SQLite, resumable after interruption, and
-  rate-limited. A rerun MUST only fetch what is missing.
-- Dashboard pages MUST NOT call external APIs on page load; they read the database (images are
-  loaded by the browser from the URLs Last.fm already gave us).
-- Secrets live only in `.env` and `data/.spotify_token.json`, both gitignored, and in GitHub
-  Actions secrets. They MUST NOT appear in code, specs, logs or PRs.
+- Last.fm and Spotify calls MUST be cached (Last.fm in `data/cache/` and SQLite, Spotify in SQLite),
+  resumable after interruption, and rate-limited. A rerun MUST only fetch what is missing.
+- Dashboard pages MUST NOT call third-party APIs on page load; they read the database (images are
+  loaded by the browser from the URLs Last.fm already gave us). The site's own visitor store (Neon)
+  is not a third-party API.
+- Secrets live only in `.env` and `data/.spotify_token.json` (both gitignored), GitHub Actions
+  secrets, Vercel environment variables, and the OpenTofu state, which MUST be encrypted before it
+  is committed. They MUST NOT appear in code, specs, logs or PRs.
 
 Rationale: keeps within API limits, makes long enrichments safe to stop, and protects the accounts.
 
@@ -79,10 +88,26 @@ Rationale: keeps within API limits, makes long enrichments safe to stop, and pro
 Rationale: the dashboards are the product, and comparing them is only meaningful if the numbers
 underneath are identical.
 
+### VII. Visitors' Access and Privacy
+
+- The hosted site denies by default: every API route declares which tiers may use it, and a route
+  without one is refused.
+- Each visitor has their own invite code. Codes are stored only as hashes and can be revoked, which
+  ends that visitor's sessions.
+- The login page says what is tracked (pages, features, time on site). Raw IP addresses are not
+  stored, and events older than 12 months are deleted.
+- Visitor data stays separate from listening data: it lives in Neon, never in `public.db`, so the SQL
+  page cannot reach it.
+- Hosting MUST stay on free plans with no payment card, unless the owner decides otherwise.
+
+Rationale: other people's activity is now in the owner's care, and a personal project should not be
+able to run up a bill.
+
 ## Data and Privacy
 
 The repository is private and holds personal listening history. Nothing from `data/` other than
-`data/raw/` is committed. Published artifacts (screenshots, shared pages) contain only what the
+`data/raw/` and `data/cache/` is committed. The OpenTofu state in `infra/` is committed only
+encrypted. Visitor data may be exported to the private `analytics` branch, never to `main`. Published artifacts (screenshots, shared pages) contain only what the
 owner chooses to share.
 
 ## Development Workflow
@@ -104,4 +129,4 @@ any deviation MUST be justified in the plan's Complexity Tracking. Amendments go
 `chore/` pull request that states the version bump: MAJOR for removing or redefining a principle,
 MINOR for adding one or materially expanding guidance, PATCH for wording.
 
-**Version**: 1.1.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-16
+**Version**: 1.2.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-26
