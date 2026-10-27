@@ -17,7 +17,7 @@ The Contact Me page SHALL open at `/contact` from the **Contact Me** link in the
 - **THEN** no "Coming soon" notice or link to issue #34 appears on it
 
 ### Requirement: Contact links
-Below the title **Contact Me** and its intro line, the page SHALL have a section headed **Get in touch** listing, in this order, Email, LinkedIn, GitHub and Last.fm. Each entry SHALL show the service's icon, the service name and the address. Each entry SHALL be a link: Email SHALL open a `mailto:` link to the shown address, and LinkedIn, GitHub and Last.fm SHALL open the shown profile in a new tab. The GitHub and Last.fm entries SHALL point at the owner's profiles (`ItsAlwaysRaining`).
+Below the title **Contact Me** and its intro line, the page SHALL have a section headed **Get in touch** listing, in this order, Email, LinkedIn, GitHub and Last.fm. Each entry SHALL show the service's icon, the service name and the address. Each entry SHALL be a link: Email SHALL open a `mailto:` link to the shown address, and LinkedIn, GitHub and Last.fm SHALL open the shown profile in a new tab. Every entry SHALL point at the owner's real address or profile, with no placeholder values: email `aowheeler@proton.me`, LinkedIn `augustowheeler`, GitHub `ItsAlwaysRaining`, Last.fm `UntiLiUnderstan`.
 
 #### Scenario: Four entries in order
 - **WHEN** the Contact Me page is open
