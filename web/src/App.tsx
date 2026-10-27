@@ -9,8 +9,9 @@ import Genre from "./pages/Genre";
 import Landing from "./pages/Landing";
 import NewArtists from "./pages/NewArtists";
 import Overview from "./pages/Overview";
-import { About, Contact, ListeningSlot, Mainstream, Storm } from "./pages/Placeholders";
+import { About, Contact, ListeningSlot, Mainstream } from "./pages/Placeholders";
 import Playlists from "./pages/Playlists";
+import Storm from "./pages/Storm";
 import { breadcrumbs, SECTIONS } from "./routes";
 
 const queryClient = new QueryClient({
@@ -30,7 +31,8 @@ function TopBar() {
   return (
     <header className={styles.topBar}>
       <div className={styles.topBarInner}>
-        <Link to="/" className={styles.brand}>
+        {/* Dissolves home, as the prototype's "Back to home" from Storm does. */}
+        <Link to="/" viewTransition className={styles.brand}>
           <CloudLogo />
           Rain in My Head
         </Link>
