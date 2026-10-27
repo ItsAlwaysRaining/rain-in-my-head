@@ -127,6 +127,18 @@ textarea {
   color: inherit;
 }
 
+/* Page changes made with a view transition (the landing page's bolt) dissolve over 300 ms. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
 :focus-visible {
   outline: 2px solid var(--rain);
   outline-offset: 2px;
