@@ -67,8 +67,10 @@ def _value(v):
     return v
 
 
-def _records(df: pd.DataFrame, columns: dict[str, str]) -> list[dict]:
-    """Rows of `df` as dicts, keeping and renaming only `columns` (source -> output name)."""
+def _records(df: pd.DataFrame, columns: dict[str, str] | list[str]) -> list[dict]:
+    """Rows of `df` as dicts, keeping only `columns`: a list keeps names, a dict renames (source -> output)."""
+    if isinstance(columns, list):
+        columns = {c: c for c in columns}
     return [
         {out: _value(row[src]) for src, out in columns.items()}
         for row in df[list(columns)].astype(object).to_dict("records")
@@ -134,7 +136,7 @@ def overview(
         "empty": False,
         "kpis": [{"label": label, "value": _value(value), "delta": _value(change)}
                  for label, (value, change) in ov.kpis(df, ov.previous(data, start_, end_)).items()],
-        "top": {k: _records(v, {"name": "name", "plays": "plays"}) for k, v in top.items()},
+        "top": {k: _records(v, ["name", "plays"]) for k, v in top.items()},
         "top_per_year": _records(ov.top_per_year(data), {"year": "year", "artist_name": "artist", "plays": "plays", "share": "share"}),
         "heatmap": _records(ov.heatmap(df), {"weekday_name": "weekday", "hour": "hour", "plays": "plays"}),
         "new_artists": _records(ov.new_artists(data, start_, end_, inner), {"artist_first_play": "start", "new_artists": "count"}),
@@ -143,7 +145,7 @@ def overview(
             "label": ar.period_label(list_start, list_end),
             "start": list_start.isoformat(), "end": list_end.isoformat(),
             "artists": _records(ar.new_artists(config.DB_PATH, list_start, list_end),
-                                {"artist_key": "artist_key", "name": "name", "thumb": "thumb", "plays": "plays"}),
+                                ["artist_key", "name", "thumb", "plays"]),
         },
         "genres": None if genres is None else {
             "y_max": genres[1],
@@ -153,7 +155,7 @@ def overview(
                 for g in genres[0]
             ],
         },
-        "listener_buckets": None if genres is None else _records(ov.listener_buckets(df), {"bucket": "bucket", "share": "share"}),
+        "listener_buckets": None if genres is None else _records(ov.listener_buckets(df), ["bucket", "share"]),
         "loved": _records(ov.loved(data, df), {"artist_name": "artist", "track_name": "track", "plays": "plays"}),
         "coverage": _records(ov.coverage(df), {"Check": "check", "Coverage": "coverage"}),
     })
@@ -186,7 +188,7 @@ def genre(genre: str | None = None, start: date | None = None, end: date | None 
         "range_label": gn.range_label(start_, end_),
         "plays": len(plays),
         "artists": [] if plays.empty else _records(
-            gn.artists(plays), {"artist_key": "artist_key", "name": "name", "art": "art", "thumb": "thumb", "plays": "plays"}
+            gn.artists(plays), ["artist_key", "name", "art", "thumb", "plays"]
         ),
     }
 
@@ -375,7 +377,7 @@ def playlists_preview(body: PlaylistRequest) -> dict:
         **result,
         "info": p.info, "caption": p.caption, "name": p.name, "description": p.description,
         "columns": [{"key": k, "label": c.label, "kind": c.kind, "help": c.help} for k, c in p.columns.items()],
-        "rows": _records(p.rows, {k: k for k in p.columns}),
+        "rows": _records(p.rows, list(p.columns)),
         "candidate_count": len(p.ranked),
     }
 
@@ -410,7 +412,7 @@ def playlists_create(body: CreateRequest) -> StreamingResponse:
                 progress=lambda f, msg: events.put(_event("progress", {"fraction": f, "message": msg})),
             )
             events.put(_event("done", {"url": url, "name": body.name, "count": len(hits),
-                                       "misses": _records(misses, {"artist": "artist", "track": "track"})}))
+                                       "misses": _records(misses, ["artist", "track"])}))
         except (SpotifyAuthError, SystemExit) as e:
             events.put(_event("error", {"message": str(e)}))
         except Exception as e:  # anything else still ends the stream with a message

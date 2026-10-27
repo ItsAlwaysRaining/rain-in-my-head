@@ -66,11 +66,16 @@ def in_range(data: pd.DataFrame, start: date, end: date) -> pd.DataFrame:
     return data[data["date"].between(pd.Timestamp(start), pd.Timestamp(end))]
 
 
+def _per(grain: str, key: str = "played_local") -> pd.Grouper:
+    """Group timestamps in `key` into steps of `grain`, each labelled by its first day."""
+    return pd.Grouper(key=key, freq=FREQ[grain], label="left", closed="left")
+
+
 def over_time(data: pd.DataFrame, start: date, end: date, grain: str) -> pd.DataFrame:
     """Scrobbles and hours per period of `grain`, with a display label in `period`."""
     df = in_range(data, start, end)
     table = (
-        df.groupby(pd.Grouper(key="played_local", freq=FREQ[grain], label="left", closed="left"))
+        df.groupby(_per(grain))
         .agg(scrobbles=("track_key", "size"), hours=("est_minutes", lambda m: m.sum() / 60))
         .reset_index()
     )
@@ -160,7 +165,7 @@ def new_artists(data: pd.DataFrame, start: date, end: date, grain: str) -> pd.Da
     firsts = data.drop_duplicates("artist_key")[["artist_key", "artist_first_play"]]
     firsts = firsts[firsts["artist_first_play"].dt.normalize().between(pd.Timestamp(start), pd.Timestamp(end))]
     return (
-        firsts.groupby(pd.Grouper(key="artist_first_play", freq=FREQ[grain], label="left", closed="left"))
+        firsts.groupby(_per(grain, "artist_first_play"))
         .size()
         .rename("new_artists")
         .reset_index()
@@ -174,11 +179,11 @@ def new_share(df: pd.DataFrame) -> float:
 
 def genre_shares(df: pd.DataFrame, grain: str, n: int = 6) -> tuple[list[str], float, pd.DataFrame] | None:
     """(top genres, highest share, per-step share of tagged plays), or None if nothing is tagged."""
-    if df["primary_genre"].notna().sum() == 0:
-        return None
     tagged = df[df["primary_genre"].notna()]
+    if tagged.empty:
+        return None
     top_genres = list(tagged["primary_genre"].value_counts().head(n).index)
-    period = pd.Grouper(key="played_local", freq=FREQ[grain], label="left", closed="left")
+    period = _per(grain)
     per_period = tagged.groupby(period).size().rename("tagged")
     genre_time = (
         tagged[tagged["primary_genre"].isin(top_genres)]
