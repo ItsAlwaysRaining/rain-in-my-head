@@ -32,6 +32,6 @@ No new data, tables or API shapes. Everything here is front-end only.
 ## URL state
 
 - Dashboards: `preset`, `start`, `end`, `grain`, `measure`, `period`. These are unchanged and carried into Genre, Artist and New artists so "Back to Dashboards" can restore them.
-- New artists: `month` (an `over_time.period` label at month grain).
-- Playlists: `type` = `slot | discovery | binges | ai | sql`.
+- New artists: `month` = `YYYY-MM`. A missing or unknown month falls back to the latest one.
+- Playlists: `type` = `slot | discoveries | binges | ai | sql`.
 - Analyst: `schema=open` expands the schema card.

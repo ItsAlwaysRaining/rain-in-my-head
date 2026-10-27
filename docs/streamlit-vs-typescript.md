@@ -129,6 +129,24 @@ The first feature built for both apps at once, after they were side by side.
 **Shared**
 - `rain_in_my_head.artist` reuses the Genre page's ranking helpers, so the list, the page and the Genre page pick names, art and counts the same way. Its results were checked against direct SQLite queries for three periods, with no differences.
 
+### Prototype redesign (spec 005, TypeScript only)
+
+The TypeScript app was restyled to match the Figma Prototype page. Streamlit is unchanged, so from here on the two apps no longer look alike. They still show the same numbers.
+
+**Where they now differ**
+- Addresses: TypeScript has `/` (a placeholder home), `/dashboards`, `/dashboards/new-artists`, `/dashboards/genre`, `/dashboards/artist`, `/playlists` and `/analyst`. Streamlit keeps `/`, `/genre`, `/artist`, `/sql`, `/schema` and `/playlists`. The old TypeScript addresses redirect. This is the deviation from constitution VI recorded in the spec's plan.
+- Navigation: a top bar and breadcrumbs instead of a sidebar. The Overview's filters are chips on the page.
+- Overview: no Loved tracks section. The six genre panels are one multi-line chart with a chip legend, using three extra colours (plum, moss, ember) that only TypeScript has. New artists is its own page with a month picker, instead of a table on the Overview.
+- SQL and Schema are one Analyst page. Its schema map replaces the Tables and columns expander.
+- Type: Fredoka, Lexend and Red Hat Mono, loaded from Google Fonts. Streamlit keeps Source Sans (issue #22 is still open for both).
+
+**Easy in TypeScript**
+- The whole shell (top bar, breadcrumbs, redirects) is one `routes.ts` table and about 100 lines in `App.tsx`.
+- The new pages reuse the API as is. New artists calls `/api/overview` over all time by month, which already returns both the months and the list.
+
+**Would be hard in Streamlit**
+- A top bar, breadcrumbs, chips that look like the design, a raised-card shadow and a custom webfont all fight Streamlit's fixed layout and theme.
+
 ## Same-change test
 
 _Added after all pages are done: one identical small change made in both apps._

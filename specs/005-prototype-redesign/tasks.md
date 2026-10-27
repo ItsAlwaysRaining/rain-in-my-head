@@ -24,8 +24,8 @@ All paths are relative to the repository root. The app is in `web/`.
 
 ## Phase 1: Setup
 
-- [ ] T001 Add the Google Fonts `<link>` for Fredoka 600/700, Lexend 300/400/500/600 and Red Hat Mono 400 with `display=swap` to `web/index.html` (research R1)
-- [ ] T002 Add font, type-scale, `--shadow-raised` and chart plum/moss/ember tokens, then restyle the base `h1`/`h2`/`h3`/body/code rules in `web/src/theme.css` (FR-003, FR-004, research R2)
+- [X] T001 Add the Google Fonts `<link>` for Fredoka 600/700, Lexend 300/400/500/600 and Red Hat Mono 400 with `display=swap` to `web/index.html` (research R1)
+- [X] T002 Add font, type-scale, `--shadow-raised` and chart plum/moss/ember tokens, then restyle the base `h1`/`h2`/`h3`/body/code rules in `web/src/theme.css` (FR-003, FR-004, research R2)
 
 ---
 
@@ -33,11 +33,11 @@ All paths are relative to the repository root. The app is in `web/`.
 
 **⚠️ Every story depends on these**
 
-- [ ] T003 Create `web/src/routes.ts` with the top-bar sections, path → breadcrumb label map and the GitHub issue URL helper (data-model "Route entry", contracts/routes.md)
-- [ ] T004 [P] Add `Card`, `ChipGroup` (single-select radiogroup), `Breadcrumbs`, `BackLink` (replaces `BackToOverview`, keeps the Dashboards query string) to `web/src/components/ui.tsx`. Restyle `Kpi` (delta pill), `Tabs` (underline) and `SegmentedControl` in `web/src/components/ui.module.css`
-- [ ] T005 [P] Create `web/src/components/ComingSoon.tsx` and `ComingSoon.module.css`: SVG cloud with bolt and animated rain, "Coming soon" pill, title, description, issue link. No animation under `prefers-reduced-motion` (research R6, FR-016)
-- [ ] T006 [P] Restyle the multi-select chips, sliders and field labels in `web/src/components/Form.module.css`, and the tables (raised card, row rules, header) in `web/src/components/DataTable.module.css`
-- [ ] T007 [P] Switch the Vega font to Lexend and add the plum/moss/ember constants in `web/src/charts/config.ts`
+- [X] T003 Create `web/src/routes.ts` with the top-bar sections, path → breadcrumb label map and the GitHub issue URL helper (data-model "Route entry", contracts/routes.md)
+- [X] T004 [P] Add `Card`, `ChipGroup` (single-select radiogroup), `Breadcrumbs`, `BackLink` (replaces `BackToOverview`, keeps the Dashboards query string) to `web/src/components/ui.tsx`. Restyle `Kpi` (delta pill), `Tabs` (underline) and `SegmentedControl` in `web/src/components/ui.module.css`
+- [X] T005 [P] Create `web/src/components/ComingSoon.tsx` and `ComingSoon.module.css`: SVG cloud with bolt and animated rain, "Coming soon" pill, title, description, issue link. No animation under `prefers-reduced-motion` (research R6, FR-016)
+- [X] T006 [P] Restyle the multi-select chips, sliders and field labels in `web/src/components/Form.module.css`, and the tables (raised card, row rules, header) in `web/src/components/DataTable.module.css`
+- [X] T007 [P] Switch the Vega font to Lexend and add the plum/moss/ember constants in `web/src/charts/config.ts`
 
 **Checkpoint**: the shared building blocks exist.
 
@@ -49,9 +49,9 @@ All paths are relative to the repository root. The app is in `web/`.
 
 **Independent Test**: quickstart checks 2, 3 and 9.
 
-- [ ] T008 [US1] Replace the sidebar with the top bar (logo + name → `/`, section links, active highlight) and breadcrumbs, and remove the `Sidebar` slot, in `web/src/App.tsx` and `web/src/App.module.css`
-- [ ] T009 [US1] Register every route in contracts/routes.md, plus `<Navigate>` redirects that keep the query string for `/genre`, `/artist`, `/sql`, and `/schema` → `/analyst?schema=open`, in `web/src/App.tsx`
-- [ ] T010 [US1] Restyle the Not Found page (title, message, link to Dashboards) in `web/src/App.tsx`
+- [X] T008 [US1] Replace the sidebar with the top bar (logo + name → `/`, section links, active highlight) and breadcrumbs, and remove the `Sidebar` slot, in `web/src/App.tsx` and `web/src/App.module.css`
+- [X] T009 [US1] Register every route in contracts/routes.md, plus `<Navigate>` redirects that keep the query string for `/genre`, `/artist`, `/sql`, and `/schema` → `/analyst?schema=open`, in `web/src/App.tsx`
+- [X] T010 [US1] Restyle the Not Found page (title, message, link to Dashboards) in `web/src/App.tsx`
 
 **Checkpoint**: every top-bar link and old address opens a page.
 
@@ -63,12 +63,12 @@ All paths are relative to the repository root. The app is in `web/`.
 
 **Independent Test**: quickstart checks 4 and 5.
 
-- [ ] T011 [US2] Move the Date range and Grain filters onto the page as `ChipGroup`s with inline Custom dates, title "Overview" with the date caption, in `web/src/pages/Overview.tsx`
-- [ ] T012 [US2] Lay out the KPI cards, the "Scrobbles per month" card with the Scrobbles/Hours toggle in its header, the Top card with tabs, the "When you listen" and "New artists per month" cards side by side, and the "Mainstream vs. niche" and "Data quality" cards side by side. Remove Loved tracks and the inline new-artists list. In `web/src/pages/Overview.tsx` and `web/src/pages/Overview.module.css`
-- [ ] T013 [US2] Add `genreLines()` (one multi-line chart, six colours, click selects a genre) to `web/src/charts/overview.ts`. Use it with a chip legend that opens `/dashboards/genre` in `web/src/pages/Overview.tsx` (research R4, FR-009)
-- [ ] T014 [US2] Make the "New artists per month" points open `/dashboards/new-artists?month=`, the heatmap open `/dashboards/slot` and the mainstream bars open `/dashboards/mainstream`, in `web/src/charts/overview.ts` and `web/src/pages/Overview.tsx`
-- [ ] T015 [US2] Create `web/src/pages/NewArtists.tsx` with a month picker and an artist table. Rows open the Artist page. Data from `/api/overview?preset=all&grain=month&period=` (research R3, FR-010)
-- [ ] T016 [P] [US2] Restyle `web/src/pages/Genre.tsx`/`.module.css` and `web/src/pages/Artist.tsx`/`.module.css` with `BackLink` and cards. Update their internal links to `/dashboards/...` (FR-011)
+- [X] T011 [US2] Move the Date range and Grain filters onto the page as `ChipGroup`s with inline Custom dates, title "Overview" with the date caption, in `web/src/pages/Overview.tsx`
+- [X] T012 [US2] Lay out the KPI cards, the "Scrobbles per month" card with the Scrobbles/Hours toggle in its header, the Top card with tabs, the "When you listen" and "New artists per month" cards side by side, and the "Mainstream vs. niche" and "Data quality" cards side by side. Remove Loved tracks and the inline new-artists list. In `web/src/pages/Overview.tsx` and `web/src/pages/Overview.module.css`
+- [X] T013 [US2] Add `genreLines()` (one multi-line chart, six colours, click selects a genre) to `web/src/charts/overview.ts`. Use it with a chip legend that opens `/dashboards/genre` in `web/src/pages/Overview.tsx` (research R4, FR-009)
+- [X] T014 [US2] Make the "New artists per month" points open `/dashboards/new-artists?month=`, the heatmap open `/dashboards/slot` and the mainstream bars open `/dashboards/mainstream`, in `web/src/charts/overview.ts` and `web/src/pages/Overview.tsx`
+- [X] T015 [US2] Create `web/src/pages/NewArtists.tsx` with a month picker and an artist table. Rows open the Artist page. Data from `/api/overview?preset=all&grain=month&period=` (research R3, FR-010)
+- [X] T016 [P] [US2] Restyle `web/src/pages/Genre.tsx`/`.module.css` and `web/src/pages/Artist.tsx`/`.module.css` with `BackLink` and cards. Update their internal links to `/dashboards/...` (FR-011)
 
 **Checkpoint**: Dashboards and its drill-downs match the prototype, with the same numbers as before.
 
@@ -80,9 +80,9 @@ All paths are relative to the repository root. The app is in `web/`.
 
 **Independent Test**: quickstart checks 6 and 7.
 
-- [ ] T017 [US3] Restyle `web/src/pages/Playlists.tsx`/`.module.css`: title "Create a playlist" with an intro line, underline tabs Time Slot/Discovery/Binge/AI/SQL kept in `?type=`, chip groups for days and "Listening from", results in a card, and Create on Spotify as a bar card (name, public toggle, button) (FR-012, FR-014)
-- [ ] T018 [US3] Render `ComingSoon` in the AI tab (#32) and the SQL tab (#31) in `web/src/pages/Playlists.tsx` (FR-013)
-- [ ] T019 [US3] Create `web/src/pages/Analyst.tsx`: a collapsible "Database schema" card (open when `?schema=open`) holding the Schema content, then Write SQL, Results and Download CSV from `Sql.tsx`. Demote the `h1`s in `web/src/pages/Sql.tsx` and `web/src/pages/Schema.tsx` (FR-015, research R8)
+- [X] T017 [US3] Restyle `web/src/pages/Playlists.tsx`/`.module.css`: title "Create a playlist" with an intro line, underline tabs Time Slot/Discovery/Binge/AI/SQL kept in `?type=`, chip groups for days and "Listening from", results in a card, and Create on Spotify as a bar card (name, public toggle, button) (FR-012, FR-014)
+- [X] T018 [US3] Render `ComingSoon` in the AI tab (#32) and the SQL tab (#31) in `web/src/pages/Playlists.tsx` (FR-013)
+- [X] T019 [US3] Create `web/src/pages/Analyst.tsx`: a collapsible "Database schema" card (open when `?schema=open`) holding the Schema content, then Write SQL, Results and Download CSV from `Sql.tsx`. Demote the `h1`s in `web/src/pages/Sql.tsx` and `web/src/pages/Schema.tsx` (FR-015, research R8)
 
 **Checkpoint**: playlists build the same tracks as before, and Analyst runs queries and saves the schema layout.
 
@@ -94,14 +94,14 @@ All paths are relative to the repository root. The app is in `web/`.
 
 **Independent Test**: quickstart check 8.
 
-- [ ] T020 [US4] Create `web/src/pages/Placeholders.tsx` exporting Home (#27, with a link to Dashboards), Storm (#28), ListeningSlot (#30), Mainstream (#12), About (#33) and Contact (#34), each a `ComingSoon` with a title and description from data-model.md. Wire them into `web/src/App.tsx`
+- [X] T020 [US4] Create `web/src/pages/Placeholders.tsx` exporting Home (#27, with a link to Dashboards), Storm (#28), ListeningSlot (#30), Mainstream (#12), About (#33) and Contact (#34), each a `ComingSoon` with a title and description from data-model.md. Wire them into `web/src/App.tsx`
 
 ---
 
 ## Phase 7: Polish
 
-- [ ] T021 [P] Record the route, layout and genre-chart differences in `docs/streamlit-vs-typescript.md`, and update the page list in `README.md`
-- [ ] T022 Run `npm run build` in `web/`, then the full quickstart.md walk-through in a browser against the real database. Note what was and wasn't checked for the PR
+- [X] T021 [P] Record the route, layout and genre-chart differences in `docs/streamlit-vs-typescript.md`, and update the page list in `README.md`
+- [X] T022 Run `npm run build` in `web/`, then the full quickstart.md walk-through in a browser against the real database. Note what was and wasn't checked for the PR
 
 ---
 
