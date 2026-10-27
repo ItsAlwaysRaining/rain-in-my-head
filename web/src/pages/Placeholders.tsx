@@ -28,14 +28,3 @@ export function Mainstream() {
     </>
   );
 }
-
-export function Contact() {
-  return (
-    <>
-      <PageHeader title="Contact Me">Questions about the project, a role, or your own listening data? Get in touch.</PageHeader>
-      <ComingSoon title="Get in touch" issue={34}>
-        Email, LinkedIn, GitHub and Last.fm links, plus a CV to download.
-      </ComingSoon>
-    </>
-  );
-}

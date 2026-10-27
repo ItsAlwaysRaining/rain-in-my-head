@@ -11,9 +11,9 @@
 
 ## 3. The page
 
-- [ ] 3.1 Create `web/src/pages/Contact.tsx` and `Contact.module.css`: `PageHeader` with the existing title and intro, `h2` "Get in touch", the four rows from one `LINKS` array (whole row is an `<a>`, decorative icon in a 40 px circle, name and address with space-between, a visually hidden "(opens in a new tab)" on external rows), then the Send email (`mailto:`) and Download CV (`download`) `ButtonLink`s, using the measurements in design.md. Verify with `npm run typecheck`
-- [ ] 3.2 Remove `Contact` (and the now-unused imports, if any) from `Placeholders.tsx` and import it from `pages/Contact` in `App.tsx`. Verify `npm run build` passes and `/contact` shows no "Coming soon" card or issue #34 link
-- [ ] 3.3 Narrow screens: rows at `min(480px, 100%)`, address wraps rather than overflows. Verify at 390 px that every address is fully visible and `document.documentElement.scrollWidth` equals the window width
+- [x] 3.1 Create `web/src/pages/Contact.tsx` and `Contact.module.css`: `PageHeader` with the existing title and intro, `h2` "Get in touch", the four rows from one `LINKS` array (whole row is an `<a>`, decorative icon in a 40 px circle, name and address with space-between, a visually hidden "(opens in a new tab)" on external rows), then the Send email (`mailto:`) and Download CV (`download`) `ButtonLink`s, using the measurements in design.md. Verify with `npm run typecheck`
+- [x] 3.2 Remove `Contact` (and the now-unused imports, if any) from `Placeholders.tsx` and import it from `pages/Contact` in `App.tsx`. Verify `npm run build` passes and `/contact` shows no "Coming soon" card or issue #34 link
+- [x] 3.3 Narrow screens: rows at `min(480px, 100%)`, address wraps rather than overflows. Verify at 390 px that every address is fully visible and `document.documentElement.scrollWidth` equals the window width
 
 ## 4. Check against the spec and design
 
