@@ -10,6 +10,7 @@ from datetime import date
 
 import pandas as pd
 import streamlit as st
+from shared import clicked_row, require_db, thumb_table
 
 from rain_in_my_head import config
 from rain_in_my_head import genre as gn
@@ -25,12 +26,7 @@ def load(db_mtime: float, genre: str, start: str, end: str) -> pd.DataFrame:
     return gn.genre_plays(config.DB_PATH, genre, start, end)
 
 
-if not config.DB_PATH.exists():
-    st.title("Genre")
-    st.info("No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`.")
-    st.stop()
-
-mtime = config.DB_PATH.stat().st_mtime
+mtime = require_db("Genre")
 all_genres = genres(mtime)
 if not all_genres:
     st.title("Genre")
@@ -60,46 +56,19 @@ artists = gn.artists(plays)
 left, right = st.columns(2, gap="large")
 with left:
     st.subheader("Artists")
-    picked = st.dataframe(
-        artists[["thumb", "name", "plays"]],
-        column_config={
-            "thumb": st.column_config.ImageColumn("", width="small"),
-            "name": "Artist",
-            "plays": st.column_config.NumberColumn("Plays", format="%d"),
-        },
-        hide_index=True,
-        row_height=56,
-        height=640,
-        on_select="rerun",
-        # Cell selection makes clicking anywhere in a row pick that artist, not just its checkbox.
-        selection_mode=["single-row", "single-cell"],
-        key=f"artists-{genre}-{start}-{end}",
-    )
+    picked = thumb_table(artists, {"name": "Artist"}, height=640, key=f"artists-{genre}-{start}-{end}")
     st.caption("Click an artist to see your songs by them.")
 
 with right:
-    rows = picked.selection.rows or [row for row, _ in picked.selection.cells]
-    if not rows:
+    row = clicked_row(picked)
+    if row is None:
         st.subheader("Songs")
         st.info("Click an artist on the left.")
     else:
-        artist = artists.iloc[rows[0]]
+        artist = artists.iloc[row]
         art_col, info_col = st.columns([1, 3], vertical_alignment="center")
         if pd.notna(artist["art"]):
             art_col.image(gn.thumb(artist["art"], "174s"), width="stretch")
         info_col.subheader(artist["name"])
         info_col.caption(f"{artist['plays']:,} plays in {genre}")
-
-        songs = gn.songs(plays, artist["artist_key"])
-        st.dataframe(
-            songs[["thumb", "name", "album_name", "plays"]],
-            column_config={
-                "thumb": st.column_config.ImageColumn("", width="small"),
-                "name": "Song",
-                "album_name": "Album",
-                "plays": st.column_config.NumberColumn("Plays", format="%d"),
-            },
-            hide_index=True,
-            row_height=56,
-            height=520,
-        )
+        thumb_table(gn.songs(plays, artist["artist_key"]), {"name": "Song", "album_name": "Album"}, height=520)

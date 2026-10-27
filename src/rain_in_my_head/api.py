@@ -30,7 +30,6 @@ from rain_in_my_head import schema_info as si
 from rain_in_my_head import sql_examples as sq
 
 WEB_DIST = config.ROOT / "web" / "dist"
-NO_DATABASE = "No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`."
 PRESET_NAMES = {"last30": "Last 30 days", "last12m": "Last 12 months", "ytd": "This year", "all": "All time", "custom": "Custom"}
 
 app = FastAPI(title="Rain in My Head", docs_url="/api/docs", openapi_url="/api/openapi.json")
@@ -42,7 +41,7 @@ class NoDatabase(Exception):
 
 @app.exception_handler(NoDatabase)
 def _no_database(request: Request, exc: NoDatabase) -> JSONResponse:
-    return JSONResponse({"error": "no_database", "message": NO_DATABASE}, status_code=503)
+    return JSONResponse({"error": "no_database", "message": config.NO_DATABASE}, status_code=503)
 
 
 def _require_db() -> None:

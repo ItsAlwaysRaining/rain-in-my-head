@@ -12,6 +12,8 @@ load_dotenv(ROOT / ".env")
 
 RAW_DIR = Path(os.environ.get("LISTENING_RAW_DIR", ROOT / "data" / "raw" / "lastfm"))
 DB_PATH = Path(os.environ.get("LISTENING_DB", ROOT / "data" / "listening.db"))
+# Shown by both dashboards when DB_PATH doesn't exist yet.
+NO_DATABASE = "No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`."
 
 
 def lastfm_credentials() -> tuple[str, str]:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import altair as alt
 import pandas as pd
 import streamlit as st
+from shared import clicked_row, fit_height, require_db, thumb_table
 
 from rain_in_my_head import artist as ar
 from rain_in_my_head import config
@@ -42,12 +43,13 @@ def top_bar(counts: pd.DataFrame, field: str, title: str) -> alt.Chart:
     )
 
 
-if not config.DB_PATH.exists():
-    st.title("Rain in My Head")
-    st.info("No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`.")
-    st.stop()
+def show_whole_range() -> None:
+    """Drop the clicked period: a new over-time chart key starts with nothing selected."""
+    st.session_state["over_time_resets"] = st.session_state.get("over_time_resets", 0) + 1
 
-data = load(config.DB_PATH.stat().st_mtime)
+
+mtime = require_db("Rain in My Head")
+data = load(mtime)
 if data.empty:
     st.info("The database has no scrobbles yet. Run `uv run rain-in-my-head fetch` and `uv run rain-in-my-head build`.")
     st.stop()
@@ -109,11 +111,6 @@ st.altair_chart(
     on_select="rerun",
     key=over_time_key,
 )
-
-
-def show_whole_range() -> None:
-    st.session_state["over_time_resets"] = st.session_state.get("over_time_resets", 0) + 1
-
 
 if selected is None:
     st.caption(f"Click a bar to show just that {grain.lower()}.")
@@ -180,30 +177,21 @@ with right:
 
     list_start, list_end = ar.list_period(start, end, selected is not None)
     st.subheader(f"New artists in {ar.period_label(list_start, list_end)}")
-    newbies = load_new_artists(config.DB_PATH.stat().st_mtime, list_start, list_end)
+    newbies = load_new_artists(mtime, list_start, list_end)
     if newbies.empty:
         st.caption("No new artists in this period.")
     else:
-        picked = st.dataframe(
-            newbies.assign(thumb=newbies["thumb"].fillna(ar.no_art_url()))[["thumb", "name", "plays"]],
-            column_config={
-                "thumb": st.column_config.ImageColumn("", width="small"),
-                "name": "Artist",
-                "plays": st.column_config.NumberColumn("Plays", format="%d"),
-            },
-            hide_index=True,
-            row_height=56,
-            height=min(420, 38 + 56 * len(newbies)),
-            on_select="rerun",
-            # Cell selection makes clicking anywhere in a row open that artist, not just its checkbox.
-            selection_mode=["single-row", "single-cell"],
+        picked = thumb_table(
+            newbies.assign(thumb=newbies["thumb"].fillna(ar.no_art_url())),
+            {"name": "Artist"},
+            height=fit_height(len(newbies), 420),
             key=f"new-artists-{list_start}-{list_end}",
         )
         st.caption("Click an artist to see your songs by them.")
-        rows = picked.selection.rows or [row for row, _ in picked.selection.cells]
-        if rows:
+        row = clicked_row(picked)
+        if row is not None:
             st.switch_page("views/artist.py", query_params={
-                "artist": newbies.iloc[rows[0]]["artist_key"],
+                "artist": newbies.iloc[row]["artist_key"],
                 "start": list_start.isoformat(), "end": list_end.isoformat(),
             })
 

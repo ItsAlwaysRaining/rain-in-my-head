@@ -6,17 +6,14 @@ import sqlite3
 
 import pandas as pd
 import streamlit as st
+from shared import require_db
 
 from rain_in_my_head import config
 from rain_in_my_head import playlist as pl
 from rain_in_my_head.build import connect
 
 st.title("Playlists")
-
-if not config.DB_PATH.exists():
-    st.info("No database yet. Run `uv run rain-in-my-head build` first.")
-    st.stop()
-
+mtime = require_db()
 conn = sqlite3.connect(config.DB_PATH, timeout=30)
 first, last = pl.play_bounds(conn)
 
@@ -73,7 +70,7 @@ def binged() -> pl.Preview:
     with c2:
         size = st.slider("Playlist length", 10, 100, 50, step=5)
         order = st.radio("Playlist order", list(pl.BINGE_ORDERS), horizontal=True, format_func=pl.BINGE_ORDER_LABELS.get)
-    episodes = load_binges(min_plays, window_days, years[0], years[1], config.DB_PATH.stat().st_mtime)
+    episodes = load_binges(min_plays, window_days, years[0], years[1], mtime)
     return pl.preview_binges(episodes, first, last, years, window_days, min_plays, size, order)
 
 
