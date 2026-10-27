@@ -147,6 +147,10 @@ The TypeScript app was restyled to match the Figma Prototype page. Streamlit is 
 **Landing page (spec 006, TypeScript only)**
 - The Rain Girl artwork is the Figma export, unmodified. It's inlined so CSS can swap which rain lines are lit, matching the two Figma variants and their timing. The bolt tilts on hover and opens Storm with a view-transition dissolve. Streamlit has no landing page, and couldn't animate inside an image without a custom component.
 
+**Storm mode (spec 007, TypeScript only)**
+- The rain is the two exported Figma layers looping in CSS. Each moves exactly one or two of its streak periods (137 and 274.5 px, not the 140 and 280 px in the Figma notes, which would jump 3–5 px). Rain and thunder are made with the Web Audio API, started by the Thunder click so nothing autoplays. Lightning flashes are limited to two flickers per strike, under WCAG's 3-per-second limit.
+- Found on the way: with the page colour on both `html` and `body`, the body painted over anything placed behind the page. The colour is now on `html` only.
+
 **Would be hard in Streamlit**
 - A top bar, breadcrumbs, chips that look like the design, a raised-card shadow and a custom webfont all fight Streamlit's fixed layout and theme.
 
