@@ -41,7 +41,7 @@
   - tag order is weight descending, then tag name
 - [ ] T007 [US1] In src/rain_in_my_head/cache.py, add `replay(conn, cache_dir) -> tuple[int, int, int]` following the data-model.md replay rules:
   - load the existing `fetched_at` per key from `tracks` and `artists`
-  - for each key's current line, write the row with `INSERT OR REPLACE` "if the database has no row, or the line's `fetched_at` is at least the row's"
+  - for each key's current line, write the row with `INSERT OR REPLACE` "if the database has no row, or the line's `fetched_at` is newer than the row's"
   - for an artist that was written, run `DELETE FROM artist_tags WHERE artist_key = ?`, then insert exactly its `tags`
   - all in one transaction; return (tracks, artists, updated)
 - [ ] T008 [US1] In src/rain_in_my_head/build.py, change `build(raw_dir, db_path, cache_dir=None)`:

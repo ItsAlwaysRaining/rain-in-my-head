@@ -31,7 +31,7 @@ No schema change. The cache files mirror three existing tables (`src/rain_in_my_
 - **Validity**: a line is valid if it parses as a JSON object and has its key and `fetched_at`. Invalid lines are skipped and reported (research R5).
 - **Current state**: for each key, the current state is the last valid line in file order.
 - **Replay into the database** (research R3), for each key's current state:
-  - if the database has no row, or the line's `fetched_at` is at least the row's, write the row (`INSERT OR REPLACE`)
+  - if the database has no row, or the line's `fetched_at` is newer than the row's (an equal one is the same lookup), write the row (`INSERT OR REPLACE`)
   - for an artist, also replace its `artist_tags` with exactly `tags`, which may be none
   - otherwise leave the row alone
 - **Idempotent**: replaying the same files twice gives the same tables.

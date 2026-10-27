@@ -1,4 +1,4 @@
-"""Load the raw JSONL scrobbles into SQLite. Safe to run repeatedly."""
+"""Load the raw JSONL scrobbles, then the Last.fm lookup cache, into SQLite. Safe to run repeatedly."""
 
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ def connect_readonly(db_path: Path) -> sqlite3.Connection:
     return sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
 
 
-def build(raw_dir: Path, db_path: Path) -> int:
+def build(raw_dir: Path, db_path: Path, cache_dir: Path | None = None) -> int:
     conn = connect(db_path)
     rows = []
     for path in sorted(raw_dir.glob("*.jsonl")):
@@ -76,6 +76,14 @@ def build(raw_dir: Path, db_path: Path) -> int:
             rows,
         )
     total = conn.execute("SELECT COUNT(*) FROM scrobbles").fetchone()[0]
-    conn.close()
     print(f"Loaded {len(rows)} raw rows → {total} scrobbles in {db_path}")
+    if cache_dir is not None:
+        from .cache import replay
+
+        replayed = replay(conn, cache_dir)
+        if replayed is None:
+            print(f"No enrichment cache in {cache_dir}")
+        else:
+            print(f"Replayed cache: {replayed[0]} tracks, {replayed[1]} artists ({replayed[2]} updated)")
+    conn.close()
     return total

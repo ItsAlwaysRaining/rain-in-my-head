@@ -16,7 +16,7 @@
 
 ## R3. Last line wins, and the local database is never overwritten with older data
 
-- **Decision**: `replay` reads each file into a dict keyed by `track_key` or `artist_key`, so later lines replace earlier ones. It then upserts only where the cache's `fetched_at` is greater than or equal to the database row's.
+- **Decision**: `replay` reads each file into a dict keyed by `track_key` or `artist_key`, so later lines replace earlier ones. It then upserts only where the cache's `fetched_at` is newer than the database row's (equal means the row came from that same lookup, so a second `build` writes nothing).
 - **Rationale**: in CI the database is empty, so everything loads. On the Mac, a plain `enrich` (FR-010) may have newer rows the cache doesn't have yet. The `fetched_at` guard keeps them, and FR-006 holds: a second `build` changes nothing.
 - **Alternatives**:
   - Always replace. Rejected: it could roll back a newer local lookup.

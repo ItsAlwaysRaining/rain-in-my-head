@@ -1,4 +1,4 @@
-"""Command line entry point: `rain-in-my-head fetch | build | enrich | stats`."""
+"""Command line entry point: `rain-in-my-head fetch | build | enrich | export-cache | stats`, plus playlists."""
 
 from __future__ import annotations
 
@@ -24,13 +24,28 @@ def cmd_fetch(args) -> None:
 def cmd_build(args) -> None:
     from .build import build
 
-    build(config.RAW_DIR, config.DB_PATH)
+    build(config.RAW_DIR, config.DB_PATH, config.CACHE_DIR)
+
+
+def cmd_export_cache(args) -> None:
+    from .build import connect_readonly
+    from .cache import ARTISTS_FILE, TRACKS_FILE, export
+
+    if not config.DB_PATH.exists():
+        raise SystemExit("No database yet. Run `rain-in-my-head build` first.")
+    conn = connect_readonly(config.DB_PATH)
+    try:
+        tracks, artists = export(conn, config.CACHE_DIR, append=args.append)
+    finally:
+        conn.close()
+    size = sum((config.CACHE_DIR / f).stat().st_size for f in (TRACKS_FILE, ARTISTS_FILE)) / 1e6
+    print(f"Exported {tracks} tracks and {artists} artists to {config.CACHE_DIR} ({size:.1f} MB)")
 
 
 def cmd_enrich(args) -> None:
     from .enrich import enrich
 
-    enrich(_client(), config.DB_PATH, args.limit)
+    enrich(_client(), config.DB_PATH, args.limit, config.CACHE_DIR if args.write_cache else None)
 
 
 def cmd_stats(args) -> None:
@@ -201,10 +216,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="rain-in-my-head", description="Personal listening analytics from Last.fm scrobbles")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("fetch", help="append new scrobbles to data/raw/lastfm/").set_defaults(func=cmd_fetch)
-    sub.add_parser("build", help="load raw scrobbles into SQLite").set_defaults(func=cmd_build)
+    sub.add_parser("build", help="load raw scrobbles and the lookup cache into SQLite").set_defaults(func=cmd_build)
     p = sub.add_parser("enrich", help="cache track/artist info and tags from Last.fm")
     p.add_argument("--limit", type=int, default=None, help="max tracks and max artists to look up this run")
+    p.add_argument("--write-cache", action="store_true",
+                   help="also append each lookup to data/cache/ (used by the scheduled sync)")
     p.set_defaults(func=cmd_enrich)
+    p = sub.add_parser("export-cache", help="write the database's Last.fm lookups to data/cache/ (one-time)")
+    p.add_argument("--append", action="store_true", help="add after lookups already in data/cache/")
+    p.set_defaults(func=cmd_export_cache)
     sub.add_parser("stats", help="summarize the database").set_defaults(func=cmd_stats)
     sub.add_parser("spotify-login", help="connect Spotify (for creating playlists)").set_defaults(
         func=cmd_spotify_login

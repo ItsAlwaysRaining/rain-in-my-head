@@ -2,7 +2,8 @@
 
 Most-played items are fetched first, each result is committed as soon as it arrives (so other
 tools never wait long for the write lock), and anything already cached is skipped, so this can
-be stopped and resumed at any time.
+be stopped and resumed at any time. With a cache writer (`enrich --write-cache`, used by the
+scheduled sync), each lookup is also appended to data/cache/ before it is written to the database.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import time
 from pathlib import Path
 
 from .build import connect
+from .cache import CacheWriter
 from .lastfm import LastfmClient
 
 MIN_TAG_WEIGHT = 10
@@ -31,7 +33,9 @@ def _int(value) -> int | None:
         return None
 
 
-def enrich_tracks(conn: sqlite3.Connection, client: LastfmClient, limit: int | None) -> int:
+def enrich_tracks(
+    conn: sqlite3.Connection, client: LastfmClient, limit: int | None, writer: CacheWriter | None = None
+) -> int:
     todo = conn.execute(
         """SELECT s.track_key, s.artist_key, MIN(s.artist_name), MIN(s.track_name)
            FROM scrobbles s
@@ -44,22 +48,24 @@ def enrich_tracks(conn: sqlite3.Connection, client: LastfmClient, limit: int | N
     print(f"Tracks to look up: {len(todo)}")
     for i, (track_key, artist_key, artist, track) in enumerate(todo, 1):
         info = client.track_info(artist, track) or {}
-        conn.execute(
-            "INSERT OR REPLACE INTO tracks VALUES (?,?,?,?,?,?,?)",
-            (
-                track_key, artist_key, info.get("name") or track,
-                _int(info.get("duration")),  # milliseconds; "0" means unknown
-                _int(info.get("listeners")), _int(info.get("playcount")),
-                int(time.time()),
-            ),
-        )
+        row = {
+            "track_key": track_key, "artist_key": artist_key, "name": info.get("name") or track,
+            "duration_ms": _int(info.get("duration")),  # milliseconds; "0" means unknown
+            "global_listeners": _int(info.get("listeners")), "global_playcount": _int(info.get("playcount")),
+            "fetched_at": int(time.time()),
+        }
+        if writer:
+            writer.track(row)  # cache first: a crash here costs a repeat lookup, never a lost one
+        conn.execute("INSERT OR REPLACE INTO tracks VALUES (?,?,?,?,?,?,?)", tuple(row.values()))
         conn.commit()
         if i % PROGRESS_EVERY == 0:
             print(f"  tracks: {i}/{len(todo)}")
     return len(todo)
 
 
-def enrich_artists(conn: sqlite3.Connection, client: LastfmClient, limit: int | None) -> int:
+def enrich_artists(
+    conn: sqlite3.Connection, client: LastfmClient, limit: int | None, writer: CacheWriter | None = None
+) -> int:
     todo = conn.execute(
         """SELECT s.artist_key, MIN(s.artist_name)
            FROM scrobbles s
@@ -79,13 +85,14 @@ def enrich_artists(conn: sqlite3.Connection, client: LastfmClient, limit: int | 
             for tag, weight in weighted
             if weight >= MIN_TAG_WEIGHT and tag not in TAG_STOPLIST
         ][:MAX_TAGS_PER_ARTIST]
-        conn.execute(
-            "INSERT OR REPLACE INTO artists VALUES (?,?,?,?,?,?)",
-            (
-                artist_key, info.get("name") or artist, info.get("mbid") or None,
-                _int(stats.get("listeners")), _int(stats.get("playcount")), int(time.time()),
-            ),
-        )
+        row = {
+            "artist_key": artist_key, "name": info.get("name") or artist, "mbid": info.get("mbid") or None,
+            "global_listeners": _int(stats.get("listeners")), "global_playcount": _int(stats.get("playcount")),
+            "fetched_at": int(time.time()),
+        }
+        if writer:
+            writer.artist(row, [(tag, weight) for _, tag, weight in tags])
+        conn.execute("INSERT OR REPLACE INTO artists VALUES (?,?,?,?,?,?)", tuple(row.values()))
         conn.execute("DELETE FROM artist_tags WHERE artist_key = ?", (artist_key,))
         conn.executemany("INSERT OR IGNORE INTO artist_tags VALUES (?,?,?)", tags)
         conn.commit()
@@ -94,10 +101,14 @@ def enrich_artists(conn: sqlite3.Connection, client: LastfmClient, limit: int | 
     return len(todo)
 
 
-def enrich(client: LastfmClient, db_path: Path, limit: int | None = None) -> None:
+def enrich(client: LastfmClient, db_path: Path, limit: int | None = None, cache_dir: Path | None = None) -> None:
     conn = connect(db_path)
+    writer = CacheWriter(cache_dir) if cache_dir is not None else None
     try:
-        enrich_artists(conn, client, limit)
-        enrich_tracks(conn, client, limit)
+        enrich_artists(conn, client, limit, writer)
+        enrich_tracks(conn, client, limit, writer)
     finally:
         conn.close()
+        if writer:
+            writer.close()
+            print(f"Appended {writer.tracks} track and {writer.artists} artist lookups to {cache_dir}")
