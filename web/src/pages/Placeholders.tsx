@@ -29,17 +29,6 @@ export function Mainstream() {
   );
 }
 
-export function About() {
-  return (
-    <>
-      <PageHeader title="About" />
-      <ComingSoon title="About me and this app" issue={33}>
-        Who made Rain in My Head, and why: a personal listening app built on years of Last.fm scrobbles.
-      </ComingSoon>
-    </>
-  );
-}
-
 export function Contact() {
   return (
     <>

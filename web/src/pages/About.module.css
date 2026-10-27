@@ -1,0 +1,69 @@
+/* Body: the photo beside the text column, 48 apart, as in Figma. */
+.body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-7);
+}
+
+/* Kind=Portrait: 420 × 480. */
+.photo {
+  display: block;
+  flex-shrink: 0;
+  width: 420px;
+  aspect-ratio: 420 / 480;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+/* The empty frame until the photo is added: surface-raised fill, dashed line border. */
+.empty {
+  display: grid;
+  place-items: center;
+  background: var(--surface-raised);
+  border: 1.5px dashed var(--line);
+}
+
+/* icon/image at 24px: the 16px icon's group (12.5 × 11.5 with its stroke) scaled 1.5×. */
+.icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+}
+.icon img {
+  width: 18.75px;
+  height: 17.25px;
+}
+
+/* Every heading and text block is 48 apart, as in Figma. */
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-7);
+  min-width: 0;
+}
+.text h2 {
+  color: var(--text);
+}
+
+/* Bio: Body text, paragraphs 16 apart. */
+.copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 720px;
+}
+.copy p {
+  margin: 0;
+}
+
+/* Narrow screens: the photo stacks above the text and shrinks to fit. */
+@media (max-width: 900px) {
+  .body {
+    flex-direction: column;
+  }
+  .photo {
+    width: min(420px, 100%);
+  }
+}
