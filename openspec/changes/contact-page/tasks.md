@@ -7,7 +7,7 @@
 
 ## 2. Shared button link
 
-- [ ] 2.1 Add `ButtonLink` to `web/src/components/ui.tsx` (an `<a>` with the `.primary` / `.secondary` classes) and the anchor fixes in `ui.module.css` (no underline, inherited font, `--page` text on primary and `--text` on secondary). Verify with `npm run typecheck`
+- [x] 2.1 Add `ButtonLink` to `web/src/components/ui.tsx` (an `<a>` with the `.primary` / `.secondary` classes) and the anchor fixes in `ui.module.css` (no underline, inherited font, `--page` text on primary and `--text` on secondary). Verify with `npm run typecheck`
 
 ## 3. The page
 
