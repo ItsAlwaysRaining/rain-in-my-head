@@ -63,10 +63,14 @@
   box-sizing: border-box;
 }
 
+/* The page colour is on html only, so it fills the canvas; on body as well it would paint over
+   full-window layers placed behind the page (Storm's rain). */
+html {
+  background: var(--page);
+}
 html,
 body {
   margin: 0;
-  background: var(--page);
   color: var(--text);
   font-family: var(--font);
   font-size: 16px;
