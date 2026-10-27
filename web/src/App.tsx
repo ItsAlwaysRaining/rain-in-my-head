@@ -6,9 +6,10 @@ import { Breadcrumbs, Notice, PageHeader } from "./components/ui";
 import Analyst from "./pages/Analyst";
 import Artist from "./pages/Artist";
 import Genre from "./pages/Genre";
+import Landing from "./pages/Landing";
 import NewArtists from "./pages/NewArtists";
 import Overview from "./pages/Overview";
-import { About, Contact, Home, ListeningSlot, Mainstream, Storm } from "./pages/Placeholders";
+import { About, Contact, ListeningSlot, Mainstream, Storm } from "./pages/Placeholders";
 import Playlists from "./pages/Playlists";
 import { breadcrumbs, SECTIONS } from "./routes";
 
@@ -85,7 +86,7 @@ function Shell() {
           {/* Keyed by path so an error on one page clears when you navigate away. */}
           <ErrorBoundary key={pathname}>
             <Routes>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<Landing />} />
               <Route path="/dashboards" element={<Overview />} />
               <Route path="/dashboards/new-artists" element={<NewArtists />} />
               <Route path="/dashboards/genre" element={<Genre />} />

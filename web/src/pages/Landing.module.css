@@ -1,0 +1,123 @@
+/* The hero fills the window under the top bar, cancelling the page padding from App.module.css. */
+.landing {
+  --chrome: 61px; /* the top bar's height */
+  display: grid;
+  place-items: center;
+  min-height: calc(100dvh - var(--chrome));
+  margin: calc(-1 * (var(--space-5) + var(--space-6))) 0 -96px;
+  overflow: hidden;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The 569×624 "Rain Girl" frame. It shrinks to fit short or narrow windows; everything inside is
+   placed in percentages of it, so the bolt stays on the cloud at any size. */
+.hero {
+  position: relative;
+  width: min(569px, calc(100vw - 2 * var(--space-4)), calc((100dvh - var(--chrome) - var(--space-6)) * 569 / 624));
+  aspect-ratio: 569 / 624;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+/* RainyGirl: 661.221×559.622 at (−47.61, 30.69) */
+.art {
+  position: absolute;
+  left: calc(-47.61 / 569 * 100%);
+  top: calc(30.69 / 624 * 100%);
+  width: calc(661.221 / 569 * 100%);
+  height: calc(559.622 / 624 * 100%);
+}
+.art :global(svg) {
+  width: 100%;
+  height: 100%;
+}
+
+/* Rain loop: variant 1 lights the even lines, variant 2 the others. Hold 800 ms, smart animate 300 ms,
+   hold 1 ms, smart animate 300 ms back: a 1401 ms cycle. */
+.art :global(#Rain path) {
+  animation: rain-b 1401ms linear infinite;
+}
+.art :global(#Rain [id="Line 2"]),
+.art :global(#Rain [id="Line 4"]),
+.art :global(#Rain [id="Line 6"]),
+.art :global(#Rain [id="Line 8"]),
+.art :global(#Rain [id="Line 10"]),
+.art :global(#Rain [id="Line 12"]),
+.art :global(#Rain [id="Line 14"]) {
+  animation-name: rain-a;
+}
+@keyframes rain-a {
+  0%,
+  57.1% {
+    opacity: 1;
+  }
+  78.5%,
+  78.6% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes rain-b {
+  0%,
+  57.1% {
+    opacity: 0;
+  }
+  78.5%,
+  78.6% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Lightning bolt: 134×155 at (195, 303). Hover tilts it from the drawn −18° to −25°. */
+.bolt {
+  position: absolute;
+  left: calc(195 / 569 * 100%);
+  top: calc(303 / 624 * 100%);
+  width: calc(134 / 569 * 100%);
+  height: calc(155 / 624 * 100%);
+  transition: rotate 300ms ease-out;
+  border-radius: 50%;
+}
+.bolt img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.bolt:hover,
+.bolt:focus-visible {
+  rotate: -7deg;
+}
+
+/* On narrow screens the top bar wraps to a variable height, so the hero sits in the page flow instead
+   of filling the window, and is sized by width alone. */
+@media (max-width: 800px) {
+  .landing {
+    min-height: 0;
+    margin: 0;
+  }
+  .hero {
+    width: min(569px, calc(100vw - 2 * var(--space-4)));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .art :global(#Rain path) {
+    animation: none;
+  }
+  .bolt {
+    transition: none;
+  }
+}

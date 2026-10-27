@@ -144,6 +144,9 @@ The TypeScript app was restyled to match the Figma Prototype page. Streamlit is 
 - The whole shell (top bar, breadcrumbs, redirects) is one `routes.ts` table and about 100 lines in `App.tsx`.
 - The new pages reuse the API as is. New artists calls `/api/overview` over all time by month, which already returns both the months and the list.
 
+**Landing page (spec 006, TypeScript only)**
+- The Rain Girl artwork is the Figma export, unmodified. It's inlined so CSS can swap which rain lines are lit, matching the two Figma variants and their timing. The bolt tilts on hover and opens Storm with a view-transition dissolve. Streamlit has no landing page, and couldn't animate inside an image without a custom component.
+
 **Would be hard in Streamlit**
 - A top bar, breadcrumbs, chips that look like the design, a raised-card shadow and a custom webfont all fight Streamlit's fixed layout and theme.
 
