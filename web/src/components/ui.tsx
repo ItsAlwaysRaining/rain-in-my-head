@@ -1,6 +1,6 @@
 // Small building blocks: cards, KPI, tabs, chips, segmented control, radios, notices, breadcrumbs,
 // the back link, and the page-level loading and error states. Looks follow the Figma prototype.
-import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { useState, type AnchorHTMLAttributes, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Link } from "react-router";
 import { ApiError } from "../api";
 import { formatCount } from "../format";
@@ -169,6 +169,11 @@ export function RadioGroup<T extends string>({
 
 export function Button({ variant = "secondary", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" }) {
   return <button type="button" {...props} className={`${variant === "primary" ? styles.primary : styles.secondary} ${props.className ?? ""}`} />;
+}
+
+/** A link that looks like a Button, for actions that navigate or download (mailto:, a file). */
+export function ButtonLink({ variant = "secondary", ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { variant?: "primary" | "secondary" }) {
+  return <a {...props} className={`${variant === "primary" ? styles.primary : styles.secondary} ${props.className ?? ""}`} />;
 }
 
 export function Notice({ tone = "info", children }: { tone?: "info" | "success" | "warning" | "error"; children: ReactNode }) {

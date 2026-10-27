@@ -1,0 +1,86 @@
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Body: "Get in touch", the links and the buttons, 16 apart. */
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: min(480px, 100%);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Contact / Social link: icon circle, then the name and address pushed apart. */
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-radius: var(--radius);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.iconCircle {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-raised);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* Label semibold: Lexend SemiBold 15 */
+.name {
+  flex-shrink: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Nav & controls: Lexend Regular 14, in Rain */
+.address {
+  min-width: 0;
+  color: var(--rain);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.link:hover .address {
+  color: var(--rain-strong);
+  text-decoration: underline;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}

@@ -210,6 +210,15 @@
 .secondary:hover {
   border-color: var(--night);
 }
+/* ButtonLink: an <a> doesn't get the button resets in theme.css. */
+a.primary,
+a.secondary {
+  display: inline-block;
+  text-decoration: none;
+}
+a.secondary {
+  color: var(--text);
+}
 .primary:disabled,
 .secondary:disabled {
   opacity: 0.5;
