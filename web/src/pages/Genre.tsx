@@ -1,12 +1,12 @@
 // Genre: the TypeScript twin of dashboard/views/genre.py. Lists come from /api/genre
-// (rain_in_my_head.genre). Opened from an Overview genre panel with ?genre=&start=&end=.
+// (rain_in_my_head.genre). Opened from the Overview's genre chart with ?genre=&start=&end=.
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { fetchGenre, fetchGenreSongs, type GenreArtist, type GenreParams } from "../api";
 import { artistColumns, songColumns } from "../components/columns";
 import { DataTable } from "../components/DataTable";
-import { BackToOverview, ErrorState, Loading, Notice } from "../components/ui";
+import { BackLink, ErrorState, Loading, Notice, PageHeader } from "../components/ui";
 import { formatCount } from "../format";
 import styles from "./Genre.module.css";
 
@@ -52,7 +52,10 @@ export default function Genre() {
   const range = { genre: data.genre, start: asked.start, end: asked.end };
   return (
     <>
-      <BackToOverview />
+      <BackLink />
+      <PageHeader title={title(data.genre)}>
+        {data.range_label} · {formatCount(data.plays)} plays · artists whose top Last.fm tag is “{data.genre}”
+      </PageHeader>
       <label className={styles.select}>
         Genre
         <select
@@ -70,11 +73,6 @@ export default function Genre() {
           ))}
         </select>
       </label>
-
-      <h1 className={styles.title}>{title(data.genre)}</h1>
-      <p className="caption">
-        {data.range_label} · {formatCount(data.plays)} plays · artists whose top Last.fm tag is “{data.genre}”
-      </p>
 
       {data.artists.length === 0 ? (
         <Notice tone="warning">No plays in this genre for this range.</Notice>

@@ -1,5 +1,5 @@
 // Artist: the TypeScript twin of dashboard/views/artist.py. Data comes from /api/artist
-// (rain_in_my_head.artist). Opened from the Overview's "New artists" list with ?artist=&start=&end=;
+// (rain_in_my_head.artist). Opened from the New artists page with ?artist=&start=&end=;
 // not in the menu. Contract: specs/001-new-artist-page/contracts/artist-page.md
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -7,7 +7,7 @@ import { useSearchParams } from "react-router";
 import { fetchArtist, NO_ART, type ArtistSong } from "../api";
 import { songColumns } from "../components/columns";
 import { DataTable } from "../components/DataTable";
-import { BackToOverview, ErrorState, Loading, Notice } from "../components/ui";
+import { BackLink, ErrorState, Loading, Notice } from "../components/ui";
 import { formatCount } from "../format";
 import styles from "./Artist.module.css";
 
@@ -28,12 +28,12 @@ export default function Artist() {
   if (asked.artist === undefined || data?.found === false || query.error)
     return (
       <>
-        <BackToOverview />
+        <BackLink />
         <h1 className={styles.title}>Artist</h1>
         {query.error ? (
           <ErrorState error={query.error} />
         ) : (
-          <Notice>No plays found for this artist. Open one from the “New artists” list on the Overview.</Notice>
+          <Notice>No plays found for this artist. Open one from the New artists page in Dashboards.</Notice>
         )}
       </>
     );
@@ -41,7 +41,7 @@ export default function Artist() {
 
   return (
     <>
-      <BackToOverview />
+      <BackLink />
       <div className={styles.header}>
         <img className={styles.cover} src={data.cover ?? NO_ART} alt="" />
         <div>
