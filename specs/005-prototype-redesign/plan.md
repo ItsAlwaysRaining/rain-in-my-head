@@ -52,6 +52,8 @@ Only `web/` changes. The pages keep reading the existing API.
 | V. External APIs and secrets | Pass, with a note | Google Fonts is a font CDN, not a data API. No user data is sent. Pages still don't call Last.fm or Spotify on load. |
 | VI. Consistent dashboards | **Deviation** | Palette unchanged except three genre-line colours. TypeScript routes no longer match Streamlit paths. See Complexity Tracking. Numbers still come from the shared Python functions, so the dashboards stay comparable. |
 
+**Re-check against constitution v1.2.0** (amended on `main` during this work): VII (visitors' privacy) means the hosted site's visitors would now send their IP address to Google when the fonts load. V's wording still allows it, since a font CDN isn't a data API, but self-hosting the three font files in `web/public/fonts` would avoid it without an npm dependency. That's left for the owner to decide before the site is hosted.
+
 **Post-design re-check**: still passes. The design adds no data logic in TypeScript: New artists reuses `/api/overview`'s `new_artist_list`, and the genre chart re-plots the existing `genres.panels`.
 
 ## Project Structure
