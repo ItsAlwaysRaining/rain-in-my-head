@@ -3,7 +3,8 @@
 Personal listening history from Last.fm (scrobbled from Spotify), stored in SQLite and explored in two dashboards. Formerly `spotify-music-analysis`. See [Renamed from spotify-music-analysis](#renamed-from-spotify-music-analysis).
 
 - `data/raw/lastfm/YYYY-MM.jsonl` holds every scrobble. It's the source of truth, committed to git and appended to by GitHub Actions every 6 hours.
-- `data/listening.db` is a SQLite database rebuilt from the raw files. It's gitignored.
+- `data/cache/tracks.jsonl` and `artists.jsonl` hold every Last.fm lookup (durations, listener counts, genre tags). They're committed and append-only too: a redone lookup is a new line, and the last line for a key wins.
+- `data/listening.db` is a SQLite database rebuilt from the raw files plus the cache. It's gitignored.
 
 ## Setup
 
@@ -19,13 +20,15 @@ If "hide recent listening" is enabled on your Last.fm profile, turn it off. The 
 
 ```sh
 uv run rain-in-my-head fetch      # first run backfills your whole account, then only new scrobbles
-uv run rain-in-my-head build      # load raw JSONL into SQLite (safe to rerun)
+uv run rain-in-my-head build      # load raw JSONL and the lookup cache into SQLite (safe to rerun)
 uv run rain-in-my-head enrich     # Last.fm durations, listener counts and genre tags; resumable, --limit N
 uv run rain-in-my-head stats      # counts, enrichment coverage, suspicious scrobble bursts
 uv run streamlit run dashboard/app.py
 ```
 
-The first `enrich` makes about one call per unique track and two per unique artist, at roughly 2 per second in practice. For about 76k tracks and 24k artists that is around 15 hours, so use `--limit` or leave it running overnight. It's safe to Ctrl-C and rerun. Later runs only look up new items.
+On a fresh clone, `build` restores all enrichment from `data/cache/` without calling Last.fm, so `enrich` only has new items to look up. A plain `enrich` updates your local database only. The scheduled sync runs `enrich --write-cache`, which also appends each lookup to `data/cache/`. It's the only routine writer, so `git pull` never conflicts with local runs.
+
+Without a cache, `enrich` makes about one call per unique track and two per unique artist, at roughly 2 per second. For 76k tracks and 24k artists that's around 15 hours. It's safe to Ctrl-C and rerun. `uv run rain-in-my-head export-cache` seeded `data/cache/` from a fully enriched database. It's a one-time command and refuses to run again unless given `--append`.
 
 ## Two dashboards
 
@@ -76,8 +79,8 @@ Both dashboards have the list and the page, with the same numbers (`src/rain_in_
 
 1. Push this repo to a **private** GitHub repository. It contains your listening history.
 2. Add the repo secrets `LASTFM_API_KEY` and `LASTFM_USER` (Settings → Secrets and variables → Actions).
-3. Run the "Sync scrobbles" workflow once by hand from the Actions tab. After that it runs every 6 hours.
-4. Locally: `git pull && uv run rain-in-my-head build && uv run rain-in-my-head enrich` to refresh the database.
+3. Run the "Sync scrobbles" workflow once by hand from the Actions tab. After that it runs every 6 hours: it fetches new scrobbles, looks up up to 100 new tracks and 100 new artists, and commits both to `data/`.
+4. Locally: `git pull && uv run rain-in-my-head build` to refresh the database, including the sync's lookups.
 
 ## Renamed from spotify-music-analysis
 
