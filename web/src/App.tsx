@@ -1,44 +1,64 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Component, createContext, useContext, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
-import { BrowserRouter, NavLink, Route, Routes } from "react-router";
+import { Component, type ReactNode } from "react";
+import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router";
 import styles from "./App.module.css";
-import { Notice } from "./components/ui";
+import { Breadcrumbs, Notice, PageHeader } from "./components/ui";
+import Analyst from "./pages/Analyst";
 import Artist from "./pages/Artist";
 import Genre from "./pages/Genre";
+import NewArtists from "./pages/NewArtists";
 import Overview from "./pages/Overview";
+import { About, Contact, Home, ListeningSlot, Mainstream, Storm } from "./pages/Placeholders";
 import Playlists from "./pages/Playlists";
-import Schema from "./pages/Schema";
-import Sql from "./pages/Sql";
+import { breadcrumbs, SECTIONS } from "./routes";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 60_000, retry: false, refetchOnWindowFocus: false } },
 });
 
-// Same pages, order and paths as the Streamlit dashboard (dashboard/app.py).
-const PAGES = [
-  { path: "/", label: "Overview", icon: "▥" },
-  { path: "/genre", label: "Genre", icon: "◇" },
-  { path: "/sql", label: "SQL", icon: "⛁" },
-  { path: "/schema", label: "Schema", icon: "⊶" },
-  { path: "/playlists", label: "Playlists", icon: "♫" },
-];
+/** The cloud from the logo, as an outline. */
+function CloudLogo() {
+  return (
+    <svg viewBox="0 0 32 22" width="28" height="20" aria-hidden>
+      <path d="M8 20h16a6 6 0 0 0 .5-12A8 8 0 0 0 9 9.5 5.3 5.3 0 0 0 8 20Z" fill="none" stroke="var(--rain)" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
-/** Pages put their filters in the sidebar, under the menu, through this slot. */
-const SidebarSlot = createContext<HTMLElement | null>(null);
+function TopBar() {
+  return (
+    <header className={styles.topBar}>
+      <div className={styles.topBarInner}>
+        <Link to="/" className={styles.brand}>
+          <CloudLogo />
+          Rain in My Head
+        </Link>
+        <nav aria-label="Main" className={styles.nav}>
+          {SECTIONS.map((s) => (
+            <NavLink key={s.path} to={s.path} className={({ isActive }) => (isActive ? styles.navActive : styles.navLink)}>
+              {s.label}
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+    </header>
+  );
+}
 
-export function Sidebar({ children }: { children: ReactNode }) {
-  const slot = useContext(SidebarSlot);
-  return slot ? createPortal(children, slot) : null;
+/** Sends an old address to its new page, keeping the query string. */
+function Redirect({ to, extra }: { to: string; extra?: Record<string, string> }) {
+  const params = new URLSearchParams(useLocation().search);
+  for (const [k, v] of Object.entries(extra ?? {})) params.set(k, v);
+  return <Navigate to={params.size ? `${to}?${params}` : to} replace />;
 }
 
 function NotFound() {
   return (
     <>
-      <h1>Not found</h1>
-      <div style={{ marginTop: 24 }}>
-        <Notice>There's no page here. Pick one from the menu.</Notice>
-      </div>
+      <PageHeader title="Not found">There's no page at this address. It may have moved in the redesign.</PageHeader>
+      <Notice>
+        Try <Link to="/dashboards">Dashboards</Link>, or pick a section from the top bar.
+      </Notice>
     </>
   );
 }
@@ -54,42 +74,48 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 
+function Shell() {
+  const { pathname } = useLocation();
+  return (
+    <>
+      <TopBar />
+      <main className={styles.main}>
+        <Breadcrumbs crumbs={breadcrumbs(pathname)} />
+        <div className={styles.page}>
+          {/* Keyed by path so an error on one page clears when you navigate away. */}
+          <ErrorBoundary key={pathname}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/dashboards" element={<Overview />} />
+              <Route path="/dashboards/new-artists" element={<NewArtists />} />
+              <Route path="/dashboards/genre" element={<Genre />} />
+              <Route path="/dashboards/artist" element={<Artist />} />
+              <Route path="/dashboards/slot" element={<ListeningSlot />} />
+              <Route path="/dashboards/mainstream" element={<Mainstream />} />
+              <Route path="/playlists" element={<Playlists />} />
+              <Route path="/analyst" element={<Analyst />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/storm" element={<Storm />} />
+              {/* Addresses from before the redesign (same paths as the Streamlit dashboard). */}
+              <Route path="/genre" element={<Redirect to="/dashboards/genre" />} />
+              <Route path="/artist" element={<Redirect to="/dashboards/artist" />} />
+              <Route path="/sql" element={<Redirect to="/analyst" />} />
+              <Route path="/schema" element={<Redirect to="/analyst" extra={{ schema: "open" }} />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ErrorBoundary>
+        </div>
+      </main>
+    </>
+  );
+}
+
 export default function App() {
-  const [slot, setSlot] = useState<HTMLElement | null>(null);
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <SidebarSlot.Provider value={slot}>
-          <div className={styles.shell}>
-            <aside className={styles.sidebar}>
-              <nav className={styles.nav}>
-                {PAGES.map((p) => (
-                  <NavLink key={p.path} to={p.path} end className={({ isActive }) => (isActive ? styles.navActive : styles.navLink)}>
-                    <span className={styles.navIcon} aria-hidden>
-                      {p.icon}
-                    </span>
-                    {p.label}
-                  </NavLink>
-                ))}
-              </nav>
-              <div ref={setSlot} className={styles.sidebarSlot} />
-            </aside>
-            <main className={styles.main}>
-              <ErrorBoundary>
-                <Routes>
-                  <Route path="/" element={<Overview />} />
-                  <Route path="/genre" element={<Genre />} />
-                  <Route path="/sql" element={<Sql />} />
-                  <Route path="/schema" element={<Schema />} />
-                  <Route path="/playlists" element={<Playlists />} />
-                  {/* Opened from the Overview's "New artists" list, not the menu. */}
-                  <Route path="/artist" element={<Artist />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </ErrorBoundary>
-            </main>
-          </div>
-        </SidebarSlot.Provider>
+        <Shell />
       </BrowserRouter>
     </QueryClientProvider>
   );

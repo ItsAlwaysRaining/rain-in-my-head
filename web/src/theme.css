@@ -1,9 +1,11 @@
 /* Design tokens. Colours mirror .streamlit/config.toml (the project palette, dark mode) and the chart
-   constants in dashboard/views/overview.py; change both together (constitution VI). */
+   constants in dashboard/views/overview.py; change both together (constitution VI). Type, elevation and
+   the plum/moss/ember chart steps follow the Figma prototype (specs/005-prototype-redesign) and are
+   TypeScript-only for now. */
 :root {
   /* Surfaces and text */
   --page: #141a2a;
-  --surface: #1c2238; /* --night-surface: sidebar, table headers */
+  --surface: #1c2238; /* --night-surface: top bar, cards, table headers */
   --surface-raised: #232a44;
   --text: #e2e7f0;
   --text-muted: #a6aec2;
@@ -24,15 +26,24 @@
   --coral-strong: #ffa59c;
   --coral-surface: #2e1c22;
 
-  /* Chart steps (OKLCH L 0.48–0.67, C ≥ 0.10): rain = plays, night = discovery */
+  /* Chart steps (OKLCH L 0.48–0.67, C ≥ 0.10): rain = plays, night = discovery; the rest are genre lines */
   --chart-rain: #05a0cf;
   --chart-night: #736ee1;
   --chart-bolt: #b39105;
+  --chart-plum: #c25bb8;
+  --chart-moss: #2fa36b;
+  --chart-ember: #d0662e;
   --chart-dim: #1c77ac;
 
-  /* Type, spacing, shape */
-  --font: "Source Sans 3", "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --mono: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Type (Figma text styles) */
+  --font: "Lexend", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display: "Fredoka", "Lexend", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "Red Hat Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Elevation/Raised */
+  --shadow-raised: 3px 4px 10px #00000073, 1px 1px 2px #0000004d, inset 1px 1px 0 #ffffff12;
+
+  /* Spacing and shape */
   --radius: 0.5rem;
   --space-1: 4px;
   --space-2: 8px;
@@ -41,7 +52,7 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
-  --sidebar-width: 280px;
+  --content-width: 1360px;
 
   color-scheme: dark;
 }
@@ -59,7 +70,8 @@ body {
   color: var(--text);
   font-family: var(--font);
   font-size: 16px;
-  line-height: 1.5;
+  font-weight: 300;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -68,16 +80,30 @@ h2,
 h3 {
   margin: 0;
   line-height: 1.2;
+  font-family: var(--display);
+}
+/* H1: Fredoka Bold 36 */
+h1 {
+  font-size: 2.25rem;
   font-weight: 700;
 }
-h1 {
-  font-size: 2.75rem;
-}
+/* Section: Fredoka SemiBold 28 */
 h2 {
   font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.25;
 }
+/* Chart title: Lexend SemiBold 18 */
 h3 {
-  font-size: 1.1rem;
+  font-family: var(--font);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+strong,
+b {
+  font-weight: 600;
 }
 
 a {
@@ -86,7 +112,7 @@ a {
 
 code {
   font-family: var(--mono);
-  font-size: 0.9em;
+  font-size: 0.875em;
   background: var(--surface);
   padding: 0.1em 0.35em;
   border-radius: 4px;
@@ -97,10 +123,19 @@ input,
 select,
 textarea {
   font: inherit;
+  font-weight: 400;
   color: inherit;
 }
 
+:focus-visible {
+  outline: 2px solid var(--rain);
+  outline-offset: 2px;
+}
+
+/* Caption: Lexend Regular 13 */
 .caption {
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.5;
 }

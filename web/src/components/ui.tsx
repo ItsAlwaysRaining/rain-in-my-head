@@ -1,10 +1,36 @@
-// Small building blocks: KPI, tabs, segmented control, radios, notices, the back link, and the
-// page-level loading and error states.
-import { useState, type ReactNode } from "react";
+// Small building blocks: cards, KPI, tabs, chips, segmented control, radios, notices, breadcrumbs,
+// the back link, and the page-level loading and error states. Looks follow the Figma prototype.
+import { useState, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { Link } from "react-router";
 import { ApiError } from "../api";
 import { formatCount } from "../format";
+import type { Crumb } from "../routes";
 import styles from "./ui.module.css";
+
+/** A raised card, optionally with a chart-title heading and controls on the right of it. */
+export function Card({ title, actions, className, children }: { title?: string; actions?: ReactNode; className?: string; children: ReactNode }) {
+  return (
+    <section className={`${styles.card} ${className ?? ""}`}>
+      {(title || actions) && (
+        <header className={styles.cardHeader}>
+          {title && <h3>{title}</h3>}
+          {actions}
+        </header>
+      )}
+      {children}
+    </section>
+  );
+}
+
+/** Page title and the line under it. */
+export function PageHeader({ title, children }: { title: ReactNode; children?: ReactNode }) {
+  return (
+    <header className={styles.pageHeader}>
+      <h1>{title}</h1>
+      {children && <p className={styles.lede}>{children}</p>}
+    </header>
+  );
+}
 
 export function Kpi({ label, value, delta, help }: { label: string; value: number; delta: number | null; help?: string }) {
   const rounded = delta === null ? null : Math.round(delta * 100);
@@ -22,19 +48,66 @@ export function Kpi({ label, value, delta, help }: { label: string; value: numbe
   );
 }
 
-export function Tabs({ tabs }: { tabs: { label: string; content: ReactNode }[] }) {
-  const [active, setActive] = useState(0);
+/** Underlined tabs. Pass `active` and `onChange` to keep the tab in the URL; otherwise it's local state. */
+export function Tabs<K extends string>({
+  tabs,
+  active,
+  onChange,
+}: {
+  tabs: { key: K; label: string; content: ReactNode }[];
+  active?: K;
+  onChange?: (key: K) => void;
+}) {
+  const [local, setLocal] = useState<K>(tabs[0].key);
+  const current = active ?? local;
+  const panel = tabs.find((t) => t.key === current) ?? tabs[0];
   return (
     <div>
       <div className={styles.tabList} role="tablist">
-        {tabs.map((t, i) => (
-          <button key={t.label} role="tab" aria-selected={i === active} className={i === active ? styles.tabActive : styles.tab} onClick={() => setActive(i)}>
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            role="tab"
+            aria-selected={t.key === panel.key}
+            className={t.key === panel.key ? styles.tabActive : styles.tab}
+            onClick={() => (onChange ? onChange(t.key) : setLocal(t.key))}
+          >
             {t.label}
           </button>
         ))}
       </div>
       <div role="tabpanel" className={styles.tabPanel}>
-        {tabs[active].content}
+        {panel.content}
+      </div>
+    </div>
+  );
+}
+
+/** Pick one of a few options, shown as pill chips (Date range, Grain, Listening from). */
+export function ChipGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  format = (o) => o,
+}: {
+  label: string;
+  options: readonly T[];
+  value: T;
+  onChange: (value: T) => void;
+  format?: (option: T) => string;
+}) {
+  return (
+    <div className={styles.field}>
+      <div className={styles.fieldLabel} id={`chips-${label}`}>
+        {label}
+      </div>
+      <div className={styles.chips} role="radiogroup" aria-labelledby={`chips-${label}`}>
+        {options.map((o) => (
+          <button key={o} type="button" role="radio" aria-checked={o === value} className={o === value ? styles.chipOn : styles.chip} onClick={() => onChange(o)}>
+            {format(o)}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -54,15 +127,12 @@ export function SegmentedControl<T extends string>({
   format?: (option: T) => string;
 }) {
   return (
-    <div className={styles.field}>
-      {label && <div className={styles.fieldLabel}>{label}</div>}
-      <div className={styles.segmented} role="radiogroup" aria-label={label}>
-        {options.map((o) => (
-          <button key={o} role="radio" aria-checked={o === value} className={o === value ? styles.segmentActive : styles.segment} onClick={() => onChange(o)}>
-            {format(o)}
-          </button>
-        ))}
-      </div>
+    <div className={styles.segmented} role="radiogroup" aria-label={label}>
+      {options.map((o) => (
+        <button key={o} type="button" role="radio" aria-checked={o === value} className={o === value ? styles.segmentActive : styles.segment} onClick={() => onChange(o)}>
+          {format(o)}
+        </button>
+      ))}
     </div>
   );
 }
@@ -97,21 +167,59 @@ export function RadioGroup<T extends string>({
   );
 }
 
+export function Button({ variant = "secondary", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" }) {
+  return <button type="button" {...props} className={`${variant === "primary" ? styles.primary : styles.secondary} ${props.className ?? ""}`} />;
+}
+
 export function Notice({ tone = "info", children }: { tone?: "info" | "success" | "warning" | "error"; children: ReactNode }) {
   return <div className={`${styles.notice} ${styles[tone]}`}>{children}</div>;
 }
 
-/** The "← Overview" link at the top of the pages opened from the Overview. */
-export function BackToOverview() {
+export function Breadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
+  if (crumbs.length === 0) return null;
   return (
-    <Link to="/" className={styles.back}>
-      ← Overview
+    <nav aria-label="Breadcrumb" className={styles.breadcrumbs}>
+      <ol>
+        {crumbs.map((c, i) => (
+          <li key={i}>{c.to ? <Link to={c.to}>{c.label}</Link> : <span aria-current="page">{c.label}</span>}</li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+// The Overview's filters, so "Back to Dashboards" returns to the same range, grain and period.
+let dashboardsSearch = "";
+export const rememberDashboardsSearch = (search: string) => {
+  dashboardsSearch = search;
+};
+
+/** "← Back to Dashboards" at the top of the pages opened from the Overview. */
+export function BackLink() {
+  return (
+    <Link to={`/dashboards${dashboardsSearch}`} className={styles.back}>
+      <span aria-hidden>←</span> Back to Dashboards
     </Link>
   );
 }
 
+/** The raining cloud from the prototype's loading screen. */
 export function Loading({ text = "Loading…" }: { text?: string }) {
-  return <p className="caption">{text}</p>;
+  return (
+    <div className={styles.loader} role="status">
+      <svg viewBox="0 0 48 40" width="40" height="34" aria-hidden>
+        <path
+          d="M14 26h22a8 8 0 0 0 .6-16A11 11 0 0 0 15.4 12 7 7 0 0 0 14 26Z"
+          fill="none"
+          stroke="var(--rain)"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <rect className={styles.drop} x="23" y="30" width="2.5" height="6" rx="1.25" fill="var(--rain-strong)" />
+      </svg>
+      <span className="caption">{text}</span>
+    </div>
+  );
 }
 
 /** The message for a failed request: missing database, API not running, or anything else. */

@@ -1,10 +1,12 @@
-// SQL: the TypeScript twin of dashboard/views/sql.py. Queries run read-only through /api/sql
-// (rain_in_my_head.sql_examples); examples and the schema list are the ones Streamlit shows.
+// SQL: the "Write SQL" part of the Analyst page, the TypeScript twin of dashboard/views/sql.py. Queries
+// run read-only through /api/sql (rain_in_my_head.sql_examples); the examples are the ones Streamlit shows.
+// The table list Streamlit shows is replaced here by the schema map above it on the Analyst page.
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { fetchSqlMeta, runSql, type SqlCell } from "../api";
 import { DataTable, type Column } from "../components/DataTable";
-import { ErrorState, Loading, Notice } from "../components/ui";
+import { Button, ErrorState, Loading, Notice } from "../components/ui";
 import { formatCount } from "../format";
 import styles from "./Sql.module.css";
 
@@ -36,9 +38,10 @@ export default function Sql() {
     if (sql.trim()) run.mutate(sql);
   };
 
+  const navigate = useNavigate();
   return (
-    <>
-      <h1>SQL</h1>
+    <section>
+      <h2>Write SQL</h2>
       {meta.error ? (
         <div className={styles.section}>
           <ErrorState error={meta.error} />
@@ -47,27 +50,10 @@ export default function Sql() {
         <Loading />
       ) : (
         <div className={styles.stack}>
-          <details className={styles.expander}>
-            <summary>
-              Tables and columns — start with <code>v_plays</code> (one row per play, everything joined)
-            </summary>
-            <div className={styles.expanderBody}>
-              <DataTable
-                rows={meta.data.schema}
-                columns={[
-                  { key: "object", label: "object" },
-                  { key: "column", label: "column" },
-                  { key: "type", label: "type" },
-                ]}
-                maxHeight={350}
-              />
-            </div>
-          </details>
-
           <label className={styles.label}>
             Examples
             <select
-              className={styles.field}
+              className={`${styles.field} ${styles.select}`}
               value={example}
               onChange={(e) => {
                 setExample(e.target.value);
@@ -98,13 +84,24 @@ export default function Sql() {
                 }
               }}
             />
+            <span className="caption">Run with the button or ⌘/Ctrl + Enter.</span>
           </label>
 
-          <div>
-            <button className={styles.primary} onClick={submit} disabled={run.isPending}>
-              Run
-            </button>
-            <span className={`caption ${styles.shortcut}`}>or ⌘/Ctrl + Enter</span>
+          <div className={styles.actions}>
+            <Button variant="primary" onClick={submit} disabled={run.isPending}>
+              Run query
+            </Button>
+            <Button
+              onClick={() => {
+                setSql("");
+                setExample("");
+                run.reset();
+              }}
+            >
+              Clear
+            </Button>
+            {/* The SQL playlist type is issue #31; its tab explains what's coming. */}
+            <Button onClick={() => navigate("/playlists?type=sql")}>Use in Playlist Generator</Button>
           </div>
 
           {run.error ? (
@@ -116,7 +113,7 @@ export default function Sql() {
           ) : null}
         </div>
       )}
-    </>
+    </section>
   );
 }
 
@@ -131,12 +128,13 @@ function Result({ columns, floatColumns, rows, rowCount }: { columns: string[]; 
 
   return (
     <div className={styles.stack}>
-      <p className="caption">{formatCount(rowCount)} rows</p>
+      <div>
+        <h2>Results</h2>
+        <p className="caption">{formatCount(rowCount)} rows · click a column header to sort</p>
+      </div>
       <DataTable rows={records} columns={tableColumns} maxHeight={480} sortable />
       <div>
-        <button className={styles.secondary} onClick={() => download("query.csv", toCsv(columns, rows, floats))}>
-          Download CSV
-        </button>
+        <Button onClick={() => download("query.csv", toCsv(columns, rows, floats))}>Download CSV</Button>
       </div>
     </div>
   );

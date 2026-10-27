@@ -1,22 +1,33 @@
 .header {
-  display: grid;
-  grid-template-columns: 1fr 3fr;
+  display: flex;
   align-items: center;
   gap: var(--space-5);
-  margin: var(--space-5) 0 var(--space-6);
+  margin-bottom: var(--space-6);
 }
 .cover {
   display: block;
-  width: 100%;
+  width: 160px;
+  flex: none;
   aspect-ratio: 1;
   object-fit: cover;
   border-radius: var(--radius);
+  box-shadow: var(--shadow-raised);
 }
 
 .title {
-  margin: var(--space-4) 0 var(--space-2);
+  margin-bottom: var(--space-2);
 }
 
+/* Chart title: Lexend SemiBold 18 */
 .subheader {
+  font-family: var(--font);
+  font-size: 1.125rem;
   margin-bottom: var(--space-3);
+}
+
+@media (max-width: 600px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

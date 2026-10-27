@@ -36,13 +36,16 @@ There are two dashboards over the same database, kept side by side to compare th
 | Code | `dashboard/` | `web/` (Vite + React) and its JSON API, `src/rain_in_my_head/api.py` |
 | Run | `uv run streamlit run dashboard/app.py` | `cd web && npm install && npm run build`, then `uv run rain-in-my-head serve` |
 | Open | http://localhost:8501 | http://localhost:8000 |
-| Pages | Overview, Genre, SQL, Schema, Playlists | The same five pages |
+| Pages | Overview, Genre, SQL, Schema, Playlists | The same pages, laid out as the Figma prototype: Dashboards (Overview, with New artists, Genre and Artist under it), Playlist Generator, and Analyst (SQL and Schema on one page) |
+| Navigation | Sidebar, with the Overview's filters in it | Top bar and breadcrumbs, with the filters on the page |
 
 Both can run at the same time. `uv sync` installs what both need (the `dashboard` and `web` groups). The TypeScript app also needs Node 22 or newer.
 
 To work on the TypeScript app with hot reload, run `uv run rain-in-my-head serve --dev` (API only) and `npm run dev` in `web/`, then open http://localhost:5173.
 
 [docs/streamlit-vs-typescript.md](docs/streamlit-vs-typescript.md) records how building each page went in each app.
+
+The TypeScript app follows the Figma prototype (`specs/005-prototype-redesign`), so its addresses differ from Streamlit's: `/dashboards`, `/dashboards/new-artists`, `/dashboards/genre`, `/dashboards/artist`, `/playlists` and `/analyst`. The old `/genre`, `/artist`, `/sql` and `/schema` addresses redirect. Pages from the prototype that aren't built yet show a **Coming soon** card that links to their GitHub issue: the landing page (#27), Storm (#28), the listening-slot drill-down (#30), mainstream vs. niche artists (#12), the AI (#32) and SQL (#31) playlist types, About (#33) and Contact Me (#34).
 
 ## Filter by period
 

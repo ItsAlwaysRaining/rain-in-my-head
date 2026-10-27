@@ -4,11 +4,13 @@
   gap: var(--space-2);
   min-width: 0;
 }
+/* Label semibold: Lexend SemiBold 15 */
 .label {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
 }
 .help {
   display: inline-grid;
@@ -28,7 +30,8 @@
   gap: 2px;
 }
 .value {
-  color: var(--night-strong);
+  color: var(--text-muted);
+  font-family: var(--mono);
   font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
 }
@@ -92,11 +95,12 @@
 .chip,
 .chipOn {
   border-radius: 999px;
-  padding: 2px var(--space-3);
-  font-size: 0.875rem;
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.8125rem;
   cursor: pointer;
   border: 1px solid var(--line);
-  background: none;
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
 }
 .chip:hover {
   border-color: var(--night);
@@ -104,5 +108,5 @@
 .chipOn {
   background: var(--night-soft);
   border-color: var(--night);
-  color: var(--night-strong);
+  font-weight: 600;
 }
