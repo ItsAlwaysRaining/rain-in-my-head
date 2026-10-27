@@ -3,13 +3,13 @@
 // not in the menu. Contract: specs/001-new-artist-page/contracts/artist-page.md
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { fetchArtist, NO_ART, type ArtistSong } from "../api";
+import { songColumns } from "../components/columns";
 import { DataTable } from "../components/DataTable";
-import { ErrorState, Notice } from "../components/ui";
+import { BackToOverview, ErrorState, Loading, Notice } from "../components/ui";
+import { formatCount } from "../format";
 import styles from "./Artist.module.css";
-
-const count = new Intl.NumberFormat("en-GB");
 
 export default function Artist() {
   const [params] = useSearchParams();
@@ -25,15 +25,10 @@ export default function Artist() {
   });
   const data = query.data;
 
-  const back = (
-    <Link to="/" className={styles.back}>
-      ← Overview
-    </Link>
-  );
   if (asked.artist === undefined || data?.found === false || query.error)
     return (
       <>
-        {back}
+        <BackToOverview />
         <h1 className={styles.title}>Artist</h1>
         {query.error ? (
           <ErrorState error={query.error} />
@@ -42,19 +37,19 @@ export default function Artist() {
         )}
       </>
     );
-  if (!data) return <p className="caption">Loading…</p>;
+  if (!data) return <Loading />;
 
   return (
     <>
-      {back}
+      <BackToOverview />
       <div className={styles.header}>
         <img className={styles.cover} src={data.cover ?? NO_ART} alt="" />
         <div>
           <h1 className={styles.title}>{data.name}</h1>
           <p className="caption">
             {data.period === null
-              ? `${count.format(data.all_time_plays)} plays · all time`
-              : `${count.format(data.period_plays)} plays in ${data.period.label} · ${count.format(data.all_time_plays)} all time`}
+              ? `${formatCount(data.all_time_plays)} plays · all time`
+              : `${formatCount(data.period_plays)} plays in ${data.period.label} · ${formatCount(data.all_time_plays)} all time`}
           </p>
         </div>
       </div>
@@ -73,16 +68,5 @@ export default function Artist() {
 
 function Songs({ songs }: { songs: ArtistSong[] }) {
   const rows = useMemo(() => songs.map((s) => ({ ...s, thumb: s.thumb ?? NO_ART })), [songs]);
-  return (
-    <DataTable
-      rows={rows}
-      columns={[
-        { key: "thumb", label: "", kind: "image", width: "64px" },
-        { key: "name", label: "Song" },
-        { key: "album", label: "Album" },
-        { key: "plays", label: "Plays", kind: "number" },
-      ]}
-      maxHeight={640}
-    />
-  );
+  return <DataTable rows={rows} columns={songColumns()} maxHeight={640} />;
 }

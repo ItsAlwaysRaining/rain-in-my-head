@@ -4,7 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { ApiError, fetchSchema, resetSchemaLayout, saveSchemaLayout } from "../api";
-import { ErrorState, Notice } from "../components/ui";
+import { ErrorState, Loading, Notice } from "../components/ui";
 import { createMap } from "./schema/map";
 import "./schema/map.css";
 
@@ -41,7 +41,7 @@ export default function Schema() {
           <ErrorState error={query.error} />
         </div>
       ) : !data ? (
-        <p className="caption">Loading…</p>
+        <Loading />
       ) : !data.objects.length ? (
         <div style={{ marginTop: 24 }}>
           <Notice>

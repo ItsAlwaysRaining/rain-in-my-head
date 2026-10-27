@@ -9,14 +9,11 @@ import {
 } from "../api";
 import { DataTable, type Column } from "../components/DataTable";
 import { Chips, Field, RangeSlider, Slider } from "../components/Form";
-import { ErrorState, Notice, RadioGroup, SegmentedControl } from "../components/ui";
+import { ErrorState, Loading, Notice, RadioGroup, SegmentedControl } from "../components/ui";
+import { formatDayMonthYear } from "../format";
 import styles from "./Playlists.module.css";
 
 const KINDS: Record<PlaylistKind, string> = { slot: "Time slot", discoveries: "Discoveries by year", binges: "Binged songs" };
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-/** Streamlit's "D MMM YYYY": "2025-01-11T01:50:09" -> "11 Jan 2025". */
-const dayMonthYear = (iso: string) => `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`;
 
 /** The **bold** and *italic* that the shared notices use. */
 function inline(text: string): ReactNode {
@@ -55,7 +52,7 @@ export default function Playlists() {
           <ErrorState error={meta.error} />
         </div>
       ) : !meta.data ? (
-        <p className="caption">Loading…</p>
+        <Loading />
       ) : (
         <PlaylistsForm meta={meta.data} />
       )}
@@ -86,7 +83,7 @@ function PlaylistsForm({ meta }: { meta: PlaylistsMeta }) {
       {preview.error ? (
         <ErrorState error={preview.error} />
       ) : !preview.data || preview.data.title === undefined ? (
-        <p className="caption">{kind === "binges" ? "Finding binges…" : "Loading…"}</p>
+        <Loading text={kind === "binges" ? "Finding binges…" : undefined} />
       ) : (
         <div className={preview.isFetching ? styles.stale : undefined}>
           <Preview data={preview.data} />
@@ -207,7 +204,7 @@ function Preview({ data }: { data: PlaylistPreview }) {
       c.kind === "lift"
         ? (r) => (r[c.key] === null ? "" : `${(r[c.key] as number).toFixed(1)}×`)
         : c.kind === "date"
-          ? (r) => (r[c.key] === null ? "" : dayMonthYear(r[c.key] as string))
+          ? (r) => (r[c.key] === null ? "" : formatDayMonthYear(r[c.key] as string))
           : undefined,
   }));
   return (

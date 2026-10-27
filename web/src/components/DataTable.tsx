@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
+import { formatCount } from "../format";
 import styles from "./DataTable.module.css";
 
 export type ColumnKind = "text" | "number" | "percent" | "progress" | "image" | "year";
@@ -26,7 +27,6 @@ interface Props<T> {
   sortable?: boolean;
 }
 
-const numberFormat = new Intl.NumberFormat("en-GB");
 const percentFormat = new Intl.NumberFormat("en-GB", { style: "percent", maximumFractionDigits: 0 });
 
 function cell<T>(row: T, column: Column<T>): ReactNode {
@@ -35,7 +35,7 @@ function cell<T>(row: T, column: Column<T>): ReactNode {
   if (value === null || value === undefined) return "";
   switch (column.kind) {
     case "number":
-      return numberFormat.format(value as number);
+      return formatCount(value as number);
     case "year":
       return String(value);
     case "percent":

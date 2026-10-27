@@ -7,10 +7,11 @@ import { useNavigate, useSearchParams } from "react-router";
 import { fetchOverview, NO_ART, type Grain, type NewArtistList, type OverviewFull, type Preset } from "../api";
 import { Sidebar } from "../App";
 import * as charts from "../charts/overview";
+import { artistColumns } from "../components/columns";
 import { DataTable } from "../components/DataTable";
-import { ErrorState, Kpi, Notice, RadioGroup, SegmentedControl, Tabs } from "../components/ui";
+import { ErrorState, Kpi, Loading, Notice, RadioGroup, SegmentedControl, Tabs } from "../components/ui";
 import { VegaChart } from "../components/VegaChart";
-import { formatDate, formatDateTime, percent } from "../format";
+import { capitalize, formatDate, formatDateTime, percent } from "../format";
 import styles from "./Overview.module.css";
 
 const PRESETS: Record<Preset, string> = {
@@ -96,7 +97,7 @@ export default function Overview() {
           <ErrorState error={query.error} />
         </div>
       ) : !data ? (
-        <p className="caption">Loading…</p>
+        <Loading />
       ) : data.empty && data.reason === "no_scrobbles" ? (
         <div className={styles.section}>
           <Notice>
@@ -294,11 +295,7 @@ function NewArtists({ list }: { list: NewArtistList }) {
       ) : (
         <DataTable
           rows={rows}
-          columns={[
-            { key: "thumb", label: "", kind: "image", width: "64px" },
-            { key: "name", label: "Artist" },
-            { key: "plays", label: "Plays", kind: "number" },
-          ]}
+          columns={artistColumns()}
           maxHeight={420}
           onRowClick={(a) => navigate(`/artist?${new URLSearchParams({ artist: a.artist_key, start: list.start, end: list.end })}`)}
         />
@@ -307,5 +304,3 @@ function NewArtists({ list }: { list: NewArtistList }) {
     </section>
   );
 }
-
-const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1);
