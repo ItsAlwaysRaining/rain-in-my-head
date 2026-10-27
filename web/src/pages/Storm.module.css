@@ -1,0 +1,203 @@
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The rain fills the window behind everything; the top bar covers its top edge. */
+.rain {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+/* The exported "Storm / Rain" layers, placed as in Frame 1 (far 388 px and near 547 px above the rain
+   box, which starts under the 64 px top bar) and tiled across wide windows. Each moves a whole number
+   of its streak periods per 1200 ms loop, so the jump back to the start is invisible. */
+.far,
+.near {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background-repeat: repeat-x;
+  /* Longhands: CSS modules rename the keyframes, which breaks a shorthand split from its name. */
+  animation-duration: 1200ms;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.far {
+  top: calc(64px - 388px);
+  height: 1449px;
+  background-image: url(/storm/far-rain.svg);
+  background-size: 1440px 1449px;
+  animation-name: fall-far;
+}
+.near {
+  top: calc(64px - 547px);
+  height: 1632px;
+  background-image: url(/storm/near-rain.svg);
+  background-size: 1440px 1632px;
+  animation-name: fall-near;
+}
+@keyframes fall-far {
+  to {
+    transform: translateY(137px);
+  }
+}
+@keyframes fall-near {
+  to {
+    transform: translateY(274.546px);
+  }
+}
+
+/* Lightning: two flickers in under half a second (under 3 flashes per second, WCAG 2.3.1). */
+.flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 20%, #f0f4ffcc, #a9b8f266 60%, transparent);
+  opacity: 0;
+  animation: strike 600ms ease-out forwards;
+}
+@keyframes strike {
+  0% {
+    opacity: 0;
+  }
+  6% {
+    opacity: 0.55;
+  }
+  18% {
+    opacity: 0;
+  }
+  55% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Controls row: 48 px in from each side, 24 px from the bottom, as in the frame. */
+.controls {
+  position: fixed;
+  left: var(--space-7);
+  right: var(--space-7);
+  bottom: var(--space-5);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  pointer-events: none;
+}
+.controls > * {
+  pointer-events: auto;
+}
+
+/* Raised pill (Elevation/Raised on Surface) */
+.pill {
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: var(--shadow-raised);
+}
+
+.sound {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.icon {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.icon img {
+  display: block;
+}
+
+/* Thunder toggle: Off is a Line outline, On is a Bolt pill with Page text (Smart animate 150 ms). */
+.thunderOff,
+.thunderOn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out,
+    border-color 150ms ease-out;
+}
+.thunderOff:hover {
+  border-color: var(--bolt);
+}
+.thunderOn {
+  background: var(--bolt);
+  border-color: var(--bolt);
+  color: var(--page);
+}
+
+/* Caption: Lexend Regular 13, Muted */
+.volume,
+.hint {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.volume {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  transition: opacity 150ms ease-out;
+}
+.volume input {
+  width: 160px;
+  margin: 0;
+  accent-color: var(--night);
+  cursor: pointer;
+}
+/* Until Thunder is on, the volume sleeps. */
+.asleep {
+  opacity: 0.5;
+}
+.asleep input {
+  cursor: not-allowed;
+}
+
+@media (max-width: 800px) {
+  .controls {
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: var(--space-4);
+  }
+  .pill:has(.sound) {
+    border-radius: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .far,
+  .near {
+    animation: none;
+  }
+  .flash {
+    display: none;
+  }
+}

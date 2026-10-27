@@ -3,17 +3,6 @@
 import { ComingSoon } from "../components/ComingSoon";
 import { BackLink, PageHeader } from "../components/ui";
 
-export function Storm() {
-  return (
-    <>
-      <PageHeader title="Storm" />
-      <ComingSoon title="Storm mode" issue={28}>
-        Full-screen rain to sit with while the music plays, with a thunder switch and a rain-volume slider.
-      </ComingSoon>
-    </>
-  );
-}
-
 export function ListeningSlot() {
   return (
     <>
