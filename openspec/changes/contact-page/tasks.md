@@ -17,5 +17,5 @@
 
 ## 4. Check against the spec and design
 
-- [ ] 4.1 At 1440 px, compare `/contact` with the Figma screenshot of `362:20290`: row width (480), icon circle (40) and icon sizes (mail 16.875 × 13.125, others 20 × 20), type sizes, gaps. Record the measured numbers in the PR
-- [ ] 4.2 Check each scenario in `specs/contact-page/spec.md`: nav highlight and breadcrumbs, row order, `mailto:` and new-tab `href`/`target` values, the CV response is `application/pdf` with `download` set, Tab order with a visible outline, each link's accessible name (via the accessibility tree), and one `h1` followed by one `h2`
+- [x] 4.1 At 1440 px, compare `/contact` with the Figma screenshot of `362:20290`: row width (480), icon circle (40) and icon sizes (mail 16.875 × 13.125, others 20 × 20), type sizes, gaps. Record the measured numbers in the PR
+- [x] 4.2 Check each scenario in `specs/contact-page/spec.md`: nav highlight and breadcrumbs, row order, `mailto:` and new-tab `href`/`target` values, the CV response is `application/pdf` with `download` set, Tab order with a visible outline, each link's accessible name (via the accessibility tree), and one `h1` followed by one `h2`
