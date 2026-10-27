@@ -5,15 +5,68 @@ This project has two dashboards over the same `data/listening.db`:
 - **Streamlit** (`dashboard/`): `uv run streamlit run dashboard/app.py` → http://localhost:8501
 - **TypeScript** (`web/` + `src/rain_in_my_head/api.py`): `uv run rain-in-my-head serve` → http://localhost:8000
 
-Both get their numbers from the same functions in `src/rain_in_my_head/`, so any difference you see is the UI, not the maths. This log records what building and changing each one was like, page by page, as the work happened (spec `specs/003-typescript-dashboard`).
+Both get their numbers from the same functions in `src/rain_in_my_head/`, so any difference you see is the design, not the maths.
 
-## How to read this
+This page explains, from a designer's point of view, why the TypeScript app exists: what I can and can't control in each. How hard each page was to build is in the [build log](#build-log) at the end.
+
+## The short version
+
+I built in Streamlit first to get a quick, rough look at my listening data and to sketch the dashboards and drill-downs I wanted. Once I knew what I wanted to show, I needed more control over the visual design and layout than Streamlit allows, so I rebuilt it in TypeScript (React). Streamlit is the sketchbook; TypeScript is the designed product.
+
+Speed wasn't a factor: both apps load in about the same time (see [Load times](#load-times)).
+
+## Streamlit: the sketchbook
+
+Streamlit was the right tool for the first look at the data. With a few lines of Python each, I could:
+
+- put a chart on screen and see whether the data said anything interesting
+- try range presets, date pickers, sliders and toggles without designing them
+- add drill-downs (click a bar, click a genre, click an artist) and see whether the path through the data made sense
+- change my mind cheaply, because nothing was designed yet
+
+It answered the question "what is worth showing?" before I spent any time on how it should look.
+
+## Where Streamlit stopped me
+
+Once the content was settled, the questions became design questions, and Streamlit decides most of those for you.
+
+| What I wanted to control | In Streamlit | In TypeScript |
+|---|---|---|
+| **Page layout** | Fixed: a sidebar, one column, and `st.columns` to split it. I couldn't put a caption beside a chart or decide how much space sits between sections. | Any layout. Every gap comes from a spacing scale (`--space-1` to `--space-7`) in `theme.css`. |
+| **Visual style of components** | KPIs, tables and widgets look the way Streamlit draws them. I couldn't style a KPI. | Every component is mine to style: KPIs, tables, tabs, radios, notices. |
+| **Colour** | The palette has to fit Streamlit's named slots (`blueColor`, `greenColor`, `redColor`…). To get rain-blue for positive changes, I had to set `greenColor` to blue. Sequential chart colours must be exactly 10 steps. | Colours are named for what they mean (`--rain` for plays, `--night` for discovery, `--coral` only for errors), with surface, base and hover steps for each. |
+| **Interaction states** | The table is drawn on a canvas, so I couldn't design its hover or selected states. | I designed the hover, selected-row highlight and whole-row click target, and reuse them on every table. |
+| **Where you are and how you got there** | Selections live inside widgets, so a view can't be bookmarked or shared, and the back button doesn't step back through clicks. | Every view is in the address (`?preset=…&grain=…&period=…`), so any view can be bookmarked or shared, and back works the way people expect. |
+| **What happens while data loads** | The whole page reruns on every click. | I chose the behaviour: the old figures stay on screen, dimmed, until the new ones arrive. |
+| **Forms** | One fixed widget per control, and a form forgets your settings when you switch playlist type. | I designed the range slider and day chips, and each playlist type keeps its settings when you switch away and back. |
+| **Keyboard** | A button is the only way to run a SQL query. | Cmd/Ctrl+Enter runs the query. |
+| **Custom visuals** | The Schema map couldn't be built in Streamlit at all; it needed a custom component bolted on. | The map is a normal part of the page. |
+| **App chrome** | Streamlit adds its own toolbar and menus, which I could only partly hide. | Nothing on screen I didn't put there. |
+
+## What I gave up
+
+- **Speed of sketching.** A new idea takes minutes in Streamlit and longer in TypeScript, because every part of it is designed rather than given.
+- **Free defaults.** Streamlit gives you a menu, theme, widgets and tables that already work together. In TypeScript each one is a design decision I have to make, which is the point, but it's also work.
+
+## How I use them now
+
+1. **Explore in Streamlit.** A new question about the data starts here, rough and fast, to find out whether it's worth showing.
+2. **Design in Figma.** Once it is, I design it properly: layout, states and how it fits the rest of the app (see the Figma design process file).
+3. **Build in TypeScript.** The designed version goes into the TypeScript app, using the same tokens as Figma.
+
+Both apps keep the same colours: `theme.css` and `.streamlit/config.toml` share the project palette and are changed together.
+
+## Build log
+
+How building each page went in each app, recorded as the work happened (spec `specs/003-typescript-dashboard`).
+
+### How to read this
 
 - **Lines**: `wc -l` of the code written for that page. For Streamlit, the view in `dashboard/views/`. For TypeScript, the page, its chart builders and its API route. Shared data functions in `src/rain_in_my_head/` are counted once, separately, because both apps use them. Shared components, such as the table and chart wrapper, are counted in "Foundation".
 - **Effort**: working sessions, with notes. Not exact hours.
 - **Easy / hard**: what each approach made simple or difficult for that page.
 
-## Foundation
+### Foundation
 
 | | Streamlit | TypeScript |
 |---|---|---|
@@ -22,7 +75,7 @@ Both get their numbers from the same functions in `src/rain_in_my_head/`, so any
 
 Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "is the server up" handling for free. In TypeScript each of those was a file to write, but each one is now ours to change.
 
-## Pages
+### Pages
 
 | Page | Streamlit lines | TS lines (page + charts + API route) | Shared function lines | Effort (TS) |
 |---|---|---|---|---|
@@ -33,7 +86,7 @@ Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "i
 | Playlists | 224 → 143 | 659: page 314 + CSS 114 + API routes 140 + form controls 91 (`Form.tsx`, CSS 108 more) | 141 added to `playlist.py` (the preview builders) | About half a session |
 | Artist + new-artists list (spec 001) | 104: page 67 + Overview table 35 + menu entry 2 | 237: page 88 + CSS 43 + Overview table 28 + route 3 + API client 44 + API routes 31 | 113 (`artist.py`) | Built in both apps in the same session |
 
-### Overview notes (slice 1)
+#### Overview notes (slice 1)
 
 **Easy in Streamlit**
 - Selection state. `on_select="rerun"` plus a widget key gives the clicked bar back on the next run.
@@ -58,7 +111,7 @@ Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "i
 **Shared**
 - Moving the maths into `listening/overview.py` was mechanical. A golden comparison of 24 input combinations was byte-identical before and after, so both apps provably show the same numbers.
 
-### Genre and SQL notes (slice 2)
+#### Genre and SQL notes (slice 2)
 
 **Easy in Streamlit**
 - Clicking anywhere on a row to pick an artist is one argument: `selection_mode=["single-row", "single-cell"]`.
@@ -82,7 +135,7 @@ Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "i
 **Shared**
 - `genre.py` and `sql_examples.py` were moved, not rewritten. A scratch script ran the old view's functions (from `main`) and the new module over 6 genres × 3 ranges, and 51 artists' song lists: all identical. Every SQL example gives the same row count through the API as directly in SQLite.
 
-### Schema and Playlists notes (slice 3)
+#### Schema and Playlists notes (slice 3)
 
 **Easy in Streamlit**
 - Every Playlists control is one line: `st.multiselect`, a two-thumb `st.slider`, `st.date_input` for a range, `st.toggle`, `st.progress`. The TypeScript app needed a new `Form.tsx` for the slider, range slider and day chips.
@@ -107,7 +160,7 @@ Streamlit gives you the menu, layout, theme, widgets, tables, caching and the "i
 - The preview builders (`preview_slot`, `preview_discoveries`, `preview_binges`) were checked against the old view: a scratch script ran the old view's code with a stub Streamlit for 141 form settings (days, hours including past midnight, spans, years, orders, windows, minimum plays), and every playlist, preview, name, description, warning and note was identical.
 - The layout file is shared: a card moved in either app shows up in the other, and "Reset layout" in one resets both.
 
-### New artists and the Artist page (spec 001)
+#### New artists and the Artist page (spec 001)
 
 The first feature built for both apps at once, after they were side by side.
 
@@ -129,11 +182,11 @@ The first feature built for both apps at once, after they were side by side.
 **Shared**
 - `rain_in_my_head.artist` reuses the Genre page's ranking helpers, so the list, the page and the Genre page pick names, art and counts the same way. Its results were checked against direct SQLite queries for three periods, with no differences.
 
-## Same-change test
+### Same-change test
 
 _Added after all pages are done: one identical small change made in both apps._
 
-## Load times
+### Load times
 
 _Time until each page's figures appear, both apps, same inputs._
 

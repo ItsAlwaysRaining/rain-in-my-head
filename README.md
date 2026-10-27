@@ -42,7 +42,7 @@ Both can run at the same time. `uv sync` installs what both need (the `dashboard
 
 To work on the TypeScript app with hot reload, run `uv run rain-in-my-head serve --dev` (API only) and `npm run dev` in `web/`, then open http://localhost:5173.
 
-[docs/streamlit-vs-typescript.md](docs/streamlit-vs-typescript.md) records how building each page went in each app.
+[docs/streamlit-vs-typescript.md](docs/streamlit-vs-typescript.md) explains why the TypeScript app exists (design control over layout, style and interaction) and logs how building each page went in each app.
 
 ## Filter by period
 
