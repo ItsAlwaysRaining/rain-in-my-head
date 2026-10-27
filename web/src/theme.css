@@ -1,7 +1,8 @@
 /* Design tokens. Colours mirror .streamlit/config.toml (the project palette, dark mode) and the chart
    constants in dashboard/views/overview.py; change both together (constitution VI). Type, elevation and
    the plum/moss/ember chart steps follow the Figma prototype (specs/005-prototype-redesign) and are
-   TypeScript-only for now. */
+   TypeScript-only for now. The Color and Spacing variables and the text styles in the Figma design file
+   (README, Design) mirror these tokens, so change them there too. */
 :root {
   /* Surfaces and text */
   --page: #141a2a;
