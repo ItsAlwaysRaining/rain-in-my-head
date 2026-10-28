@@ -33,7 +33,7 @@ I read `infra/` and know exactly what exists on Vercel, Neon and GitHub, and how
 
 1. **Given** empty Vercel and Neon accounts, **When** I run the apply, **Then** they're created:
    - one Vercel project with no Git connection, and previews that need a Vercel login to view
-   - one Neon project with `prod` and `dev` branches, each with a database and two roles (app and owner)
+   - one Neon project with `prod` and `dev` branches, each with a database and an owner role, plus a generated password and connection string for the app role that phase 4 creates
    - the GitHub Actions secrets and variables the later phases need
 2. **Given** that apply has finished, **When** I run a plan again, **Then** it reports no changes.
 3. **Given** the Vercel project, **When** I look at its environment variables, **Then**:
@@ -99,9 +99,9 @@ When a pull request changes `infra/`, GitHub checks the code and posts the plan:
 - **FR-002**: The Vercel project MUST have no Git connection. Deploys come only from CI (phase 6). Preview deployments MUST need a Vercel login to view.
 - **FR-003**: Neon MUST have a `prod` branch and a `dev` branch, each with its own database. Production uses `prod`, and previews use `dev`.
 - **FR-004**: Each Neon branch MUST have two roles:
-  - an **app** role, the only one the website uses
-  - an **owner** role, used only by OpenTofu, the nightly clean-up job (phase 7) and the owner's Mac
-  The exact table grants are set in phase 4, when the tables exist. The app role MUST NOT own the database.
+  - an **owner** role, which owns the database and is used only by OpenTofu, the nightly clean-up job (phase 7) and the owner's Mac. It's created here.
+  - an **app** role, the only one the website uses. This phase only generates its password and connection string. Phase 4 creates the role itself with plain SQL and grants it access to the visitor tables. The role is not created through Neon's API, because roles made that way are Neon superusers. *(Found while planning, 2026-10-28.)*
+  The app role MUST NOT own the database or be a superuser.
 - **FR-005**: The website's connection string (app role) and a randomly generated session-signing secret MUST be set as Vercel environment variables by the code. No secret value is typed by hand, except the four the owner adds to GitHub first.
 - **FR-006**: The values later workflows need MUST be written to GitHub Actions by the code: the Vercel project and team IDs, and the owner-role connection string for the clean-up job.
 - **FR-007**: The state, and any saved plan, MUST be encrypted with a key derived from the owner's passphrase before it's written. The encrypted state MUST be committed in `infra/`.
@@ -134,6 +134,7 @@ When a pull request changes `infra/`, GitHub checks the code and posts the plan:
 
 ## Assumptions
 
+- The owner gives the Vercel Team ID (not a secret), which is committed in `infra/terraform.tfvars`.
 - The owner has created the accounts and added the GitHub secrets `VERCEL_API_TOKEN`, `NEON_API_KEY`, `GH_INFRA_TOKEN` and `TOFU_STATE_PASSPHRASE` (see the to-do page) before the first apply. The code can be written and validated before then.
 - The first apply runs from the owner's Mac, because the GitHub secrets that CI applies would use are created by that same apply.
 - Neon region `aws-us-east-1`, close to Vercel's default region (`iad1`).
