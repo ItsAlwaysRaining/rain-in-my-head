@@ -6,13 +6,13 @@ Streamlit import, so both dashboards get identical lists.
 
 from __future__ import annotations
 
-import sqlite3
+from contextlib import closing
 from datetime import date
 from pathlib import Path
 
 import pandas as pd
 
-from .build import MIN_PLAYED_AT
+from .build import MIN_PLAYED_AT, connect_readonly
 
 # Last.fm's grey-star "no image" picture.
 PLACEHOLDER = "2a96cbd8b46e442fc41c2b86b821562f"
@@ -30,7 +30,7 @@ def thumb(url: str, size: str = "64s") -> str:
 
 def genres(db_path: Path) -> list[str]:
     """Every primary genre, most played first."""
-    with sqlite3.connect(db_path) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         rows = conn.execute(
             """SELECT g.primary_genre FROM scrobbles s JOIN v_artist_genre g USING (artist_key)
                GROUP BY g.primary_genre ORDER BY COUNT(*) DESC"""
@@ -40,7 +40,7 @@ def genres(db_path: Path) -> list[str]:
 
 def genre_plays(db_path: Path, genre: str, start: str, end: str) -> pd.DataFrame:
     """One row per play of an artist whose primary genre is `genre`, between ISO dates `start` and `end`."""
-    with sqlite3.connect(db_path) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         return pd.read_sql(
             f"""SELECT {PLAY_COLUMNS}
                 FROM scrobbles s JOIN v_artist_genre g USING (artist_key)
