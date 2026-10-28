@@ -4,3 +4,4 @@
 plan.txt
 comment.md
 body.md
+*.tfstate.backup
