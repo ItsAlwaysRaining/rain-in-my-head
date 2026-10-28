@@ -22,7 +22,7 @@
 
 - **Decision**: prod uses `neon_project.database_host`, the default endpoint. dev gets its own `neon_endpoint` (`read_write`).
 - **Organization**: new Neon accounts belong to an organization, and the API refuses to create a project without `org_id` (HTTP 400, found at the first apply). `neon_project.org_id` comes from `var.neon_org_id` in `terraform.tfvars`; it isn't secret.
-- **Free plan**: both at 0.25 CU, suspending after 5 minutes. The free plan only bills compute while the endpoint is awake, within its free allowance.
+- **Free plan**: both at 0.25 CU. They suspend after 5 minutes idle, which the free plan fixes: setting `suspend_timeout_seconds` is refused (HTTP 412, found at the first apply), so the code leaves it unset. The free plan only bills compute while the endpoint is awake, within its free allowance.
 
 ## R4. Vercel
 
