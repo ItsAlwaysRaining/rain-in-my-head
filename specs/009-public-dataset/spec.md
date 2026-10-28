@@ -43,11 +43,11 @@ When the API runs on the hosted copy, nothing a visitor does can write to the da
 
 **Why this priority**: visitors share one copy. Nothing they do should change what the next visitor sees, and the hosted file system is read-only anyway.
 
-**Independent Test**: run the API in read-only mode on `public.db`. Try every route that writes, and check that each is refused with a clear message and that the database file is byte-identical afterwards.
+**Independent Test**: run the API in read-only mode on `public.db`. Try every route that writes, and check that each is refused with "This DJ doesn't take requests." and that the database file is byte-identical afterwards.
 
 **Acceptance Scenarios**:
 
-1. **Given** read-only mode, **When** a visitor tries to save or reset the schema layout, **Then** they get a "not available on the hosted site" response and nothing is written.
+1. **Given** read-only mode, **When** a visitor tries to save or reset the schema layout, **Then** they get "This DJ doesn't take requests." and nothing is written.
 2. **Given** read-only mode, **When** a visitor opens the Playlists page or calls any playlist route, **Then** it's refused with "This DJ doesn't take requests." (FR-018).
 3. **Given** read-only mode, **When** every read page is used, **Then** the database file's checksum is unchanged, and no journal or lock file is created next to it.
 4. **Given** normal (local) mode, **Then** every route works exactly as before.
@@ -70,7 +70,7 @@ Then check that locally, without hosted mode, the SQL page works exactly as toda
 **Acceptance Scenarios**:
 
 1. **Given** hosted mode, **When** a visitor opens the Analyst page, **Then** they see the schema map and a list of pre-defined queries. Choosing one shows its SQL (read-only) and its results. There's no editable query box.
-2. **Given** hosted mode, **When** anyone sends free-form SQL to the API, **Then** it's refused with "Only the pre-defined queries can run here." and nothing is executed.
+2. **Given** hosted mode, **When** anyone sends free-form SQL to the API, **Then** it's refused with "This DJ doesn't take requests." and nothing is executed.
 3. **Given** hosted mode, **When** anyone asks for a pre-defined query by a name that doesn't exist, **Then** it's refused with the same message.
 4. **Given** hosted mode, **When** a visitor opens the AI page, **Then** they see the "Coming soon" card. Any AI route, now or added later, is refused with "This DJ doesn't take requests."
 5. **Given** local mode (no hosted setting), **When** I use the SQL page, **Then** it works exactly as today, with free-form SQL and the examples as starting points.
@@ -96,16 +96,16 @@ Then check that locally, without hosted mode, the SQL page works exactly as toda
 - **FR-004**: `publish` MUST read the full database without changing it, MUST replace the output file whole (writing to a temporary file first), and MUST compact the result.
 - **FR-005**: `publish` MUST print the window's dates, the play, track and artist counts, and the file size.
 - **FR-006**: The API MUST have a read-only mode, switched on by an environment setting. In it, every database connection opens the file as unchangeable, so no journal, lock or write is ever attempted.
-- **FR-007**: In read-only mode, the schema-layout save and reset routes and all playlist routes MUST be refused with a clear "not available on the hosted site" response, and the pages using them MUST say so instead of failing. Outside read-only mode, they MUST work as today.
+- **FR-007**: In read-only mode, the schema-layout save and reset routes and all playlist routes MUST be refused with "This DJ doesn't take requests.", and the pages using them MUST say so instead of failing. Outside read-only mode, they MUST work as today.
 - **FR-008**: Every read in the API and the shared data functions MUST go through one shared way of opening the database. In read-only mode, nothing may open it for writing.
-- **FR-009**: In hosted (read-only) mode, the SQL route MUST accept only the name of a pre-defined query, and MUST run that query's SQL as written in the code. Free-form SQL, or an unknown name, MUST be refused without running anything, with "Only the pre-defined queries can run here." The schema information routes stay available.
+- **FR-009**: In hosted (read-only) mode, the SQL route MUST accept only the name of a pre-defined query, and MUST run that query's SQL as written in the code. Free-form SQL, or an unknown name, MUST be refused without running anything, with "This DJ doesn't take requests." The schema information routes stay available.
 - **FR-010**: In hosted mode, the Analyst page MUST show the schema map and the list of pre-defined queries. Choosing one shows its SQL as read-only text and its results. There MUST be no editable query box.
 - **FR-011**: In hosted mode, every AI route MUST be refused with "This DJ doesn't take requests." That covers today's none and any added later. The AI page shows only its "Coming soon" card.
 - **FR-012**: Outside hosted mode, SQL behaves exactly as today. The pre-defined queries are the same list both modes use, defined once.
 - **FR-013**: Table names in the SQL examples' schema listing MUST be quoted the same safe way as on the Schema page. It's a consistency fix: those names come from the database itself, not from visitors.
 - **FR-016**: The README MUST describe `publish`, hosted read-only mode, and which features are off there (SQL, AI, playlists, layout saving).
 - **FR-017**: No one but the owner may create playlists on the owner's Spotify account. The hosted site MUST NOT hold any Spotify credential (the token file or the client ID), so playlist creation is impossible there even if a route were left on. In read-only mode, every playlist route is refused (FR-007). *(Owner's requirement, 2026-10-27.)*
-- **FR-018**: When a playlist route is refused in read-only mode, the response and the Playlists page MUST say exactly: **"This DJ doesn't take requests."** This applies to anyone who opens the page directly or calls the API. Other refused write routes keep the plain "not available on the hosted site" message. *(Owner's wording, 2026-10-27.)*
+- **FR-018**: Every refusal on the hosted site MUST say exactly **"This DJ doesn't take requests."** That covers blocked writes (schema layout), playlists, free-form or unknown SQL, AI, and any route refused in hosted mode in future. It applies both in API responses and on the pages that show them. No other refusal wording is used. *(Owner's wording, 2026-10-27.)*
 
 ### Key Entities
 
