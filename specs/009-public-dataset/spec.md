@@ -48,7 +48,7 @@ When the API runs on the hosted copy, nothing a visitor does can write to the da
 **Acceptance Scenarios**:
 
 1. **Given** read-only mode, **When** a visitor tries to save or reset the schema layout, **Then** they get a "not available on the hosted site" response and nothing is written.
-2. **Given** read-only mode, **When** a visitor calls any playlist route, **Then** it's refused in the same way.
+2. **Given** read-only mode, **When** a visitor opens the Playlists page or calls any playlist route, **Then** it's refused with "This DJ doesn't take requests." (FR-018).
 3. **Given** read-only mode, **When** every read page is used, **Then** the database file's checksum is unchanged, and no journal or lock file is created next to it.
 4. **Given** normal (local) mode, **Then** every route works exactly as before.
 
@@ -113,6 +113,7 @@ Check each result against the scenarios below.
 - **FR-015**: These SQL limits apply everywhere, locally too, since the runner is shared. Local use is unaffected apart from the limits themselves.
 - **FR-016**: The README MUST describe `publish`, read-only mode and the SQL limits.
 - **FR-017**: No one but the owner may create playlists on the owner's Spotify account. The hosted site MUST NOT hold any Spotify credential (the token file or the client ID), so playlist creation is impossible there even if a route were left on. In read-only mode, every playlist route is refused (FR-007). *(Owner's requirement, 2026-10-27.)*
+- **FR-018**: When a playlist route is refused in read-only mode, the response and the Playlists page MUST say exactly: **"This DJ doesn't take requests."** This applies to anyone who opens the page directly or calls the API. Other refused write routes keep the plain "not available on the hosted site" message. *(Owner's wording, 2026-10-27.)*
 
 ### Key Entities
 
