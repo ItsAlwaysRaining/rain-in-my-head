@@ -20,10 +20,8 @@ resource "neon_project" "visitors" {
     role_name     = "rain_owner"
   }
 
-  primary_compute {
-    autoscaling_limit_min_cu = 0.25
-    autoscaling_limit_max_cu = 0.25
-  }
+  # No primary_compute block: with one, the provider always sends a suspend timeout, and the free plan
+  # refuses any (HTTP 412). The free plan's default compute and its fixed 5-minute suspend are used.
 }
 
 resource "neon_branch" "dev" {
