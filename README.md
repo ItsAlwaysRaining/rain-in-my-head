@@ -102,6 +102,15 @@ One-off steps on a machine with an existing clone:
 
 4. Optionally rename the Spotify app at developer.spotify.com/dashboard → your app → **Settings** → **Edit**. Spotify identifies the app by its client ID, so `.env` and the saved login don't change.
 
+## Design
+
+Every page of the TypeScript app is designed in Figma before it's built.
+
+- [Rain in My Head: Design process](https://www.figma.com/design/1rbbEne7pW8oA2JCNmjhrm) (Figma). Pages: 0 Cover, 1 Research, 2 Wireframes, 3 Prototype, 4 Visual design and 5 States. Its Color and Spacing variables and text styles mirror `web/src/theme.css`, so a token change goes in both places.
+- [Design reference](https://claude.ai/artifact/SYxFoSaCHYddYzBtnAKT1M): the palette, type, spacing, writing rules and interaction states on one page.
+
+The Figma file is private while the project is in progress and will be made public when it's finished. The About page links to it too.
+
 ## Notes
 
 - Minutes listened are estimated from track durations. Plays with an unknown duration count as 3.5 minutes.

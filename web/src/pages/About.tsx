@@ -4,6 +4,9 @@ import { useState } from "react";
 import { PageHeader } from "../components/ui";
 import styles from "./About.module.css";
 
+/** The design process file: research, wireframes, prototype, visual design and states. */
+const FIGMA_URL = "https://www.figma.com/design/1rbbEne7pW8oA2JCNmjhrm";
+
 /** The photo, or the design's dashed frame until web/public/about/photo.jpg is added. */
 function Photo() {
   const [missing, setMissing] = useState(false);
@@ -52,6 +55,15 @@ export default function About() {
               listening to lately, which artists are new to me, and what I played the summer three years ago, and it builds playlists
               for times of day or seasons of my life. It builds playlists for me based on my listening history because Friday from 5 pm to 7 pm has its own
               feeling.
+            </p>
+            <p>
+              Every page was designed in Figma first, from research and wireframes to a clickable prototype. You can follow the whole
+              process in the{" "}
+              <a href={FIGMA_URL} target="_blank" rel="noreferrer">
+                Rain in My Head design file on Figma
+                <span className={styles.visuallyHidden}> (opens in a new tab)</span>
+              </a>
+              .
             </p>
           </div>
         </div>
