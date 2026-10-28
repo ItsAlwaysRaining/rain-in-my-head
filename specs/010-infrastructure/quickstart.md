@@ -3,7 +3,7 @@
 ## Before you start (owner)
 
 1. Create the accounts, tokens and passphrase, and the four GitHub secrets (see the to-do page).
-2. Send Claude your Vercel **Team ID** (Settings → General). It isn't secret, and it goes in `infra/terraform.tfvars`.
+2. Send Claude your Vercel **Team ID** (Settings → General) and your Neon **organization ID** (Organization settings → General, starts with `org-`). Neither is secret; both go in `infra/terraform.tfvars`.
 
 ## First apply, from your Mac (about 10 minutes)
 

@@ -57,7 +57,7 @@ Checkov 3.3.29 runs ad hoc with `uvx`.
 infra/
 ├── main.tf               # providers + encryption
 ├── variables.tf          # state_passphrase (sensitive), vercel_team_id, repo, region
-├── terraform.tfvars      # vercel_team_id (added at the first apply; not secret)
+├── terraform.tfvars      # vercel_team_id and neon_org_id (added at the first apply; not secret)
 ├── neon.tf               # project, dev branch/endpoint/owner/db, app passwords, URLs
 ├── vercel.tf             # project + env vars
 ├── github.tf             # Actions variables and secrets

@@ -134,7 +134,7 @@ When a pull request changes `infra/`, GitHub checks the code and posts the plan:
 
 ## Assumptions
 
-- The owner gives the Vercel Team ID (not a secret), which is committed in `infra/terraform.tfvars`.
+- The owner gives the Vercel Team ID and the Neon organization ID (neither is a secret), which are committed in `infra/terraform.tfvars`. Neon requires an organization ID to create a project in a new account (found at the first apply, 2026-10-28).
 - The owner has created the accounts and added the GitHub secrets `VERCEL_API_TOKEN`, `NEON_API_KEY`, `GH_INFRA_TOKEN` and `TOFU_STATE_PASSPHRASE` (see the to-do page) before the first apply. The code can be written and validated before then.
 - The first apply runs from the owner's Mac, because the GitHub secrets that CI applies would use are created by that same apply.
 - Neon region `aws-us-east-1`, close to Vercel's default region (`iad1`).
