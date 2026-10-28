@@ -14,6 +14,11 @@ variable "vercel_team_id" {
   type        = string
 }
 
+variable "neon_org_id" {
+  description = "The Neon organization the project lives in (Organization settings > General). Neon requires it for new projects. Not a secret: set in terraform.tfvars."
+  type        = string
+}
+
 variable "github_owner" {
   description = "GitHub account that owns the repository."
   type        = string

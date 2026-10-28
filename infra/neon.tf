@@ -8,6 +8,7 @@
 
 resource "neon_project" "visitors" {
   name                      = "rain-in-my-head"
+  org_id                    = var.neon_org_id
   region_id                 = var.neon_region
   pg_version                = 17
   history_retention_seconds = 21600 # 6 hours, within the free plan
