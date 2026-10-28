@@ -1,4 +1,4 @@
-"""Command line entry point: `rain-in-my-head fetch | build | enrich | export-cache | stats`, plus playlists."""
+"""Command line entry point: `rain-in-my-head fetch | build | enrich | export-cache | publish | stats`, plus playlists."""
 
 from __future__ import annotations
 
@@ -46,6 +46,13 @@ def cmd_enrich(args) -> None:
     from .enrich import enrich
 
     enrich(_client(), config.DB_PATH, args.limit, config.CACHE_DIR if args.write_cache else None)
+
+
+def cmd_publish(args) -> None:
+    from .publish import publish
+
+    out = Path(args.out)
+    print(publish(config.DB_PATH, out, args.window_days, args.lag_days).line(out))
 
 
 def cmd_stats(args) -> None:
@@ -225,6 +232,11 @@ def main() -> None:
     p = sub.add_parser("export-cache", help="write the database's Last.fm lookups to data/cache/ (one-time)")
     p.add_argument("--append", action="store_true", help="add after lookups already in data/cache/")
     p.set_defaults(func=cmd_export_cache)
+    p = sub.add_parser("publish", help="build data/public.db, the two-year copy for the hosted site")
+    p.add_argument("--window-days", type=int, default=730, help="days of plays to keep (default 730)")
+    p.add_argument("--lag-days", type=int, default=7, help="leave out the newest N days (default 7)")
+    p.add_argument("--out", default=str(config.ROOT / "data" / "public.db"), help="output file (default data/public.db)")
+    p.set_defaults(func=cmd_publish)
     sub.add_parser("stats", help="summarize the database").set_defaults(func=cmd_stats)
     sub.add_parser("spotify-login", help="connect Spotify (for creating playlists)").set_defaults(
         func=cmd_spotify_login
