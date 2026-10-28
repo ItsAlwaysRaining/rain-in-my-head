@@ -151,6 +151,14 @@ The TypeScript app was restyled to match the Figma Prototype page. Streamlit is 
 - The rain is the two exported Figma layers looping in CSS. Each moves exactly one or two of its streak periods (137 and 274.5 px, not the 140 and 280 px in the Figma notes, which would jump 3–5 px). Rain and thunder are made with the Web Audio API, started by the Thunder click so nothing autoplays. Lightning flashes are limited to two flickers per strike, under WCAG's 3-per-second limit.
 - Found on the way: with the page colour on both `html` and `body`, the body painted over anything placed behind the page. The colour is now on `html` only.
 
+**Hosted mode (spec 009, TypeScript only)**
+- Only the TypeScript app is hosted. With `LISTENING_HOSTED=1`:
+  - the Analyst page swaps the SQL editor for a picker of the pre-defined queries, with each query's SQL shown read-only
+  - the API refuses typed SQL
+  - every refusal shows "This DJ doesn't take requests."
+- Streamlit isn't hosted, so it has no hosted mode.
+- Locally, both apps' SQL pages are unchanged, and the shared pieces behave the same in both: the examples list and the read-only runner.
+
 **Would be hard in Streamlit**
 - A top bar, breadcrumbs, chips that look like the design, a raised-card shadow and a custom webfont all fight Streamlit's fixed layout and theme.
 
