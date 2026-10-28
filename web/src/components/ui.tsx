@@ -235,6 +235,7 @@ export function ErrorState({ error }: { error: unknown }) {
         No database yet. Run <code>uv run rain-in-my-head fetch</code> then <code>uv run rain-in-my-head build</code>.
       </Notice>
     );
+  if (error instanceof ApiError && error.kind === "refused") return <Notice>{error.message}</Notice>;
   if (error instanceof ApiError && error.kind === "unreachable")
     return (
       <Notice tone="warning">

@@ -9,7 +9,7 @@ import { createMap } from "./schema/map";
 import "./schema/map.css";
 
 const saveError = (e: unknown) =>
-  new Error(e instanceof ApiError && e.kind === "http" ? e.message : "Couldn't save the layout: the data service isn't responding");
+  new Error(e instanceof ApiError && (e.kind === "http" || e.kind === "refused") ? e.message : "Couldn't save the layout: the data service isn't responding");
 
 export default function Schema() {
   // Read once per visit: refetching would redraw the map under a drag.
