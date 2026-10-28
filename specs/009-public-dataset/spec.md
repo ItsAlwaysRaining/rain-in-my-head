@@ -1,4 +1,4 @@
-# Feature Specification: Two-year public dataset and safe SQL page
+# Feature Specification: Two-year public dataset and a read-only hosted API
 
 **Feature Branch**: `feature/public-dataset`
 
@@ -10,7 +10,7 @@
 
 1. A `publish` command that builds `data/public.db`, a copy of the database limited to a rolling window. It covers the last 730 days, ending 7 days before the build.
 2. A read-only mode for the API, where nothing can be written.
-3. Limits on the SQL page, so a visitor can't hang the server, read files or attach other databases.
+3. No free-form SQL and no AI for visitors. In hosted mode, the SQL page offers only the owner's pre-defined queries: visitors pick one and see its results, but can't edit them or type their own. AI routes are switched off. *(Decided with the owner, 2026-10-27; this replaces the earlier plan to put limits on free-form SQL.)*
 
 Decided with the owner in the hosting plan: a 730-day window with a 7-day lag; playlists and Streamlit are not hosted.
 
@@ -54,43 +54,37 @@ When the API runs on the hosted copy, nothing a visitor does can write to the da
 
 ---
 
-### User Story 3 - The SQL page is safe to share (Priority: P3)
+### User Story 3 - Pre-defined queries only, and no AI, for visitors (Priority: P3)
 
-Visitors I trust can type their own queries on the SQL page. A runaway or hostile query can't slow the site for everyone, read anything outside the listening data, or reveal how the server is set up.
+On the hosted site, visitors can browse every chart. On the Analyst page they can pick any of my pre-defined queries (such as "Top artists this year" or "Plays by genre"), see its results, and read its SQL, but they can't change it or type their own. The schema map stays. The AI page shows its "Coming soon" card, and any AI action is refused.
 
-**Why this priority**: SQL is the most powerful page. Phase 4 limits it to trusted codes, but it must be safe even so.
+**Why this priority**: free-form SQL and AI are the two features that let a visitor make the server do open-ended work. AI would also spend the owner's money and use their API keys. With only pre-defined queries, every query that can run on the server is one the owner wrote, so injection is impossible, and the page is still fun to show off.
 
-**Independent Test**: on `public.db`, run:
-- a normal query
-- an endless recursive query
-- a query returning 50,000 rows
-- an `ATTACH`
-- a `PRAGMA`
-- a write
-- a 10,000-character query
-- a syntax error
+**Independent Test**: in hosted (read-only) mode on `public.db`:
+1. Run each pre-defined query from the Analyst page.
+2. Call the SQL route directly with free-form SQL, including a hostile query, and with a query name that doesn't exist.
+3. Open the AI page.
 
-Check each result against the scenarios below.
+Then check that locally, without hosted mode, the SQL page works exactly as today.
 
 **Acceptance Scenarios**:
 
-1. **Given** an ordinary query, **When** I run it, **Then** I get the same result as today.
-2. **Given** a query that would run forever, **When** I run it, **Then** it's stopped after about 2 seconds with "Query took too long (limit 2 seconds)".
-3. **Given** a query returning more than 1,000 rows, **When** I run it, **Then** I see the first 1,000, with a note that the results were cut off at 1,000 rows.
-4. **Given** `ATTACH`, `DETACH`, any `PRAGMA`, or any write or schema change, **When** I run it, **Then** it's refused with "Only SELECT queries are allowed" and nothing happens.
-5. **Given** a query over 5,000 characters, **When** I run it, **Then** it's refused before it runs.
-6. **Given** invalid SQL, **When** I run it, **Then** the error says what's wrong with the query. It never includes a file path, a server detail or a stack trace.
-7. **Given** these limits, **Then** the Streamlit SQL page and the TypeScript SQL page behave the same, including the "cut off" note (constitution VI).
+1. **Given** hosted mode, **When** a visitor opens the Analyst page, **Then** they see the schema map and a list of pre-defined queries. Choosing one shows its SQL (read-only) and its results. There's no editable query box.
+2. **Given** hosted mode, **When** anyone sends free-form SQL to the API, **Then** it's refused with "Only the pre-defined queries can run here." and nothing is executed.
+3. **Given** hosted mode, **When** anyone asks for a pre-defined query by a name that doesn't exist, **Then** it's refused with the same message.
+4. **Given** hosted mode, **When** a visitor opens the AI page, **Then** they see the "Coming soon" card. Any AI route, now or added later, is refused with "This DJ doesn't take requests."
+5. **Given** local mode (no hosted setting), **When** I use the SQL page, **Then** it works exactly as today, with free-form SQL and the examples as starting points.
 
 ### Edge Cases
 
-- **Example queries that need older data.** "Artists I've stopped listening to" looks for artists last played over 2 years ago, so it finds nothing on `public.db`. It still runs, and shows an empty result rather than an error.
 - **Plays exactly on the window's edges.** The start of the window is inclusive and the end is exclusive, so a play is never in two consecutive builds' "edge".
 - **Placeholder timestamps.** Plays with placeholder timestamps before 2000 are never inside the window.
 - **Re-running `publish`.** It replaces `public.db` completely. It never appends to an old copy.
 - **A missing or stale full database.** `publish` refuses to run if the full database doesn't exist, and it never writes to it.
 - **The schema page on `public.db`.** It shows the same tables, minus Spotify matches.
-- **Recursive queries.** A recursive query that is legitimate, for example a calendar CTE, still works if it finishes within 2 seconds.
+- **Pre-defined queries that need older data.** "Artists I've stopped listening to" looks for artists last played over 2 years ago, so it finds nothing on `public.db`. It still runs and shows an empty result, not an error.
+- **The schema map on the hosted site.** It only reads table and column names from `public.db`, so it stays available.
+- **AI routes added later.** Any route that uses AI must be on the hosted-mode refusal list from the day it's added.
 
 ## Requirements *(mandatory)*
 
@@ -104,14 +98,12 @@ Check each result against the scenarios below.
 - **FR-006**: The API MUST have a read-only mode, switched on by an environment setting. In it, every database connection opens the file as unchangeable, so no journal, lock or write is ever attempted.
 - **FR-007**: In read-only mode, the schema-layout save and reset routes and all playlist routes MUST be refused with a clear "not available on the hosted site" response, and the pages using them MUST say so instead of failing. Outside read-only mode, they MUST work as today.
 - **FR-008**: Every read in the API and the shared data functions MUST go through one shared way of opening the database. In read-only mode, nothing may open it for writing.
-- **FR-009**: The SQL runner shared by both dashboards MUST allow only reading statements. It MUST refuse ATTACH, DETACH, PRAGMA, writes and schema changes with "Only SELECT queries are allowed".
-- **FR-010**: The SQL runner MUST stop any query after 2 seconds with "Query took too long (limit 2 seconds)".
-- **FR-011**: The SQL runner MUST return at most 1,000 rows, and say when it cut the results off.
-- **FR-012**: The SQL runner MUST refuse queries over 5,000 characters before running them.
-- **FR-013**: SQL errors shown to the user MUST describe the query's problem only, with no file paths, server details or stack traces.
-- **FR-014**: Both SQL pages MUST show the "cut off at 1,000 rows" note when results are truncated.
-- **FR-015**: These SQL limits apply everywhere, locally too, since the runner is shared. Local use is unaffected apart from the limits themselves.
-- **FR-016**: The README MUST describe `publish`, read-only mode and the SQL limits.
+- **FR-009**: In hosted (read-only) mode, the SQL route MUST accept only the name of a pre-defined query, and MUST run that query's SQL as written in the code. Free-form SQL, or an unknown name, MUST be refused without running anything, with "Only the pre-defined queries can run here." The schema information routes stay available.
+- **FR-010**: In hosted mode, the Analyst page MUST show the schema map and the list of pre-defined queries. Choosing one shows its SQL as read-only text and its results. There MUST be no editable query box.
+- **FR-011**: In hosted mode, every AI route MUST be refused with "This DJ doesn't take requests." That covers today's none and any added later. The AI page shows only its "Coming soon" card.
+- **FR-012**: Outside hosted mode, SQL behaves exactly as today. The pre-defined queries are the same list both modes use, defined once.
+- **FR-013**: Table names in the SQL examples' schema listing MUST be quoted the same safe way as on the Schema page. It's a consistency fix: those names come from the database itself, not from visitors.
+- **FR-016**: The README MUST describe `publish`, hosted read-only mode, and which features are off there (SQL, AI, playlists, layout saving).
 - **FR-017**: No one but the owner may create playlists on the owner's Spotify account. The hosted site MUST NOT hold any Spotify credential (the token file or the client ID), so playlist creation is impossible there even if a route were left on. In read-only mode, every playlist route is refused (FR-007). *(Owner's requirement, 2026-10-27.)*
 - **FR-018**: When a playlist route is refused in read-only mode, the response and the Playlists page MUST say exactly: **"This DJ doesn't take requests."** This applies to anyone who opens the page directly or calls the API. Other refused write routes keep the plain "not available on the hosted site" message. *(Owner's wording, 2026-10-27.)*
 
@@ -119,7 +111,6 @@ Check each result against the scenarios below.
 
 - **Public dataset**: the two-year copy. It holds plays in the window, plus the tracks, artists and tags they reference. It has a window start, a window end and a build time.
 - **Window**: a rolling period of 730 days, ending 7 days before the build.
-- **SQL request**: query text up to 5,000 characters. Its result has up to 1,000 rows, a "cut off" flag, or a plain error message.
 
 ## Success Criteria *(mandatory)*
 
@@ -128,16 +119,15 @@ Check each result against the scenarios below.
 - **SC-001**: `public.db` holds 0 plays outside the window and 0 tracks or artists without a play in it. Both are checked by direct query.
 - **SC-002**: `public.db` is under 25 MB, against 92 MB for the full database, and `publish` takes under 30 seconds.
 - **SC-003**: Every dashboard page shows the same numbers on `public.db` as a direct query of `public.db`.
-- **SC-004**: No SQL query can keep the server busy for more than 3 seconds, or return more than 1,000 rows.
-- **SC-005**: None of the 8 hostile or edge queries in story 3's test succeeds in writing, attaching, reading pragmas, or showing a path or server detail.
+- **SC-004**: In hosted mode, 0 visitor-supplied SQL statements are executed, and every pre-defined query returns the same rows as running its SQL directly on `public.db`.
+- **SC-005**: In hosted mode, every AI and playlist route returns its refusal message. Checked for each route.
 - **SC-006**: After a full click-through in read-only mode, the database file is byte-identical, and no extra files appear next to it.
 
 ## Assumptions
 
 - "Now" is the time `publish` runs. In CI (phase 6), that's each deploy and the nightly rebuild, so the window moves forward once a day.
 - The window uses the plays' UTC timestamps, so the edge can be up to a day off local dates. That's acceptable.
-- Being cut off at 1,000 rows doesn't affect any built-in page. Only the SQL page runs free-form queries.
-- Who may use the SQL page (trusted codes only) is decided in phase 4, not here.
+- There are no tiers for SQL or AI on the hosted site. Everyone there gets pre-defined queries only and no AI. The owner uses free-form SQL locally.
 - The hosted site's file system is read-only, which is another reason write routes must be off there.
-- **Only the TypeScript dashboard is hosted. Streamlit stays local only** (confirmed with the owner, 2026-10-27). Streamlit still gets the SQL limits, because both dashboards share the same SQL runner (FR-014, constitution VI), but it is never deployed.
+- **Only the TypeScript dashboard is hosted. Streamlit stays local only** (confirmed with the owner, 2026-10-27). Streamlit is never deployed, so it needs no hosted-mode changes.
 - **The hosted site is read-only for everyone, the owner included** (decided with the owner, 2026-10-27). The owner changes listening data and layouts on their Mac, and those changes arrive with the next deploy. On the hosted site, the owner code adds only the Visitors page and invite management (phase 4). Every write route there is refused, whatever the code.
