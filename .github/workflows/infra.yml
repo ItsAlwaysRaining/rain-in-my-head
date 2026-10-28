@@ -1,0 +1,186 @@
+name: Infrastructure
+
+# Plans on every PR that touches infra/, applies only when the owner starts it by hand on a PR branch,
+# and checks weekly for settings changed outside the code (specs/010-infrastructure).
+
+on:
+  pull_request:
+    paths: ["infra/**", ".github/workflows/infra.yml"]
+  workflow_dispatch: # Run workflow → choose the PR's branch → apply
+  schedule:
+    - cron: "41 7 * * 1" # Mondays 07:41 UTC: drift check
+
+permissions: {}
+
+concurrency:
+  group: infra
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: infra
+
+env:
+  TF_IN_AUTOMATION: "1"
+  TF_INPUT: "0"
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: 1.13.2
+          tofu_wrapper: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: State must be encrypted
+        run: |
+          for f in $(git ls-files '*.tfstate' '*.tfstate.backup' '*.tfplan'); do
+            if ! grep -q '"encrypted_data"' "$f"; then
+              echo "::error file=infra/$f::$f is not encrypted. Never commit plain OpenTofu state."
+              exit 1
+            fi
+          done
+
+      - name: Format
+        run: tofu fmt -check -diff
+
+      - name: Init and validate
+        env:
+          TF_VAR_state_passphrase: ${{ secrets.TOFU_STATE_PASSPHRASE }}
+        run: |
+          tofu init
+          tofu validate
+
+      - name: Scan for insecure settings
+        run: uvx checkov==3.3.29 -d . --framework terraform --compact --quiet
+
+      - name: Plan
+        id: plan
+        env:
+          TF_VAR_state_passphrase: ${{ secrets.TOFU_STATE_PASSPHRASE }}
+          VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GH_INFRA_TOKEN }}
+        run: tofu plan -no-color -lock=false 2>&1 | tee plan.txt
+
+      - name: Post the plan on the PR
+        if: always() && steps.plan.outcome != 'skipped'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          {
+            echo "### OpenTofu plan"
+            echo
+            echo "Nothing is applied until the owner runs **Infrastructure → Run workflow** on this branch."
+            echo
+            echo '```'
+            # Sensitive values are already hidden by OpenTofu; keep the comment short.
+            grep -E '^(  [#~+-]|Plan:|No changes|Error|│)' plan.txt | head -c 60000
+            echo '```'
+          } > comment.md
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file comment.md --edit-last --create-if-none
+
+  apply:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Refuse main
+        if: github.ref == 'refs/heads/main'
+        working-directory: .
+        run: |
+          echo "::error::Start the apply on the pull request's branch, not main, so the updated state lands through the PR."
+          exit 1
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: 1.13.2
+          tofu_wrapper: false
+
+      - name: Apply
+        env:
+          TF_VAR_state_passphrase: ${{ secrets.TOFU_STATE_PASSPHRASE }}
+          VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GH_INFRA_TOKEN }}
+        run: |
+          tofu init
+          tofu apply -auto-approve -no-color
+
+      - name: Commit the encrypted state to this branch
+        run: |
+          grep -q '"encrypted_data"' terraform.tfstate || { echo "::error::State is not encrypted; not committing."; exit 1; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add terraform.tfstate
+          if git diff --cached --quiet; then
+            echo "State unchanged."
+          else
+            git commit -m "Update encrypted infrastructure state"
+            git push
+          fi
+
+  drift:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: 1.13.2
+          tofu_wrapper: false
+
+      - name: Plan against the real accounts
+        id: drift
+        env:
+          TF_VAR_state_passphrase: ${{ secrets.TOFU_STATE_PASSPHRASE }}
+          VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GH_INFRA_TOKEN }}
+        run: |
+          tofu init
+          set +e
+          tofu plan -detailed-exitcode -no-color -lock=false > plan.txt 2>&1
+          code=$?
+          set -e
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          [ "$code" -ne 1 ] || { cat plan.txt; exit 1; }
+
+      - name: Open or update the drift issue
+        if: steps.drift.outputs.code == '2'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "The weekly check found settings that don't match \`infra/\`. Fix them in code (or revert the dashboard change), then apply."
+            echo
+            echo '```'
+            grep -E '^(  [#~+-]|Plan:)' plan.txt | head -c 60000
+            echo '```'
+          } > body.md
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Infrastructure drift in:title" --json number -q '.[0].number')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body-file body.md
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "Infrastructure drift" --body-file body.md
+          fi
