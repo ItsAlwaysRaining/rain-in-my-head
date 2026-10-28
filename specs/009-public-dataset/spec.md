@@ -139,4 +139,5 @@ Check each result against the scenarios below.
 - Being cut off at 1,000 rows doesn't affect any built-in page. Only the SQL page runs free-form queries.
 - Who may use the SQL page (trusted codes only) is decided in phase 4, not here.
 - The hosted site's file system is read-only, which is another reason write routes must be off there.
+- **Only the TypeScript dashboard is hosted. Streamlit stays local only** (confirmed with the owner, 2026-10-27). Streamlit still gets the SQL limits, because both dashboards share the same SQL runner (FR-014, constitution VI), but it is never deployed.
 - **The hosted site is read-only for everyone, the owner included** (decided with the owner, 2026-10-27). The owner changes listening data and layouts on their Mac, and those changes arrive with the next deploy. On the hosted site, the owner code adds only the Visitors page and invite management (phase 4). Every write route there is refused, whatever the code.
