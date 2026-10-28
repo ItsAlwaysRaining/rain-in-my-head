@@ -112,6 +112,7 @@ Check each result against the scenarios below.
 - **FR-014**: Both SQL pages MUST show the "cut off at 1,000 rows" note when results are truncated.
 - **FR-015**: These SQL limits apply everywhere, locally too, since the runner is shared. Local use is unaffected apart from the limits themselves.
 - **FR-016**: The README MUST describe `publish`, read-only mode and the SQL limits.
+- **FR-017**: No one but the owner may create playlists on the owner's Spotify account. The hosted site MUST NOT hold any Spotify credential (the token file or the client ID), so playlist creation is impossible there even if a route were left on. In read-only mode, every playlist route is refused (FR-007). *(Owner's requirement, 2026-10-27.)*
 
 ### Key Entities
 
