@@ -23,7 +23,6 @@ resource "neon_project" "visitors" {
   primary_compute {
     autoscaling_limit_min_cu = 0.25
     autoscaling_limit_max_cu = 0.25
-    suspend_timeout_seconds  = 300
   }
 }
 
@@ -40,7 +39,6 @@ resource "neon_endpoint" "dev" {
 
   autoscaling_limit_min_cu = 0.25
   autoscaling_limit_max_cu = 0.25
-  suspend_timeout_seconds  = 300
 }
 
 # dev starts as a copy of prod, so it also has rain_owner and visitors. Its own names keep the two apart.
