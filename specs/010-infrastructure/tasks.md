@@ -18,13 +18,13 @@
 - [x] T006 [US1] infra/vercel.tf: the project (no Git, `standard_protection`, `iad1`), plus `LISTENING_HOSTED`, `DATABASE_URL` and `SESSION_SECRET` for production and preview
 - [x] T007 [US1] infra/github.tf: `VERCEL_PROJECT_ID` and `VERCEL_ORG_ID` variables, and the `NEON_{PROD,DEV}_{OWNER,APP}_URL` secrets. infra/outputs.tf.
 - [x] T008 [US1] Run `tofu fmt -check` and `tofu validate`, and lock providers for linux_amd64 and darwin_arm64
-- [ ] T009 [US1] **Owner**: add infra/terraform.tfvars with `vercel_team_id` and `neon_org_id`, run the first apply from the Mac, and commit the encrypted state (quickstart)
+- [x] T009 [US1] **Owner**: add infra/terraform.tfvars with `vercel_team_id` and `neon_org_id`, run the first apply from the Mac, and commit the encrypted state (quickstart)
 - [ ] T010 [US1] A second plan shows 0 changes. Check the Vercel and Neon dashboards.
 
 ## Phase 4: US2, encrypted state (P2)
 
 - [x] T011 [US2] Workflow guard: fail if any committed `*.tfstate` or `*.tfplan` lacks `encrypted_data`
-- [ ] T012 [US2] After T009, search the committed state for `neon.tech` and the role names: 0 matches
+- [x] T012 [US2] After T009, search the committed state for `neon.tech` and the role names: 0 matches
 
 ## Phase 5: US3, reviewed changes (P3)
 
