@@ -1,7 +1,8 @@
 // Typed access to the JSON API (src/rain_in_my_head/api.py). Shapes follow
 // specs/003-typescript-dashboard/data-model.md; dates are local "YYYY-MM-DD".
 
-export type ApiErrorKind = "no_database" | "unreachable" | "http";
+// "refused": the hosted site turned the request down (403, "This DJ doesn't take requests.").
+export type ApiErrorKind = "no_database" | "unreachable" | "http" | "refused";
 
 export class ApiError extends Error {
   constructor(
@@ -46,6 +47,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
     throw new ApiError("unreachable", "The data service isn't running.");
   }
   const body = await response.json();
+  if (response.status === 403 && body?.error === "refused") throw new ApiError("refused", body.message);
   if (!response.ok) throw new ApiError("http", typeof body?.detail === "string" ? body.detail : JSON.stringify(body));
   return body as T;
 }
@@ -205,6 +207,8 @@ export const fetchArtist = (p: ArtistParams) => getJson<Artist>("/api/artist", {
 
 export interface SqlMeta {
   examples: Record<string, string>;
+  /** On the hosted site only these examples can run, by name; typed SQL is refused. */
+  hosted: boolean;
   schema: { object: string; column: string; type: string }[];
 }
 
@@ -213,6 +217,7 @@ export type SqlResult = { columns: string[]; float_columns: number[]; rows: SqlC
 
 export const fetchSqlMeta = () => getJson<SqlMeta>("/api/sql/meta");
 export const runSql = (sql: string) => sendJson<SqlResult>("POST", "/api/sql", { sql });
+export const runSqlExample = (example: string) => sendJson<SqlResult>("POST", "/api/sql", { example });
 
 // ---- Schema ------------------------------------------------------------------
 

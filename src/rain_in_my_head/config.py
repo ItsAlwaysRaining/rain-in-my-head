@@ -13,6 +13,10 @@ load_dotenv(ROOT / ".env")
 RAW_DIR = Path(os.environ.get("LISTENING_RAW_DIR", ROOT / "data" / "raw" / "lastfm"))
 CACHE_DIR = Path(os.environ.get("LISTENING_CACHE_DIR", ROOT / "data" / "cache"))  # committed Last.fm lookups
 DB_PATH = Path(os.environ.get("LISTENING_DB", ROOT / "data" / "listening.db"))
+# The hosted site (LISTENING_HOSTED=1): the database is opened immutable and anything that writes, makes
+# playlists, runs typed SQL or uses AI is refused with REFUSAL (specs/009-public-dataset).
+HOSTED = os.environ.get("LISTENING_HOSTED") == "1"
+REFUSAL = "This DJ doesn't take requests."
 # Shown by both dashboards when DB_PATH doesn't exist yet.
 NO_DATABASE = "No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`."
 

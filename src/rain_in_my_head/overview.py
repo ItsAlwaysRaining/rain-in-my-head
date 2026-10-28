@@ -5,12 +5,14 @@ Everything works on the `v_plays` DataFrame from `load_plays`. Dates are local c
 
 from __future__ import annotations
 
-import sqlite3
+from contextlib import closing
 from datetime import date, timedelta
 from functools import lru_cache
 from pathlib import Path
 
 import pandas as pd
+
+from .build import connect_readonly
 
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 PRESETS = ["Last 30 days", "Last 12 months", "This year", "All time", "Custom"]
@@ -30,7 +32,7 @@ def load_plays(db_path: Path) -> pd.DataFrame:
 
 @lru_cache(maxsize=1)
 def _load(db_path: str, db_mtime: float) -> pd.DataFrame:
-    with sqlite3.connect(db_path) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         df = pd.read_sql("SELECT * FROM v_plays", conn)
     df["played_local"] = pd.to_datetime(df["played_local"])
     df["date"] = df["played_local"].dt.normalize()

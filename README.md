@@ -82,6 +82,22 @@ Both dashboards have the list and the page, with the same numbers (`src/rain_in_
 3. Run the "Sync scrobbles" workflow once by hand from the Actions tab. After that it runs every 6 hours: it fetches new scrobbles, looks up up to 100 new tracks and 100 new artists, and commits both to `data/`.
 4. Locally: `git pull && uv run rain-in-my-head build` to refresh the database, including the sync's lookups.
 
+## Two-year copy for the hosted site
+
+```sh
+uv run rain-in-my-head publish      # data/public.db: the last 730 days of plays, minus the newest 7
+LISTENING_HOSTED=1 LISTENING_DB=data/public.db uv run rain-in-my-head serve   # preview the hosted site
+```
+
+- **What `publish` keeps:** only the plays in the window, plus the tracks, artists and tags they use. Spotify matches are dropped. It only reads `data/listening.db`, and `public.db` is gitignored. `--window-days` and `--lag-days` change the window.
+- **What `LISTENING_HOSTED=1` does:**
+  - opens the database immutable, so nothing is written, locked or journaled
+  - hides the API docs
+  - turns visitors away with **"This DJ doesn't take requests."** That covers typed SQL, playlists, saving the schema layout, AI, and any other request that isn't a read.
+- **The Analyst page on the hosted site** offers only the pre-defined queries: pick one, read its SQL, run it.
+- **Locally**, without the setting, everything works as before, including free-form SQL.
+- **Only the TypeScript dashboard is hosted.** Streamlit stays local.
+
 ## Renamed from spotify-music-analysis
 
 The project was called `spotify-music-analysis`, with a package and command called `listening`. It is now `rain-in-my-head` everywhere: the repository, the `rain-in-my-head` command and the `src/rain_in_my_head/` package. The database is still `data/listening.db`, and the `LISTENING_DB` and `LISTENING_RAW_DIR` settings keep their names, so no data moves.

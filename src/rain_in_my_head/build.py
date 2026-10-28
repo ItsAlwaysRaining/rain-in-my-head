@@ -47,8 +47,13 @@ def connect(db_path: Path) -> sqlite3.Connection:
 
 
 def connect_readonly(db_path: Path) -> sqlite3.Connection:
-    """A connection that can't write, so a stray UPDATE/DELETE can't damage the database."""
-    return sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
+    """A connection that can't write, so a stray UPDATE/DELETE can't damage the database.
+
+    On the hosted site the file is also opened immutable: no locks, no journal, nothing written next to it.
+    """
+    from .config import HOSTED
+
+    return sqlite3.connect(f"file:{db_path}?mode=ro{'&immutable=1' if HOSTED else ''}", uri=True)
 
 
 def build(raw_dir: Path, db_path: Path, cache_dir: Path | None = None) -> int:

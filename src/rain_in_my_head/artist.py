@@ -8,7 +8,7 @@ filters as `genre_plays`. Spec: specs/001-new-artist-page/.
 from __future__ import annotations
 
 import base64
-import sqlite3
+from contextlib import closing
 from dataclasses import dataclass
 from datetime import date
 from functools import cache
@@ -18,7 +18,7 @@ import pandas as pd
 
 from rain_in_my_head import config
 from rain_in_my_head import genre as gn
-from rain_in_my_head.build import MIN_PLAYED_AT
+from rain_in_my_head.build import MIN_PLAYED_AT, connect_readonly
 from rain_in_my_head.genre import PLAY_COLUMNS
 
 # Missing-art image for both dashboards: the TypeScript app serves it as /no-art.svg.
@@ -50,7 +50,7 @@ def new_artists(db_path: Path, start: date, end: date) -> pd.DataFrame:
     """Artists whose first play ever is in the period, ranked by plays in it.
 
     Columns: artist_key, name, art, plays, thumb (art and thumb are None without art)."""
-    with sqlite3.connect(db_path) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         plays = pd.read_sql(
             f"""WITH firsts AS (
                     SELECT artist_key FROM scrobbles WHERE played_at >= {MIN_PLAYED_AT}
@@ -85,7 +85,7 @@ class ArtistPage:
 
 def artist_page(db_path: Path, artist_key: str, start: date | None, end: date | None) -> ArtistPage | None:
     """One artist's header counts and songs in the period (all time without one). None if they have no plays."""
-    with sqlite3.connect(db_path) as conn:
+    with closing(connect_readonly(db_path)) as conn:
         plays = pd.read_sql(
             f"SELECT {PLAY_COLUMNS} FROM scrobbles s WHERE s.artist_key = ? AND s.played_at >= {MIN_PLAYED_AT}",
             conn,

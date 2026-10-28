@@ -7,6 +7,7 @@ specs/003-typescript-dashboard/contracts/api.md
 
 from __future__ import annotations
 
+import contextlib
 import functools
 import json
 import math
@@ -18,7 +19,13 @@ from typing import Literal
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    JSONResponse,
+    PlainTextResponse,
+    Response,
+    StreamingResponse,
+)
 from pydantic import BaseModel
 
 from rain_in_my_head import artist as ar
@@ -28,11 +35,39 @@ from rain_in_my_head import overview as ov
 from rain_in_my_head import playlist as pl
 from rain_in_my_head import schema_info as si
 from rain_in_my_head import sql_examples as sq
+from rain_in_my_head.build import connect_readonly
 
 WEB_DIST = config.ROOT / "web" / "dist"
 PRESET_NAMES = {"last30": "Last 30 days", "last12m": "Last 12 months", "ytd": "This year", "all": "All time", "custom": "Custom"}
 
-app = FastAPI(title="Rain in My Head", docs_url="/api/docs", openapi_url="/api/openapi.json")
+# The hosted site serves no API docs: nothing there needs them, and they'd map every route for a stranger.
+app = FastAPI(
+    title="Rain in My Head",
+    docs_url=None if config.HOSTED else "/api/docs",
+    openapi_url=None if config.HOSTED else "/api/openapi.json",
+)
+REFUSED_PREFIXES = ("/api/playlists", "/api/ai")
+
+
+def _refused() -> JSONResponse:
+    return JSONResponse({"error": "refused", "message": config.REFUSAL}, status_code=403)
+
+
+@app.middleware("http")
+async def hosted_guard(request: Request, call_next):
+    """On the hosted site, deny by default: only reads, plus pre-defined SQL (checked in `sql`), get through.
+
+    Anything that writes, makes playlists or uses AI is refused, including routes added later
+    (specs/009-public-dataset, research R4).
+    """
+    if config.HOSTED:
+        path, method = request.url.path, request.method
+        allowed = (method in ("GET", "HEAD") and not path.startswith(REFUSED_PREFIXES)) or (
+            method == "POST" and path == "/api/sql"
+        )
+        if not allowed:
+            return _refused()
+    return await call_next(request)
 
 
 class NoDatabase(Exception):
@@ -81,7 +116,7 @@ def _records(df: pd.DataFrame, columns: dict[str, str] | list[str]) -> list[dict
 @app.get("/api/health")
 def health() -> dict:
     exists = config.DB_PATH.exists()
-    return {"ok": True, "db": exists, "db_mtime": config.DB_PATH.stat().st_mtime if exists else None}
+    return {"ok": True, "db": exists, "db_mtime": config.DB_PATH.stat().st_mtime if exists else None, "hosted": config.HOSTED}
 
 
 @app.get("/api/overview")
@@ -239,18 +274,24 @@ def artist(artist: str | None = None, start: date | None = None, end: date | Non
 @app.get("/api/sql/meta")
 def sql_meta() -> dict:
     _require_db()
-    return {"examples": sq.EXAMPLES, "schema": sq.schema(config.DB_PATH).to_dict("records")}
+    return {"examples": sq.EXAMPLES, "schema": sq.schema(config.DB_PATH).to_dict("records"), "hosted": config.HOSTED}
 
 
 class SqlRequest(BaseModel):
-    sql: str
+    sql: str | None = None
+    example: str | None = None  # the name of one of sq.EXAMPLES
 
 
 @app.post("/api/sql")
-def sql(body: SqlRequest) -> dict:
+def sql(body: SqlRequest):
+    """Typed SQL locally. On the hosted site only a pre-defined query, by name: visitor text never runs."""
     _require_db()
+    if config.HOSTED and (body.sql is not None or body.example not in sq.EXAMPLES):
+        return _refused()
+    if body.example is not None and body.example not in sq.EXAMPLES:
+        raise HTTPException(422, f"Unknown example {body.example!r}")
     try:
-        result = sq.run_readonly(config.DB_PATH, body.sql)
+        result = sq.run_example(config.DB_PATH, body.example) if body.example else sq.run_readonly(config.DB_PATH, body.sql or "")
     except Exception as e:  # shown on the page, as Streamlit does
         return {"error": str(e)}
     return {
@@ -302,14 +343,14 @@ def reset_schema_layout() -> dict:
 
 # ---- Playlists ---------------------------------------------------------------
 
-def _connect() -> sqlite3.Connection:
+def _connect() -> contextlib.closing[sqlite3.Connection]:
     _require_db()
-    return sqlite3.connect(config.DB_PATH, timeout=30)
+    return contextlib.closing(connect_readonly(config.DB_PATH))
 
 
 @functools.lru_cache(maxsize=16)
 def _binges(db_mtime: float, min_plays: int, window_days: int, since: int, until: int) -> pd.DataFrame:
-    with sqlite3.connect(config.DB_PATH, timeout=30) as conn:
+    with contextlib.closing(connect_readonly(config.DB_PATH)) as conn:
         return pl.binges(conn, min_plays, window_days, since, until)
 
 

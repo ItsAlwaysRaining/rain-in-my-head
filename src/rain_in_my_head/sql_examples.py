@@ -37,6 +37,11 @@ FROM v_plays GROUP BY genre ORDER BY plays DESC LIMIT 30""",
 }
 
 
+def _quote(name: str) -> str:
+    """A table name as a quoted SQL identifier (the same rule as schema_info)."""
+    return '"' + name.replace('"', '""') + '"'
+
+
 def schema(db_path: Path) -> pd.DataFrame:
     """Every table and view with its columns: `object` ("name (kind)"), `column`, `type`."""
     with closing(connect_readonly(db_path)) as conn:
@@ -45,9 +50,14 @@ def schema(db_path: Path) -> pd.DataFrame:
         ).fetchall()
         rows = []
         for name, kind in objects:
-            for col in conn.execute(f"PRAGMA table_info('{name}')"):
+            for col in conn.execute(f"PRAGMA table_info({_quote(name)})"):
                 rows.append({"object": f"{name} ({kind})", "column": col[1], "type": col[2]})
     return pd.DataFrame(rows)
+
+
+def run_example(db_path: Path, name: str) -> pd.DataFrame:
+    """One of EXAMPLES by name: the only queries the hosted site runs. KeyError for an unknown name."""
+    return run_readonly(db_path, EXAMPLES[name])
 
 
 def run_readonly(db_path: Path, sql: str) -> pd.DataFrame:

@@ -1,10 +1,12 @@
 // SQL: the "Write SQL" part of the Analyst page, the TypeScript twin of dashboard/views/sql.py. Queries
 // run read-only through /api/sql (rain_in_my_head.sql_examples); the examples are the ones Streamlit shows.
 // The table list Streamlit shows is replaced here by the schema map above it on the Analyst page.
+// On the hosted site (meta.hosted) visitors only pick a pre-defined query; typed SQL is refused by the API
+// (specs/009-public-dataset). Streamlit isn't hosted, so it has no equivalent.
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { fetchSqlMeta, runSql, type SqlCell } from "../api";
+import { fetchSqlMeta, runSql, runSqlExample, type SqlCell, type SqlMeta, type SqlResult } from "../api";
 import { DataTable, type Column } from "../components/DataTable";
 import { Button, ErrorState, Loading, Notice } from "../components/ui";
 import { formatCount } from "../format";
@@ -39,6 +41,7 @@ export default function Sql() {
   };
 
   const navigate = useNavigate();
+  if (meta.data?.hosted) return <HostedSql meta={meta.data} />;
   return (
     <section>
       <h2>Write SQL</h2>
@@ -104,17 +107,57 @@ export default function Sql() {
             <Button onClick={() => navigate("/playlists?type=sql")}>Use in Playlist Generator</Button>
           </div>
 
-          {run.error ? (
-            <ErrorState error={run.error} />
-          ) : run.data && "error" in run.data ? (
-            <Notice tone="error">{run.data.error}</Notice>
-          ) : run.data ? (
-            <Result columns={run.data.columns} floatColumns={run.data.float_columns} rows={run.data.rows} rowCount={run.data.row_count} />
-          ) : null}
+          <Outcome error={run.error} data={run.data} />
         </div>
       )}
     </section>
   );
+}
+
+/** The hosted Analyst page: choose one of the owner's queries, read its SQL, run it. Nothing can be typed. */
+function HostedSql({ meta }: { meta: SqlMeta }) {
+  const names = Object.keys(meta.examples);
+  const [example, setExample] = useState(names[0] ?? "");
+  const run = useMutation({ mutationFn: runSqlExample });
+  return (
+    <section>
+      <h2>Pre-defined queries</h2>
+      <div className={styles.stack}>
+        <label className={styles.label}>
+          Query
+          <select
+            className={`${styles.field} ${styles.select}`}
+            value={example}
+            onChange={(e) => {
+              setExample(e.target.value);
+              run.reset();
+            }}
+          >
+            {names.map((title) => (
+              <option key={title}>{title}</option>
+            ))}
+          </select>
+          <span className="caption">On this site you can run these queries but not write your own.</span>
+        </label>
+        <pre className={`${styles.field} ${styles.editor}`} aria-label="SQL for the chosen query">
+          {meta.examples[example]}
+        </pre>
+        <div className={styles.actions}>
+          <Button variant="primary" onClick={() => run.mutate(example)} disabled={run.isPending || !example}>
+            Run query
+          </Button>
+        </div>
+        <Outcome error={run.error} data={run.data} />
+      </div>
+    </section>
+  );
+}
+
+function Outcome({ error, data }: { error: unknown; data: SqlResult | undefined }) {
+  if (error) return <ErrorState error={error} />;
+  if (!data) return null;
+  if ("error" in data) return <Notice tone="error">{data.error}</Notice>;
+  return <Result columns={data.columns} floatColumns={data.float_columns} rows={data.rows} rowCount={data.row_count} />;
 }
 
 function Result({ columns, floatColumns, rows, rowCount }: { columns: string[]; floatColumns: number[]; rows: SqlCell[][]; rowCount: number }) {
