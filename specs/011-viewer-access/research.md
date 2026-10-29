@@ -28,7 +28,7 @@
 
 ## R3. Code format and hashing
 
-- **Decision**: 16 characters from a 54-letter-and-digit alphabet with no look-alike characters (no `0 O o 1 I l`), about 92 bits, shown as `xxxx-xxxx-xxxx-xxxx`. Dashes and spaces are ignored on entry. The case matters. Stored as the SHA-256 of the cleaned code, compared with `hmac.compare_digest`.
+- **Decision**: 16 characters from a 56-letter-and-digit alphabet with no look-alike characters (no `0 O o 1 I l`), about 92 bits, shown as `xxxx-xxxx-xxxx-xxxx`. Dashes and spaces are ignored on entry. The case matters. Stored as the SHA-256 of the cleaned code, compared with `hmac.compare_digest`.
 - **Why SHA-256**: a code this random can't be guessed from its hash, so a slow hash adds nothing. A salt-free hash also lets the login look the person up by hash with one indexed query. `scrypt` (the security options page's suggestion) would need a per-person salt, so each login would check every person, at about 50 ms of CPU each, against the 4-hour monthly CPU limit.
 - **Spec check**: FR-002 asks for at least 12 characters. 16 meets it.
 - **Alternatives considered**: `scrypt` per person (above); a keyed hash (the owner's Mac doesn't hold the site's signing secret).
