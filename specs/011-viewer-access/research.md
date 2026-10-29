@@ -10,7 +10,7 @@
   - Each result has `fields` (each with `name` and `dataTypeID`), `rows` (arrays of text values or null) and `rowCount`.
   - A failed query is HTTP 400 with `message` and `code`. Any other failure is a non-400 status.
 - **Why**: no Postgres driver, so no new dependency (constitution IV), and it works from Vercel's Python runtime, which has no long-lived connections.
-- **Open question, settled by task 1**: the driver notes say HTTP queries use the pooled host (`-pooler` after the endpoint ID). The stored URLs use the direct host. A spike against the `dev` branch decides whether `neon.py` adds `-pooler` to the host itself. That's a string change, with no infra change.
+- **Settled by the spike (T006, 2026-10-29)**: the direct host from the stored URLs works, so `neon.py` uses it as it is (`POOLED = False`). A `select 1` on the dev branch took one request. The `-pooler` switch stays in the code in case Neon changes this.
 - **Alternatives considered**: `psycopg` (a new dependency, and TCP connections on serverless); `asyncpg` (same); Neon's Data API (needs more setup, and isn't on the free-plan path we've verified).
 
 ## R2. Roles and privileges
