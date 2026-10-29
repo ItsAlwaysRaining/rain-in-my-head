@@ -81,10 +81,10 @@
 
 ## Phase 7: Polish and cross-cutting
 
-- [ ] T032 [P] README.md: a "Visitors and invite codes" section covering the `.env` names, `viewer init`, the five commands, running the site in hosted mode locally, and what each tier opens. No values.
-- [ ] T033 [P] docs/streamlit-vs-typescript.md: note that login and locked pages exist in the TypeScript app only, because Streamlit is never hosted (constitution VI).
-- [ ] T034 Run quickstart step 6 (local mode unchanged): with `LISTENING_HOSTED` unset, every page opens with no login, `GET /api/me` returns `{"local": true}`, and `viewer` commands still work. Run the pages that existed before (Overview, Genre, Artist, Analyst) once and compare one number each with a direct `sqlite3` query (constitution III).
-- [ ] T035 Search the repo and the dev database once for leaks: `git grep` for the dev code and for a `postgresql://` string in tracked files (expect none), and check the server log from the browser runs contains no code, cookie or address.
+- [x] T032 [P] README.md: a "Visitors and invite codes" section covering the `.env` names, `viewer init`, the five commands, running the site in hosted mode locally, and what each tier opens. No values.
+- [x] T033 [P] docs/streamlit-vs-typescript.md: note that login and locked pages exist in the TypeScript app only, because Streamlit is never hosted (constitution VI).
+- [x] T034 Run quickstart step 6 (local mode unchanged): with `LISTENING_HOSTED` unset, every page opens with no login, `GET /api/me` returns `{"local": true}`, and `viewer` commands still work. Run the pages that existed before (Overview, Genre, Artist, Analyst) once and compare one number each with a direct `sqlite3` query (constitution III).
+- [x] T035 Search the repo and the dev database once for leaks: `git grep` for the dev code and for a `postgresql://` string in tracked files (expect none), and check the server log from the browser runs contains no code, cookie or address.
 - [ ] T036 Open the PR with `.github/pull_request_template.md`: list what was checked (quickstart steps 1 to 6, with the numbers from T014, T025, T028, T031 and T034) and what wasn't (the production branch, and the Vercel runtime, which phase 6 covers). Say plainly that `viewer init` was run on dev only, and that `viewer init --env prod` is a step for after the merge. Mark the PR ready only after T014, T025, T028, T031 and T034 pass.
 - [ ] T037 **Owner**: run `viewer init --env prod` after the merge, once, from your Mac, with the prod values in `.env`. Phase 7 sends the first codes.
 
