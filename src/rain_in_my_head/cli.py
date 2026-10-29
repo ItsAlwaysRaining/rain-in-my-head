@@ -219,6 +219,31 @@ def cmd_serve(args) -> None:
                 reload_dirs=[str(Path(__file__).parent)] if args.dev else None)
 
 
+# ---- viewer: the owner's commands for invite codes (run on your Mac; specs/011-viewer-access) -------------------
+
+def _viewer(args, work) -> None:
+    """Print which database the command is using, run it, and turn a database or lookup error into one plain line."""
+    from . import neon
+
+    print(f"[{args.env}]", end=" ", flush=True)
+    try:
+        work()
+    except neon.NeonError as e:
+        raise SystemExit(f"\nThe database refused that: {e}")
+    except neon.NeonUnavailable as e:
+        raise SystemExit(f"\n{e}")
+
+
+def cmd_viewer_init(args) -> None:
+    from . import viewers
+
+    def work():
+        viewers.init_database(args.env)
+        print(f"ready: {len(viewers.TABLES)} tables, role {viewers.APP_ROLE}")
+
+    _viewer(args, work)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="rain-in-my-head", description="Personal listening analytics from Last.fm scrobbles")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -277,6 +302,12 @@ def main() -> None:
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--dev", action="store_true", help="reload on Python changes (use with `npm run dev` in web/)")
     p.set_defaults(func=cmd_serve)
+    p = sub.add_parser("viewer", help="invite codes for the hosted site (run on your Mac)")
+    viewer = p.add_subparsers(dest="viewer_command", required=True)
+    env_help = "which Neon branch: dev (default) or prod"
+    q = viewer.add_parser("init", help="make the tables and the site's database role (safe to run twice)")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_init)
     args = parser.parse_args()
     args.func(args)
 

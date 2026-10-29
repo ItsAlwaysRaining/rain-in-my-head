@@ -1,16 +1,19 @@
 """Invite codes, login sessions and the owner's commands for them (specs/011-viewer-access).
 
-This part is the pure functions: making and hashing codes, and signing the login cookie. It touches no
-database. A code is never stored or logged; only its SHA-256 is (research R3).
+The first half is pure functions: making and hashing codes, and signing the login cookie. The second half talks
+to the visitor database through neon.py. A code is never stored or logged; only its SHA-256 is (research R3).
 """
 
 from __future__ import annotations
 
 import hashlib
 import hmac
+import re
 import secrets
+from pathlib import Path
+from urllib.parse import urlsplit
 
-from rain_in_my_head import config
+from rain_in_my_head import config, neon
 
 # Letters and digits without the look-alikes 0 O o 1 I l: 56 characters, so 16 of them are about 93 bits.
 CODE_ALPHABET = "".join(c for c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" if c not in "0Oo1Il")
@@ -67,3 +70,34 @@ def cookie_secure(request) -> bool:
     """Secure on HTTPS (including behind Vercel's proxy) and on localhost, where Chrome allows it for testing."""
     proto = request.headers.get("x-forwarded-proto", request.url.scheme)
     return proto == "https" or request.url.hostname in LOCAL_HOSTS
+
+
+# ---- Setting up the database (the owner's `viewer init`) ---------------------------------------------------
+
+APP_ROLE = "rain_app"
+SCHEMA_FILE = Path(__file__).with_name("viewer_schema.sql")
+TABLES = ("viewers", "viewer_pages", "sessions", "login_attempts")
+
+
+def _statements(sql: str) -> list[str]:
+    """The statements in a .sql file: comments dropped, split on semicolons (the file has none inside strings)."""
+    lines = [line for line in sql.splitlines() if not line.lstrip().startswith("--")]
+    return [part.strip() for part in "\n".join(lines).split(";") if part.strip()]
+
+
+def init_database(env: str) -> None:
+    """Make the app role, the tables and the role's grants on one Neon branch. Safe to run again.
+
+    The role's password is the one OpenTofu generated, read from the app URL in .env. OpenTofu makes it
+    alphanumeric, and anything else is refused here because it's written into a statement as a literal.
+    """
+    owner_url = config.viewers_url(env, "owner")
+    parts = urlsplit(config.viewers_url(env, "app"))
+    password = parts.password or ""
+    if parts.username != APP_ROLE or not re.fullmatch(r"[A-Za-z0-9]{16,}", password):
+        raise SystemExit(f"VIEWERS_APP_URL_{env.upper()} isn't the {APP_ROLE} URL that OpenTofu makes.")
+    exists = neon.query(owner_url, "select 1 as found from pg_roles where rolname = $1", [APP_ROLE])
+    verb = "ALTER ROLE" if exists else "CREATE ROLE"
+    login = "" if exists else " LOGIN"
+    role_sql = f"{verb} {APP_ROLE}{login} PASSWORD '{password}'"
+    neon.transaction(owner_url, [(role_sql, ())] + [(sql, ()) for sql in _statements(SCHEMA_FILE.read_text())])
