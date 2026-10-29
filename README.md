@@ -98,6 +98,32 @@ LISTENING_HOSTED=1 LISTENING_DB=data/public.db uv run rain-in-my-head serve   # 
 - **Locally**, without the setting, everything works as before, including free-form SQL.
 - **Only the TypeScript dashboard is hosted.** Streamlit stays local.
 
+## Hosting infrastructure (OpenTofu)
+
+Everything hosted is declared in `infra/`:
+- **Vercel:** the site, with previews that need a Vercel login.
+- **Neon:** visitor data, with `prod` and `dev` branches.
+- **GitHub:** the Actions values the workflows read.
+
+Change hosting only here, through a pull request, never in the dashboards. The state file `infra/terraform.tfstate` is committed, but it's encrypted with your passphrase.
+
+**First apply** (once, from your Mac): follow `specs/010-infrastructure/quickstart.md`. It reads each token with `read -s`, so nothing is echoed or saved to your shell history.
+
+**Making a change:**
+1. Open a PR that touches `infra/`. The **Infrastructure** workflow checks it and posts the plan as a comment.
+2. Nothing is applied on merge. To apply, go to **Actions → Infrastructure → Run workflow** and pick the PR's branch. It applies, then commits the updated encrypted state to that branch. (GitHub only shows **Run workflow** once `infra.yml` is on `main`, so the very first CI apply happens after the infrastructure PR is merged, from a throwaway branch such as `chore/first-ci-apply`. It refuses `main`.)
+3. Merge the PR.
+
+Every Monday, a drift check opens an issue called "Infrastructure drift" if a dashboard setting no longer matches the code.
+
+**Renewing tokens.** The Vercel, Neon and GitHub tokens last 90 days. When one expires, plans fail and the drift check fails. Create a new token with the same name, then update the matching secret with `gh secret set VERCEL_API_TOKEN` (or `NEON_API_KEY`, or `GH_INFRA_TOKEN`).
+
+**Lost passphrase.** The state can't be decrypted. Choose a new passphrase, delete `infra/terraform.tfstate`, then `tofu import` each resource by its ID: the Vercel project, then the Neon project, branch, endpoint, role and database. The IDs are in each dashboard. Passwords made by `random_password` will be regenerated, so the next apply rotates them.
+
+**Neon's sign-up project.** If Neon made you create a project when you signed up (for example `scratch`), delete it by hand once. It isn't managed here.
+
+**Database roles.** OpenTofu makes the owner roles. The website's app role (`rain_app`) is created with SQL in phase 4, because roles made through Neon's API are superusers.
+
 ## Renamed from spotify-music-analysis
 
 The project was called `spotify-music-analysis`, with a package and command called `listening`. It is now `rain-in-my-head` everywhere: the repository, the `rain-in-my-head` command and the `src/rain_in_my_head/` package. The database is still `data/listening.db`, and the `LISTENING_DB` and `LISTENING_RAW_DIR` settings keep their names, so no data moves.

@@ -1,0 +1,7 @@
+# OpenTofu working files. terraform.tfstate IS committed: it is encrypted (main.tf, encryption block).
+.terraform/
+*.tfplan
+plan.txt
+comment.md
+body.md
+*.tfstate.backup
