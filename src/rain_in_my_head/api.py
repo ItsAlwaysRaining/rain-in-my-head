@@ -199,8 +199,14 @@ async def login(body: LoginRequest, request: Request):
         raise HTTPException(404)
     if not _same_origin(request):
         return _error(403, "refused", config.REFUSAL)
+    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    address = forwarded or (request.client.host if request.client else "unknown")
     try:
-        session_id, session = await run_in_threadpool(viewers.login, config.DATABASE_URL, body.code)
+        session_id, session = await run_in_threadpool(viewers.attempt_login, config.DATABASE_URL, body.code, address)
+    except viewers.SlowDown:
+        return _error(429, "slow_down", "Too many tries. Wait a minute.")
+    except viewers.Locked:
+        return _error(423, "locked", "Too many tries. Try again later.")
     except viewers.BadCode:
         return _error(401, "bad_code", "That code didn't work.")
     except neon.NeonUnavailable:
