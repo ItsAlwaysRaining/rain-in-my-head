@@ -209,6 +209,7 @@ def login(url: str, code: str) -> tuple[str, Session]:
          [hash_session_id(session_id), rows[0]["id"]]),
         ("update viewers set last_login_at = now() where id = $1", [rows[0]["id"]]),
         ("delete from sessions where expires_at < now()", []),
+        ("delete from login_attempts where updated_at < now() - interval '1 day'", []),
     ])
     session = lookup_session(url, session_id, fresh=True)
     if session is None:  # revoked between the two steps
@@ -267,3 +268,64 @@ def grant(url: str, name: str, *, add_page: str | None = None, remove_page: str 
         changes.append(f"tier {tier}")
     neon.transaction(url, statements)
     return person["name"], changes
+
+
+# ---- Guessing codes: slow it down, then stop it, without storing an address -------------------------------
+
+MAX_PER_MINUTE = 5      # wrong codes from one source in a minute; the next try is refused unchecked
+LOCK_AFTER_FAILURES = 20  # wrong codes from one source in a day
+LOCK_MINUTES = 15
+
+
+class SlowDown(Exception):
+    """Too many wrong codes in the last minute."""
+
+
+class Locked(Exception):
+    """Too many wrong codes today. Even a correct code is refused until the lock ends."""
+
+
+def source_key(address: str) -> str:
+    """Who is trying, without keeping who they are: a keyed hash of today's date and their address, so it
+    can't be turned back into an address and changes every day (research R7)."""
+    day = time.strftime("%Y-%m-%d", time.gmtime())
+    return hmac.new(config.SESSION_SECRET.encode(), f"{day}:{address}".encode(), hashlib.sha256).hexdigest()
+
+
+def check_rate(url: str, key: str) -> None:
+    rows = neon.query(
+        url,
+        "select window_failures, coalesce(locked_until > now(), false) as locked, "
+        "window_start > now() - interval '1 minute' as in_window from login_attempts where source_key = $1",
+        [key],
+    )
+    if not rows:
+        return
+    if rows[0]["locked"] == "t":
+        raise Locked()
+    if rows[0]["in_window"] == "t" and int(rows[0]["window_failures"]) >= MAX_PER_MINUTE:
+        raise SlowDown()
+
+
+def record_failure(url: str, key: str) -> None:
+    neon.query(
+        url,
+        "insert into login_attempts as a (source_key, window_start, window_failures, day_failures, updated_at) "
+        "values ($1, now(), 1, 1, now()) on conflict (source_key) do update set "
+        "window_failures = case when a.window_start > now() - interval '1 minute' then a.window_failures + 1 else 1 end, "
+        "window_start = case when a.window_start > now() - interval '1 minute' then a.window_start else now() end, "
+        f"day_failures = a.day_failures + 1, locked_until = case when a.day_failures + 1 >= {LOCK_AFTER_FAILURES} "
+        f"then now() + interval '{LOCK_MINUTES} minutes' else a.locked_until end, updated_at = now()",
+        [key],
+    )
+
+
+def attempt_login(url: str, code: str, address: str) -> tuple[str, Session]:
+    """login(), but a source that keeps sending wrong codes is slowed down and then locked out."""
+    key = source_key(address)
+    check_rate(url, key)
+    try:
+        return login(url, code)
+    except BadCode:
+        record_failure(url, key)
+        raise
