@@ -17,6 +17,21 @@ DB_PATH = Path(os.environ.get("LISTENING_DB", ROOT / "data" / "listening.db"))
 # playlists, runs typed SQL or uses AI is refused with REFUSAL (specs/009-public-dataset).
 HOSTED = os.environ.get("LISTENING_HOSTED") == "1"
 REFUSAL = "This DJ doesn't take requests."
+# Visitor access on the hosted site (specs/011-viewer-access). Vercel sets DATABASE_URL (the site's Neon role,
+# which can only read people and write sessions) and SESSION_SECRET (signs the login cookie).
+DATABASE_URL = os.environ.get("DATABASE_URL", "").strip()
+SESSION_SECRET = os.environ.get("SESSION_SECRET", "").strip()
+SESSION_DAYS = 30
+
+
+def viewers_url(env: str, role: str) -> str:
+    """The Neon connection string for the `viewer` commands: role is "owner" or "app", env is "dev" or "prod"."""
+    name = f"VIEWERS_{role.upper()}_URL_{env.upper()}"
+    value = os.environ.get(name, "").strip()
+    if not value:
+        raise SystemExit(f"Set {name} in .env (see .env.example).")
+    return value
+
 # Shown by both dashboards when DB_PATH doesn't exist yet.
 NO_DATABASE = "No database yet. Run `uv run rain-in-my-head fetch` then `uv run rain-in-my-head build`."
 
