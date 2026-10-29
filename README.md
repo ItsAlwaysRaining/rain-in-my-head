@@ -111,7 +111,7 @@ Change hosting only here, through a pull request, never in the dashboards. The s
 
 **Making a change:**
 1. Open a PR that touches `infra/`. The **Infrastructure** workflow checks it and posts the plan as a comment.
-2. Nothing is applied on merge. To apply, go to **Actions → Infrastructure → Run workflow** and pick the PR's branch. It applies, then commits the updated encrypted state to that branch.
+2. Nothing is applied on merge. To apply, go to **Actions → Infrastructure → Run workflow** and pick the PR's branch. It applies, then commits the updated encrypted state to that branch. (GitHub only shows **Run workflow** once `infra.yml` is on `main`, so the very first CI apply happens after the infrastructure PR is merged, from a throwaway branch such as `chore/first-ci-apply`. It refuses `main`.)
 3. Merge the PR.
 
 Every Monday, a drift check opens an issue called "Infrastructure drift" if a dashboard setting no longer matches the code.

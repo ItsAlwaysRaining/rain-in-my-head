@@ -34,6 +34,15 @@ Then check the dashboards:
 - **Vercel:** project `rain-in-my-head`, Git not connected, Deployment Protection set to Standard, and 6 environment variables.
 - **Neon:** project `rain-in-my-head` with branches `prod` and `dev`.
 
+## First CI apply (after the infrastructure PR is merged)
+
+GitHub only shows **Run workflow** when the workflow file is on the default branch, so this can't be tried before the merge.
+
+1. `git switch main && git pull && git switch -c chore/first-ci-apply && git push -u origin HEAD`
+2. Go to **Actions → Infrastructure → Run workflow**, choose `chore/first-ci-apply` (not `main`) and run it.
+3. The run says "Manually triggered" and its apply job turns green. It should log "No changes" and "State unchanged".
+4. Delete the throwaway branch. If the state did change, the bot pushed a commit to it, so open a PR for that branch instead.
+
 ## Later changes
 
 1. Open a PR that touches `infra/`, and read the plan comment.
