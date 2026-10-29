@@ -98,6 +98,7 @@ If someone tries codes over and over, the site slows them down and then stops th
 
 - **A visitor with an old cookie after the owner changes the site's signing secret.** They're sent to the login page, not shown an error.
 - **A cookie that was edited by hand.** It's treated as no cookie.
+- **Someone who downloads the app's files without logging in.** They get the same files every visitor gets. They hold no listening data, and every data request still needs a session.
 - **Two people with the same name.** Names are unique among active codes, so the second `viewer add` is refused (Story 1, scenario 5).
 - **A code that's entered with extra spaces or in lower case.** Spaces around it are ignored. The code is case-sensitive, so a wrong-case code fails like any other.
 - **A visitor's session outlives their tier change.** The new tier applies on their next request.
@@ -135,11 +136,11 @@ If someone tries codes over and over, the site slows them down and then stops th
 
 **Locked pages**
 
-- **FR-016**: On the hosted site, every page and every API route MUST be denied by default. Only the landing page and the login page (and what they need to load) are public.
+- **FR-016**: On the hosted site, every API route MUST be denied by default, and the app MUST show the login page to anyone without a session. Only the landing page and the login page (and what they need to load) are open to someone without a code. The site's files are static and the same for everyone, so a page that loads no data (About, Contact Me, Storm, and the coming-soon pages) is shown or hidden by the app in the browser. Every request for data is checked by the server.
 - **FR-017**: Every API route MUST declare who may use it. A route that declares nothing MUST be refused (constitution VII).
 - **FR-018**: Access MUST come from a person's tier plus any pages granted to them. A guest opens the dashboard pages. A trusted visitor opens those and the Analyst page (pre-defined queries and the schema map). No tier opens a page that's off on the hosted site (playlists, AI).
 - **FR-019**: A request for a page the visitor can't open MUST get a clear answer: the login page if they aren't logged in, or a plain "not available to you" page if they are. A locked API route MUST get a 403 with a short message.
-- **FR-020**: The navigation MUST show only the pages the logged-in visitor can open. Hiding a link is a convenience only. The server MUST check every request.
+- **FR-020**: The navigation MUST show only the pages the logged-in visitor can open. Hiding a link is a convenience only. The server MUST check every request for data.
 - **FR-021**: A tier or grant change MUST apply on the person's next request, without a new login.
 - **FR-022**: A revoked person's next request MUST be refused as if they had no session.
 
@@ -164,12 +165,12 @@ If someone tries codes over and over, the site slows them down and then stops th
 ### Measurable Outcomes
 
 - **SC-001**: The owner can add a person and have a code ready to send in under 30 seconds.
-- **SC-002**: With no code, 100% of pages and API routes other than the landing page and login page are refused (checked against the full list of routes).
+- **SC-002**: With no code, 100% of API routes other than the public ones (login, log out, who-am-I and health) are refused (checked against the full list of routes), and opening any page other than the landing page or login page shows the login page.
 - **SC-003**: In a real browser, a guest code opens Genre, and the same guest gets a 403 on the SQL route.
 - **SC-004**: After the owner revokes a code, the person's next click is refused within 5 seconds, on every device they were using.
 - **SC-005**: A search of everything stored in the visitor database finds no code and no raw IP address.
 - **SC-006**: After 20 wrong codes from one source, 100% of further attempts from it are refused for the lockout period, and a correct code from another source still works.
-- **SC-007**: For each tier, the pages shown in the navigation match the pages the server will open: 0 links lead to a refusal, and 0 hidden pages open when typed.
+- **SC-007**: For each tier, the pages shown in the navigation match the pages the server will open: 0 links lead to a refusal, and a page typed in by hand shows "not available to you" with no data and no data request that succeeds.
 - **SC-008**: Running the app locally behaves exactly as before: the existing checks pass with no login.
 
 ## Assumptions
