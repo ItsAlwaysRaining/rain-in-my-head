@@ -1,7 +1,9 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Component, type ReactNode } from "react";
-import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation } from "react-router";
+import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
+import { ApiError, type Me } from "./api";
 import styles from "./App.module.css";
+import { AuthProvider, ME_KEY, RequireAccess, useAuth } from "./auth";
 import { Breadcrumbs, Notice, PageHeader } from "./components/ui";
 import About from "./pages/About";
 import Analyst from "./pages/Analyst";
@@ -9,14 +11,22 @@ import Artist from "./pages/Artist";
 import Contact from "./pages/Contact";
 import Genre from "./pages/Genre";
 import Landing from "./pages/Landing";
+import Login from "./pages/Login";
 import NewArtists from "./pages/NewArtists";
 import Overview from "./pages/Overview";
 import { ListeningSlot, Mainstream } from "./pages/Placeholders";
 import Playlists from "./pages/Playlists";
 import Storm from "./pages/Storm";
-import { breadcrumbs, SECTIONS } from "./routes";
+import { breadcrumbs, visibleSections } from "./routes";
 
-const queryClient = new QueryClient({
+// A data request the hosted site answers with "log in" (no session, or it was ended) sends the visitor to the login page.
+const sessionEnded = (error: unknown) => {
+  if (error instanceof ApiError && error.kind === "locked") queryClient.setQueryData<Me>(ME_KEY, { logged_in: false });
+};
+
+const queryClient: QueryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: sessionEnded }),
+  mutationCache: new MutationCache({ onError: sessionEnded }),
   defaultOptions: { queries: { staleTime: 60_000, retry: false, refetchOnWindowFocus: false } },
 });
 
@@ -30,6 +40,8 @@ function CloudLogo() {
 }
 
 function TopBar() {
+  const auth = useAuth();
+  const navigate = useNavigate();
   return (
     <header className={styles.topBar}>
       <div className={styles.topBarInner}>
@@ -39,11 +51,20 @@ function TopBar() {
           Rain in My Head
         </Link>
         <nav aria-label="Main" className={styles.nav}>
-          {SECTIONS.map((s) => (
+          {visibleSections(auth.can).map((s) => (
             <NavLink key={s.path} to={s.path} className={({ isActive }) => (isActive ? styles.navActive : styles.navLink)}>
               {s.label}
             </NavLink>
           ))}
+          {auth.loggedIn && (
+            <button
+              type="button"
+              className={styles.logout}
+              onClick={() => auth.logOut().then(() => navigate("/login", { replace: true }))}
+            >
+              Log out
+            </button>
+          )}
         </nav>
       </div>
     </header>
@@ -91,17 +112,18 @@ function Shell() {
           <ErrorBoundary key={pathname}>
             <Routes>
               <Route path="/" element={<Landing />} />
-              <Route path="/dashboards" element={<Overview />} />
-              <Route path="/dashboards/new-artists" element={<NewArtists />} />
-              <Route path="/dashboards/genre" element={<Genre />} />
-              <Route path="/dashboards/artist" element={<Artist />} />
-              <Route path="/dashboards/slot" element={<ListeningSlot />} />
-              <Route path="/dashboards/mainstream" element={<Mainstream />} />
-              <Route path="/playlists" element={<Playlists />} />
-              <Route path="/analyst" element={<Analyst />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/storm" element={<Storm />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/dashboards" element={<RequireAccess page="overview"><Overview /></RequireAccess>} />
+              <Route path="/dashboards/new-artists" element={<RequireAccess page="new-artists"><NewArtists /></RequireAccess>} />
+              <Route path="/dashboards/genre" element={<RequireAccess page="genre"><Genre /></RequireAccess>} />
+              <Route path="/dashboards/artist" element={<RequireAccess page="artist"><Artist /></RequireAccess>} />
+              <Route path="/dashboards/slot" element={<RequireAccess page="slot"><ListeningSlot /></RequireAccess>} />
+              <Route path="/dashboards/mainstream" element={<RequireAccess page="mainstream"><Mainstream /></RequireAccess>} />
+              <Route path="/playlists" element={<RequireAccess page="playlists"><Playlists /></RequireAccess>} />
+              <Route path="/analyst" element={<RequireAccess page="analyst"><Analyst /></RequireAccess>} />
+              <Route path="/about" element={<RequireAccess page="about"><About /></RequireAccess>} />
+              <Route path="/contact" element={<RequireAccess page="contact"><Contact /></RequireAccess>} />
+              <Route path="/storm" element={<RequireAccess page="storm"><Storm /></RequireAccess>} />
               {/* Addresses from before the redesign (same paths as the Streamlit dashboard). */}
               <Route path="/genre" element={<Redirect to="/dashboards/genre" />} />
               <Route path="/artist" element={<Redirect to="/dashboards/artist" />} />
@@ -120,7 +142,9 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Shell />
+        <AuthProvider>
+          <Shell />
+        </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
   );

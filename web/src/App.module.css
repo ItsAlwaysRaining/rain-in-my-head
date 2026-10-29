@@ -47,6 +47,20 @@
 .navLink:hover {
   background: var(--surface-raised);
 }
+.logout {
+  padding: 6px var(--space-3);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.logout:hover {
+  background: var(--surface-raised);
+  color: var(--text);
+}
 .navActive {
   background: var(--night-soft);
   font-weight: 600;
