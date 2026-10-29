@@ -215,8 +215,9 @@ def cmd_serve(args) -> None:
     except ImportError:
         raise SystemExit("The dashboard API needs the web group: run `uv sync`.")
     print(f"Rain in My Head (TypeScript dashboard): http://{args.host}:{args.port}")
+    # The hosted site doesn't print who asked: no address in the log (specs/011-viewer-access, FR-014).
     uvicorn.run("rain_in_my_head.api:app", host=args.host, port=args.port, reload=args.dev,
-                reload_dirs=[str(Path(__file__).parent)] if args.dev else None)
+                reload_dirs=[str(Path(__file__).parent)] if args.dev else None, access_log=not config.HOSTED)
 
 
 # ---- viewer: the owner's commands for invite codes (run on your Mac; specs/011-viewer-access) -------------------

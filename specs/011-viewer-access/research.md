@@ -71,6 +71,7 @@
 - **Decision**: the source is the first address in `x-forwarded-for` (or the connection address locally). The stored key is `HMAC-SHA256(SESSION_SECRET, day + ":" + address)`, hex, so it changes every day and can't be turned back into an address without the secret. One row per key in `login_attempts` holds the failure count, the start of the minute window and a lock-out time.
 - **Rules**: more than 5 wrong codes inside one minute: refuse further tries in that minute without checking (HTTP 429). 20 wrong codes in a day: lock out for 15 minutes, including correct codes. A correct code from another source is unaffected. Rows older than a day are deleted when anyone logs in.
 - **Why**: meets FR-014 and the constitution (no raw IPs) with no extra service.
+- **Logs**: the app logs no address, code or cookie. uvicorn's own access log prints the address a proxy header gives it, so `serve` turns the access log off when hosted. On Vercel (phase 6) the platform's request logs are Vercel's, not the app's, and phase 6 should check what they keep.
 - **Alternatives considered**: counting in memory (each serverless instance would count separately, so the limit would leak); counting by the code tried (an attacker can vary the code).
 
 ## R8. Requests from other sites
