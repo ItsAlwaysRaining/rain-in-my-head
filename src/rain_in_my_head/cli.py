@@ -223,11 +223,13 @@ def cmd_serve(args) -> None:
 
 def _viewer(args, work) -> None:
     """Print which database the command is using, run it, and turn a database or lookup error into one plain line."""
-    from . import neon
+    from . import neon, viewers
 
     print(f"[{args.env}]", end=" ", flush=True)
     try:
         work()
+    except viewers.ViewerError as e:
+        raise SystemExit(f"\n{e}")
     except neon.NeonError as e:
         raise SystemExit(f"\nThe database refused that: {e}")
     except neon.NeonUnavailable as e:
@@ -240,6 +242,35 @@ def cmd_viewer_init(args) -> None:
     def work():
         viewers.init_database(args.env)
         print(f"ready: {len(viewers.TABLES)} tables, role {viewers.APP_ROLE}")
+
+    _viewer(args, work)
+
+
+def cmd_viewer_add(args) -> None:
+    from . import config, viewers
+
+    def work():
+        code = viewers.add_viewer(config.viewers_url(args.env, "owner"), args.name, args.tier)
+        print(f"added {' '.join(args.name.split())} ({args.tier})")
+        print(f"code: {code}")
+        print("This code can't be shown again. Send it to them yourself, then clear your terminal.")
+
+    _viewer(args, work)
+
+
+def cmd_viewer_list(args) -> None:
+    from . import config, viewers
+
+    def work():
+        rows = viewers.list_viewers(config.viewers_url(args.env, "owner"))
+        if not rows:
+            print("nobody invited yet. Add someone with: viewer add NAME")
+            return
+        print(f"{len(rows)} invited")
+        print(f"{'name':<22}{'tier':<9}{'extra pages':<24}{'status':<9}{'created':<12}last login")
+        for r in rows:
+            last = (r["last_login_at"] or "never")[:16]
+            print(f"{r['name']:<22}{r['tier']:<9}{r['pages'] or '-':<24}{r['status']:<9}{r['created_at'][:10]:<12}{last}")
 
     _viewer(args, work)
 
@@ -308,6 +339,14 @@ def main() -> None:
     q = viewer.add_parser("init", help="make the tables and the site's database role (safe to run twice)")
     q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
     q.set_defaults(func=cmd_viewer_init)
+    q = viewer.add_parser("add", help="invite someone and print their code once")
+    q.add_argument("name")
+    q.add_argument("--tier", choices=["guest", "trusted"], default="guest")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_add)
+    q = viewer.add_parser("list", help="show everyone invited")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_list)
     args = parser.parse_args()
     args.func(args)
 

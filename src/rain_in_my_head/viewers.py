@@ -101,3 +101,45 @@ def init_database(env: str) -> None:
     login = "" if exists else " LOGIN"
     role_sql = f"{verb} {APP_ROLE}{login} PASSWORD '{password}'"
     neon.transaction(owner_url, [(role_sql, ())] + [(sql, ()) for sql in _statements(SCHEMA_FILE.read_text())])
+
+
+# ---- The owner's commands: add and list --------------------------------------------------------------------
+
+TIERS = ("guest", "trusted")
+MAX_NAME = 60
+
+
+class ViewerError(Exception):
+    """Something the owner can fix: an unknown name, a duplicate, a bad option. The message is shown as it is."""
+
+
+def _clean_name(name: str) -> str:
+    name = " ".join(name.split())
+    if not name or len(name) > MAX_NAME:
+        raise ViewerError(f"A name needs 1 to {MAX_NAME} characters.")
+    return name
+
+
+def add_viewer(url: str, name: str, tier: str = "guest") -> str:
+    """Add a person with a new code and return the code. This is the only time it exists in readable form."""
+    name = _clean_name(name)
+    if tier not in TIERS:
+        raise ViewerError(f"The tier must be one of: {', '.join(TIERS)}.")
+    code = new_code()
+    try:
+        neon.query(url, "insert into viewers (name, tier, code_hash) values ($1, $2, $3)", [name, tier, hash_code(code)])
+    except neon.NeonError as e:
+        if e.code == "23505":  # unique violation: the active-name index (the hash can't collide)
+            raise ViewerError(f"{name} already has an active code. Revoke it first to give them a new one.") from None
+        raise
+    return code
+
+
+def list_viewers(url: str) -> list[dict[str, str | None]]:
+    """Everyone invited, newest first, with the extra pages granted to each."""
+    return neon.query(
+        url,
+        "select v.name, v.tier, v.status, v.created_at, v.last_login_at, "
+        "coalesce(string_agg(p.page, ', ' order by p.page), '') as pages "
+        "from viewers v left join viewer_pages p on p.viewer_id = v.id group by v.id order by v.id desc",
+    )
