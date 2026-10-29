@@ -75,9 +75,9 @@
 
 **Independent test**: [quickstart](quickstart.md) step 5.
 
-- [ ] T029 [US4] src/rain_in_my_head/viewers.py (part 5): `source_key(address)` is the hex HMAC of `"<UTC date>:<address>"` with `SESSION_SECRET`; the address is the first `x-forwarded-for` entry, or the connection address locally. `check_rate(url, key)` and `record_failure(url, key)` follow [research R7](research.md#r7-the-login-rate-limit-without-raw-ips): more than 5 wrong codes in a minute gives `SlowDown`; 20 wrong codes in a day sets `locked_until` 15 minutes ahead and gives `Locked`, even for a correct code. Delete rows with `updated_at` older than a day when anyone logs in.
-- [ ] T030 [US4] src/rain_in_my_head/api.py: call the rate check before the code check in `POST /api/login`, returning `429 slow_down` or `423 locked` per the contract, and record each wrong code.
-- [ ] T031 [US4] Run quickstart step 5 on dev: 6 wrong codes in a minute (the sixth gives 429), 20 wrong codes (a correct code then gives 423), and a correct code with another `x-forwarded-for` still works. Then confirm every `source_key` is 64 hex characters and no dotted address appears in any table (SC-005).
+- [x] T029 [US4] src/rain_in_my_head/viewers.py (part 5): `source_key(address)` is the hex HMAC of `"<UTC date>:<address>"` with `SESSION_SECRET`; the address is the first `x-forwarded-for` entry, or the connection address locally. `check_rate(url, key)` and `record_failure(url, key)` follow [research R7](research.md#r7-the-login-rate-limit-without-raw-ips): more than 5 wrong codes in a minute gives `SlowDown`; 20 wrong codes in a day sets `locked_until` 15 minutes ahead and gives `Locked`, even for a correct code. Delete rows with `updated_at` older than a day when anyone logs in.
+- [x] T030 [US4] src/rain_in_my_head/api.py: call the rate check before the code check in `POST /api/login`, returning `429 slow_down` or `423 locked` per the contract, and record each wrong code.
+- [x] T031 [US4] Run quickstart step 5 on dev: 6 wrong codes in a minute (the sixth gives 429), 20 wrong codes (a correct code then gives 423), and a correct code with another `x-forwarded-for` still works. Then confirm every `source_key` is 64 hex characters and no dotted address appears in any table (SC-005).
 
 ## Phase 7: Polish and cross-cutting
 
