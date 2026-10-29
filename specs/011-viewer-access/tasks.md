@@ -33,9 +33,9 @@
 
 **Independent test**: [quickstart](quickstart.md) step 1.
 
-- [ ] T012 [US1] src/rain_in_my_head/viewers.py (part 2): `add_viewer(url, name, tier)` inserts a row with `hash_code(code)` and returns the code once. A duplicate active name raises a plain error ("Sam already has an active code"). `list_viewers(url)` returns name, tier, granted pages (joined with `string_agg`), status, created and last login, newest first.
-- [ ] T013 [US1] src/rain_in_my_head/cli.py: `viewer add NAME [--tier guest|trusted]` (prints `[dev] added Sam (guest)`, then the code and "This code can't be shown again.") and `viewer list` (a table), per [contracts/cli.md](contracts/cli.md). Errors are one plain line and exit code 1.
-- [ ] T014 [US1] Run quickstart step 1 on dev: add Sam (guest) and Robin (trusted), list them, add Sam again (expect the refusal), and confirm the stored `code_hash` equals the SHA-256 of Sam's code and that the code appears in no column of the four tables.
+- [x] T012 [US1] src/rain_in_my_head/viewers.py (part 2): `add_viewer(url, name, tier)` inserts a row with `hash_code(code)` and returns the code once. A duplicate active name raises a plain error ("Sam already has an active code"). `list_viewers(url)` returns name, tier, granted pages (joined with `string_agg`), status, created and last login, newest first.
+- [x] T013 [US1] src/rain_in_my_head/cli.py: `viewer add NAME [--tier guest|trusted]` (prints `[dev] added Sam (guest)`, then the code and "This code can't be shown again.") and `viewer list` (a table), per [contracts/cli.md](contracts/cli.md). Errors are one plain line and exit code 1.
+- [x] T014 [US1] Run quickstart step 1 on dev: add Sam (guest) and Robin (trusted), list them, add Sam again (expect the refusal), and confirm the stored `code_hash` equals the SHA-256 of Sam's code and that the code appears in no column of the four tables.
 
 **Checkpoint**: owner commands work. Nothing is checked on the site yet.
 
