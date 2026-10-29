@@ -11,7 +11,7 @@
 ## Phase 1: Setup
 
 - [x] T001 infra/outputs.tf: add `dev_app_url` and `prod_app_url`, both `sensitive = true`, returning `local.dev_app_url` and `local.prod_app_url`. No resource changes. Run `tofu fmt -check` in infra/.
-- [ ] T002 **Owner**: push the branch, then in GitHub go to **Actions → Infrastructure → Run workflow** and choose `feature/viewer-access`. Wait for the green apply, then `git pull` (the bot commits the state). Then fill `.env` with the four `VIEWERS_*` values and a local `SESSION_SECRET` from [quickstart.md](quickstart.md) step 0. Each value goes straight into `.env`, never into chat.
+- [x] T002 **Owner**: push the branch, then in GitHub go to **Actions → Infrastructure → Run workflow** and choose `feature/viewer-access`. Wait for the green apply, then `git pull` (the bot commits the state). Then fill `.env` with the four `VIEWERS_*` values and a local `SESSION_SECRET` from [quickstart.md](quickstart.md) step 0. Each value goes straight into `.env`, never into chat.
 - [x] T003 [P] `.env.example`: add the names only, with a comment each: `VIEWERS_OWNER_URL_DEV`, `VIEWERS_OWNER_URL_PROD`, `VIEWERS_APP_URL_DEV`, `VIEWERS_APP_URL_PROD`, and `SESSION_SECRET` and `DATABASE_URL` (the last two are set by Vercel when hosted).
 - [x] T004 [P] src/rain_in_my_head/config.py: add `DATABASE_URL` and `SESSION_SECRET` (read from the environment, empty if unset), `SESSION_DAYS = 30`, and `viewers_url(env, role)` that returns the `VIEWERS_<ROLE>_URL_<ENV>` value or raises `SystemExit` naming the variable (never its value).
 
