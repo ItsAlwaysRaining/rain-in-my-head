@@ -65,9 +65,9 @@
 
 **Independent test**: [quickstart](quickstart.md) step 4 items 5 to 7.
 
-- [ ] T026 [US3] src/rain_in_my_head/viewers.py (part 4): `revoke_viewer(url, name)` sets `status = 'revoked'`, `revoked_at`, and deletes that person's sessions in one transaction, returning how many ended. `grant(url, name, add_page=None, remove_page=None, tier=None)` validates page keys against `access.PAGES` and refuses a revoked person.
-- [ ] T027 [US3] src/rain_in_my_head/cli.py: `viewer revoke NAME` and `viewer grant NAME [--page KEY] [--remove-page KEY] [--tier guest|trusted]` per [contracts/cli.md](contracts/cli.md). `grant` with no option is an error. An unknown page key lists the valid keys.
-- [ ] T028 [US3] Run quickstart step 4 items 5 to 7 on dev. Time the gap between `viewer revoke` and the refused click: it must be under 5 seconds. Confirm a revoked code gives the same message as a wrong code, and that adding the same name again makes a new code that works while the old one doesn't.
+- [x] T026 [US3] src/rain_in_my_head/viewers.py (part 4): `revoke_viewer(url, name)` sets `status = 'revoked'`, `revoked_at`, and deletes that person's sessions in one transaction, returning how many ended. `grant(url, name, add_page=None, remove_page=None, tier=None)` validates page keys against `access.PAGES` and refuses a revoked person.
+- [x] T027 [US3] src/rain_in_my_head/cli.py: `viewer revoke NAME` and `viewer grant NAME [--page KEY] [--remove-page KEY] [--tier guest|trusted]` per [contracts/cli.md](contracts/cli.md). `grant` with no option is an error. An unknown page key lists the valid keys.
+- [x] T028 [US3] Run quickstart step 4 items 5 to 7 on dev. Time the gap between `viewer revoke` and the refused click: it must be under 5 seconds. Confirm a revoked code gives the same message as a wrong code, and that adding the same name again makes a new code that works while the old one doesn't.
 
 ## Phase 6: US4, guessing codes doesn't work (P3)
 
