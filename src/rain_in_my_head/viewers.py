@@ -10,10 +10,12 @@ import hashlib
 import hmac
 import re
 import secrets
+import time
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from rain_in_my_head import config, neon
+from rain_in_my_head import access, config, neon
 
 # Letters and digits without the look-alikes 0 O o 1 I l: 56 characters, so 16 of them are about 93 bits.
 CODE_ALPHABET = "".join(c for c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" if c not in "0Oo1Il")
@@ -143,3 +145,77 @@ def list_viewers(url: str) -> list[dict[str, str | None]]:
         "coalesce(string_agg(p.page, ', ' order by p.page), '') as pages "
         "from viewers v left join viewer_pages p on p.viewer_id = v.id group by v.id order by v.id desc",
     )
+
+
+# ---- Logging in and checking a session (run by the hosted API) ---------------------------------------------
+
+SESSION_CACHE_SECONDS = 3  # a revoke shows up on every server within this long (spec SC-004)
+
+
+class BadCode(Exception):
+    """A wrong, revoked or unknown code. The same error for all three, so nothing hints at which."""
+
+
+@dataclass(frozen=True)
+class Session:
+    viewer_id: str
+    name: str
+    tier: str
+    pages: frozenset[str]
+
+
+_cache: dict[str, tuple[float, Session | None]] = {}
+
+
+def lookup_session(url: str, session_id: str, *, fresh: bool = False) -> Session | None:
+    """The person behind a session id, or None if it's unknown, expired or the person was revoked.
+
+    One query joins the session, the person and their granted pages. The answer is remembered for a few
+    seconds, so a page that makes six API calls costs one query (research R6).
+    """
+    key = hash_session_id(session_id)
+    now = time.monotonic()
+    hit = _cache.get(key)
+    if hit and not fresh and now - hit[0] < SESSION_CACHE_SECONDS:
+        return hit[1]
+    rows = neon.query(
+        url,
+        "select v.id, v.name, v.tier, coalesce(string_agg(p.page, ','), '') as pages "
+        "from sessions s join viewers v on v.id = s.viewer_id "
+        "left join viewer_pages p on p.viewer_id = v.id "
+        "where s.id_hash = $1 and s.expires_at > now() and v.status = 'active' group by v.id",
+        [key],
+    )
+    session = None
+    if rows:
+        r = rows[0]
+        granted = {page for page in (r["pages"] or "").split(",") if page}
+        session = Session(r["id"], r["name"], r["tier"], access.pages_for(r["tier"], granted))
+    if len(_cache) > 500:
+        _cache.clear()
+    _cache[key] = (now, session)
+    return session
+
+
+def login(url: str, code: str) -> tuple[str, Session]:
+    """Check a code. If it's active, start a session and return its id and the person."""
+    wanted = hash_code(code)
+    rows = neon.query(url, "select id, code_hash from viewers where code_hash = $1 and status = 'active'", [wanted])
+    if not rows or not hmac.compare_digest(rows[0]["code_hash"], wanted):
+        raise BadCode()
+    session_id = new_session_id()
+    neon.transaction(url, [
+        (f"insert into sessions (id_hash, viewer_id, expires_at) values ($1, $2, now() + interval '{int(config.SESSION_DAYS)} days')",
+         [hash_session_id(session_id), rows[0]["id"]]),
+        ("update viewers set last_login_at = now() where id = $1", [rows[0]["id"]]),
+        ("delete from sessions where expires_at < now()", []),
+    ])
+    session = lookup_session(url, session_id, fresh=True)
+    if session is None:  # revoked between the two steps
+        raise BadCode()
+    return session_id, session
+
+
+def end_session(url: str, session_id: str) -> None:
+    neon.query(url, "delete from sessions where id_hash = $1", [hash_session_id(session_id)])
+    _cache.pop(hash_session_id(session_id), None)
