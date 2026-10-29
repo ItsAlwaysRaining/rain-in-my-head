@@ -219,3 +219,51 @@ def login(url: str, code: str) -> tuple[str, Session]:
 def end_session(url: str, session_id: str) -> None:
     neon.query(url, "delete from sessions where id_hash = $1", [hash_session_id(session_id)])
     _cache.pop(hash_session_id(session_id), None)
+
+
+# ---- The owner's commands: revoke and grant ----------------------------------------------------------------
+
+
+def _active_viewer(url: str, name: str) -> dict[str, str | None]:
+    """The person with this name and an active code, or a plain error saying why there isn't one."""
+    name = _clean_name(name)
+    rows = neon.query(url, "select id, name, tier from viewers where lower(name) = lower($1) and status = 'active'", [name])
+    if rows:
+        return rows[0]
+    if neon.query(url, "select 1 as found from viewers where lower(name) = lower($1)", [name]):
+        raise ViewerError(f"{name}'s code is revoked. Add them again with `viewer add` to give them a new one.")
+    raise ViewerError(f"No one called {name} has been invited. See `viewer list`.")
+
+
+def revoke_viewer(url: str, name: str) -> tuple[str, int]:
+    """Make a person's code unusable and end their sessions, in one step. Returns their name and how many sessions ended."""
+    person = _active_viewer(url, name)
+    _, ended = neon.transaction(url, [
+        ("update viewers set status = 'revoked', revoked_at = now() where id = $1", [person["id"]]),
+        ("delete from sessions where viewer_id = $1 returning id_hash", [person["id"]]),
+    ])
+    return person["name"], len(ended)
+
+
+def grant(url: str, name: str, *, add_page: str | None = None, remove_page: str | None = None, tier: str | None = None) -> tuple[str, list[str]]:
+    """Add or take back a page, or change the tier, for one person. Returns their name and what changed."""
+    if not (add_page or remove_page or tier):
+        raise ViewerError("Say what to change: --page, --remove-page or --tier.")
+    for page in (add_page, remove_page):
+        if page and page not in access.PAGES:
+            raise ViewerError(f"Unknown page {page!r}. The pages are: {', '.join(access.PAGES)}.")
+    if tier and tier not in TIERS:
+        raise ViewerError(f"The tier must be one of: {', '.join(TIERS)}.")
+    person = _active_viewer(url, name)
+    statements, changes = [], []
+    if add_page:
+        statements.append(("insert into viewer_pages (viewer_id, page) values ($1, $2) on conflict do nothing", [person["id"], add_page]))
+        changes.append(f"+{add_page}")
+    if remove_page:
+        statements.append(("delete from viewer_pages where viewer_id = $1 and page = $2", [person["id"], remove_page]))
+        changes.append(f"-{remove_page}")
+    if tier:
+        statements.append(("update viewers set tier = $2 where id = $1", [person["id"], tier]))
+        changes.append(f"tier {tier}")
+    neon.transaction(url, statements)
+    return person["name"], changes

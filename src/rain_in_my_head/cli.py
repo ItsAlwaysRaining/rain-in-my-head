@@ -275,6 +275,28 @@ def cmd_viewer_list(args) -> None:
     _viewer(args, work)
 
 
+def cmd_viewer_revoke(args) -> None:
+    from . import config, viewers
+
+    def work():
+        name, ended = viewers.revoke_viewer(config.viewers_url(args.env, "owner"), args.name)
+        print(f"revoked {name}, ended {ended} session{'' if ended == 1 else 's'}")
+
+    _viewer(args, work)
+
+
+def cmd_viewer_grant(args) -> None:
+    from . import config, viewers
+
+    def work():
+        name, changes = viewers.grant(
+            config.viewers_url(args.env, "owner"), args.name, add_page=args.page, remove_page=args.remove_page, tier=args.tier
+        )
+        print(f"{name}: {', '.join(changes)}")
+
+    _viewer(args, work)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="rain-in-my-head", description="Personal listening analytics from Last.fm scrobbles")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -344,6 +366,17 @@ def main() -> None:
     q.add_argument("--tier", choices=["guest", "trusted"], default="guest")
     q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
     q.set_defaults(func=cmd_viewer_add)
+    q = viewer.add_parser("revoke", help="end someone's code and log them out")
+    q.add_argument("name")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_revoke)
+    q = viewer.add_parser("grant", help="give or take back a page, or change someone's tier")
+    q.add_argument("name")
+    q.add_argument("--page", help="a page to add, e.g. analyst")
+    q.add_argument("--remove-page", help="a page to take back")
+    q.add_argument("--tier", choices=["guest", "trusted"], help="change their tier")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_grant)
     q = viewer.add_parser("list", help="show everyone invited")
     q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
     q.set_defaults(func=cmd_viewer_list)
