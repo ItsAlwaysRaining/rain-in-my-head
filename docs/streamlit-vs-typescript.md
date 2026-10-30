@@ -162,6 +162,10 @@ The TypeScript app was restyled to match the Figma Prototype page. Streamlit is 
 **Would be hard in Streamlit**
 - A top bar, breadcrumbs, chips that look like the design, a raised-card shadow and a custom webfont all fight Streamlit's fixed layout and theme.
 
+## Login and locked pages
+
+_TypeScript only (specs/011-viewer-access)._ The hosted site asks for an invite code and hides the pages a person can't open. Streamlit is never hosted, so it has no login, and on your Mac neither app asks for one. The numbers on every page are unchanged.
+
 ## Same-change test
 
 _Added after all pages are done: one identical small change made in both apps._

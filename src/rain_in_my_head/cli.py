@@ -215,8 +215,87 @@ def cmd_serve(args) -> None:
     except ImportError:
         raise SystemExit("The dashboard API needs the web group: run `uv sync`.")
     print(f"Rain in My Head (TypeScript dashboard): http://{args.host}:{args.port}")
+    # The hosted site doesn't print who asked: no address in the log (specs/011-viewer-access, FR-014).
     uvicorn.run("rain_in_my_head.api:app", host=args.host, port=args.port, reload=args.dev,
-                reload_dirs=[str(Path(__file__).parent)] if args.dev else None)
+                reload_dirs=[str(Path(__file__).parent)] if args.dev else None, access_log=not config.HOSTED)
+
+
+# ---- viewer: the owner's commands for invite codes (run on your Mac; specs/011-viewer-access) -------------------
+
+def _viewer(args, work) -> None:
+    """Print which database the command is using, run it, and turn a database or lookup error into one plain line."""
+    from . import neon, viewers
+
+    print(f"[{args.env}]", end=" ", flush=True)
+    try:
+        work()
+    except viewers.ViewerError as e:
+        raise SystemExit(f"\n{e}")
+    except neon.NeonError as e:
+        raise SystemExit(f"\nThe database refused that: {e}")
+    except neon.NeonUnavailable as e:
+        raise SystemExit(f"\n{e}")
+
+
+def cmd_viewer_init(args) -> None:
+    from . import viewers
+
+    def work():
+        viewers.init_database(args.env)
+        print(f"ready: {len(viewers.TABLES)} tables, role {viewers.APP_ROLE}")
+
+    _viewer(args, work)
+
+
+def cmd_viewer_add(args) -> None:
+    from . import config, viewers
+
+    def work():
+        code = viewers.add_viewer(config.viewers_url(args.env, "owner"), args.name, args.tier)
+        print(f"added {' '.join(args.name.split())} ({args.tier})")
+        print(f"code: {code}")
+        print("This code can't be shown again. Send it to them yourself, then clear your terminal.")
+
+    _viewer(args, work)
+
+
+def cmd_viewer_list(args) -> None:
+    from . import config, viewers
+
+    def work():
+        rows = viewers.list_viewers(config.viewers_url(args.env, "owner"))
+        if not rows:
+            print("nobody invited yet. Add someone with: viewer add NAME")
+            return
+        print(f"{len(rows)} invited")
+        print(f"{'name':<22}{'tier':<9}{'extra pages':<24}{'status':<9}{'created':<12}last login")
+        for r in rows:
+            last = (r["last_login_at"] or "never")[:16]
+            print(f"{r['name']:<22}{r['tier']:<9}{r['pages'] or '-':<24}{r['status']:<9}{r['created_at'][:10]:<12}{last}")
+
+    _viewer(args, work)
+
+
+def cmd_viewer_revoke(args) -> None:
+    from . import config, viewers
+
+    def work():
+        name, ended = viewers.revoke_viewer(config.viewers_url(args.env, "owner"), args.name)
+        print(f"revoked {name}, ended {ended} session{'' if ended == 1 else 's'}")
+
+    _viewer(args, work)
+
+
+def cmd_viewer_grant(args) -> None:
+    from . import config, viewers
+
+    def work():
+        name, changes = viewers.grant(
+            config.viewers_url(args.env, "owner"), args.name, add_page=args.page, remove_page=args.remove_page, tier=args.tier
+        )
+        print(f"{name}: {', '.join(changes)}")
+
+    _viewer(args, work)
 
 
 def main() -> None:
@@ -277,6 +356,31 @@ def main() -> None:
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--dev", action="store_true", help="reload on Python changes (use with `npm run dev` in web/)")
     p.set_defaults(func=cmd_serve)
+    p = sub.add_parser("viewer", help="invite codes for the hosted site (run on your Mac)")
+    viewer = p.add_subparsers(dest="viewer_command", required=True)
+    env_help = "which Neon branch: dev (default) or prod"
+    q = viewer.add_parser("init", help="make the tables and the site's database role (safe to run twice)")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_init)
+    q = viewer.add_parser("add", help="invite someone and print their code once")
+    q.add_argument("name")
+    q.add_argument("--tier", choices=["guest", "trusted"], default="guest")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_add)
+    q = viewer.add_parser("revoke", help="end someone's code and log them out")
+    q.add_argument("name")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_revoke)
+    q = viewer.add_parser("grant", help="give or take back a page, or change someone's tier")
+    q.add_argument("name")
+    q.add_argument("--page", help="a page to add, e.g. analyst")
+    q.add_argument("--remove-page", help="a page to take back")
+    q.add_argument("--tier", choices=["guest", "trusted"], help="change their tier")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_grant)
+    q = viewer.add_parser("list", help="show everyone invited")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_list)
     args = parser.parse_args()
     args.func(args)
 

@@ -1,14 +1,33 @@
 // Every page's address, breadcrumb label and top-bar section, in one place (contracts/routes.md in
 // specs/005-prototype-redesign). The top bar and the breadcrumbs both read this.
 
-/** Top-bar items, left to right. */
+/** Top-bar items, left to right. `pages` are the access keys (src/rain_in_my_head/access.py) that open each one. */
 export const SECTIONS = [
-  { path: "/dashboards", label: "Dashboards" },
-  { path: "/playlists", label: "Playlist Generator" },
-  { path: "/analyst", label: "Analyst" },
-  { path: "/about", label: "About" },
-  { path: "/contact", label: "Contact Me" },
+  { path: "/dashboards", label: "Dashboards", pages: ["overview", "new-artists", "genre", "artist", "slot", "mainstream"] },
+  { path: "/playlists", label: "Playlist Generator", pages: ["playlists"] },
+  { path: "/analyst", label: "Analyst", pages: ["analyst"] },
+  { path: "/about", label: "About", pages: ["about"] },
+  { path: "/contact", label: "Contact Me", pages: ["contact"] },
 ] as const;
+
+/** The access key for each page. "playlists" is on no tier, so on the hosted site nobody can open it. */
+export const PAGE_KEYS = {
+  "/dashboards": "overview",
+  "/dashboards/new-artists": "new-artists",
+  "/dashboards/genre": "genre",
+  "/dashboards/artist": "artist",
+  "/dashboards/slot": "slot",
+  "/dashboards/mainstream": "mainstream",
+  "/playlists": "playlists",
+  "/analyst": "analyst",
+  "/storm": "storm",
+  "/about": "about",
+  "/contact": "contact",
+} as const;
+export type PageKey = (typeof PAGE_KEYS)[keyof typeof PAGE_KEYS];
+
+/** The top-bar items a visitor can open. Hiding the rest is a convenience; the server checks every request. */
+export const visibleSections = (can: (page: string) => boolean) => SECTIONS.filter((s) => s.pages.some(can));
 
 /** Breadcrumb label for each path below a section (the section's own label comes from SECTIONS). */
 const PAGES: Record<string, string> = {
@@ -18,6 +37,7 @@ const PAGES: Record<string, string> = {
   "/dashboards/slot": "When you listen",
   "/dashboards/mainstream": "Mainstream vs. niche",
   "/storm": "Storm",
+  "/login": "Log in",
 };
 
 export interface Crumb {

@@ -16,3 +16,15 @@ output "dev_owner_url" {
   value     = local.dev_owner_url
   sensitive = true
 }
+
+# The site's database role, for `viewer init` and for running the site locally in hosted mode against dev.
+# Same rules as the owner URLs above: read them with `tofu output -raw`, never print them.
+output "prod_app_url" {
+  value     = local.prod_app_url
+  sensitive = true
+}
+
+output "dev_app_url" {
+  value     = local.dev_app_url
+  sensitive = true
+}

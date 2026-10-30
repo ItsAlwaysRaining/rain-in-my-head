@@ -2,7 +2,8 @@
 // specs/003-typescript-dashboard/data-model.md; dates are local "YYYY-MM-DD".
 
 // "refused": the hosted site turned the request down (403, "This DJ doesn't take requests.").
-export type ApiErrorKind = "no_database" | "unreachable" | "http" | "refused";
+// "locked": the hosted site wants a login (403 login_required): there's no session, or it was ended.
+export type ApiErrorKind = "no_database" | "unreachable" | "http" | "refused" | "locked";
 
 export class ApiError extends Error {
   constructor(
@@ -44,13 +45,33 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   if ([502, 503, 504].includes(response.status) || !response.headers.get("content-type")?.includes("json")) {
     const body = await response.json().catch(() => null);
     if (body?.error === "no_database") throw new ApiError("no_database", body.message);
+    if (body?.error === "unavailable") throw new ApiError("http", body.message);
     throw new ApiError("unreachable", "The data service isn't running.");
   }
   const body = await response.json();
-  if (response.status === 403 && body?.error === "refused") throw new ApiError("refused", body.message);
-  if (!response.ok) throw new ApiError("http", typeof body?.detail === "string" ? body.detail : JSON.stringify(body));
+  if (response.status === 403 && body?.error === "login_required") throw new ApiError("locked", body.message);
+  if (response.status === 403 && (body?.error === "refused" || body?.error === "not_available")) throw new ApiError("refused", body.message);
+  if (!response.ok) {
+    const text = typeof body?.detail === "string" ? body.detail : typeof body?.message === "string" ? body.message : JSON.stringify(body);
+    throw new ApiError("http", text);
+  }
   return body as T;
 }
+
+// ---- Login (specs/011-viewer-access, contracts/api.md) ----------------------------------------------------
+
+/** Who is looking: `local` on your Mac (no login, every page), else logged in or not. */
+export interface Me {
+  local?: true;
+  logged_in?: boolean;
+  name?: string;
+  tier?: "guest" | "trusted";
+  pages?: string[];
+}
+
+export const fetchMe = () => getJson<Me>("/api/me");
+export const login = (code: string) => sendJson<Me>("POST", "/api/login", { code });
+export const logout = () => sendJson<void>("POST", "/api/logout");
 
 // ---- Overview ----------------------------------------------------------------
 
