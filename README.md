@@ -129,7 +129,30 @@ Until phase 6 deploys the site, the address shows Vercel's "deployment not found
 
 **Neon's sign-up project.** If Neon made you create a project when you signed up (for example `scratch`), delete it by hand once. It isn't managed here.
 
-**Database roles.** OpenTofu makes the owner roles. The website's app role (`rain_app`) is created with SQL in phase 4, because roles made through Neon's API are superusers.
+**Database roles.** OpenTofu makes the owner roles. The website's app role (`rain_app`) is created by `viewer init` (below), because roles made through Neon's API are superusers.
+
+## Visitors and invite codes
+
+The hosted site has no public pages except the landing page and the login page. Each person gets their own invite code, and you manage them from your Mac. On your Mac the dashboard needs no login, and nothing here applies.
+
+**One-time setup, per Neon branch** (`dev` first):
+1. Put these in `.env` (names are in `.env.example`; never paste the values anywhere else): `VIEWERS_OWNER_URL_DEV` and `VIEWERS_APP_URL_DEV`, from `tofu output -raw dev_owner_url` and `dev_app_url` in `infra/`. Add `VIEWERS_OWNER_URL_PROD` and `VIEWERS_APP_URL_PROD` the same way when you're ready for prod.
+2. `uv run rain-in-my-head viewer init` makes the tables and the site's database role. It's safe to run again. Add `--env prod` for production.
+
+**Commands** (all take `--env dev|prod`, default `dev`, and print `[dev]` or `[prod]` first):
+
+| Command | What it does |
+|---|---|
+| `viewer add NAME [--tier guest\|trusted]` | Invites someone and prints their code **once**. Send it to them yourself. |
+| `viewer list` | Shows everyone: tier, extra pages, status, created and last login. |
+| `viewer revoke NAME` | Ends their code and logs them out on every device, within seconds. |
+| `viewer grant NAME [--page KEY] [--remove-page KEY] [--tier guest\|trusted]` | Gives or takes back a page, or changes the tier. Applies on their next click. |
+
+**What each tier opens.** A guest opens the six dashboard pages (Overview, New artists, Genre, Artist, When you listen, Mainstream vs. niche), About and Contact Me. A trusted visitor also opens Analyst (pre-defined queries and the schema map, never free-form SQL) and Storm. Page keys for `grant`: `overview`, `new-artists`, `genre`, `artist`, `slot`, `mainstream`, `analyst`, `storm`, `about`, `contact`. Playlists and AI are off for everyone on the hosted site.
+
+**What is stored.** A person's name, the hash of their code (never the code), and when they last logged in. A guessing limit uses a daily-changing scrambled form of the visitor's address, never the address. If a code is lost, revoke it and add the person again.
+
+**Trying the hosted site on your Mac** (against the dev branch): `uv run rain-in-my-head publish`, then set `LISTENING_HOSTED=1`, `LISTENING_DB=data/public.db`, `DATABASE_URL` (the `VIEWERS_APP_URL_DEV` value) and `SESSION_SECRET` (any random string) and run `uv run rain-in-my-head serve`. The full checklist is `specs/011-viewer-access/quickstart.md`.
 
 ## Renamed from spotify-music-analysis
 

@@ -15,10 +15,12 @@ import queue
 import sqlite3
 import threading
 from datetime import date
+from urllib.parse import urlsplit
 from typing import Literal
 
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import (
     FileResponse,
     JSONResponse,
@@ -26,8 +28,9 @@ from fastapi.responses import (
     Response,
     StreamingResponse,
 )
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from rain_in_my_head import access, neon, viewers
 from rain_in_my_head import artist as ar
 from rain_in_my_head import config
 from rain_in_my_head import genre as gn
@@ -53,9 +56,48 @@ def _refused() -> JSONResponse:
     return JSONResponse({"error": "refused", "message": config.REFUSAL}, status_code=403)
 
 
+def _error(status: int, error: str, message: str) -> JSONResponse:
+    return JSONResponse({"error": error, "message": message}, status_code=status)
+
+
+def _session_cookie(request: Request) -> str | None:
+    return viewers.read_cookie(request.cookies.get("session"))
+
+
+async def _session(request: Request) -> viewers.Session | None:
+    """The logged-in person for this request, or None. Raises neon.NeonUnavailable if the visitor database is down."""
+    session_id = _session_cookie(request)
+    if session_id is None:
+        return None
+    return await run_in_threadpool(viewers.lookup_session, config.DATABASE_URL, session_id)
+
+
+UNAVAILABLE = ("unavailable", "The site can't check codes right now. Try again in a minute.")
+
+
+@app.middleware("http")
+async def access_guard(request: Request, call_next):
+    """On the hosted site, every data route needs a login whose pages allow it (specs/011-viewer-access).
+
+    Registered before hosted_guard, so hosted_guard runs first: playlists, AI and writes are refused for
+    everyone, logged in or not.
+    """
+    path, method = request.url.path, "GET" if request.method == "HEAD" else request.method
+    if config.HOSTED and path.startswith("/api/") and (method, path) not in access.PUBLIC_ROUTES:
+        try:
+            session = await _session(request)
+        except neon.NeonUnavailable:
+            return _error(503, *UNAVAILABLE)
+        if session is None:
+            return _error(403, "login_required", "Log in with your invite code.")
+        if not access.allowed(session.pages, method, path):
+            return _error(403, "not_available", "That page isn't available to you.")
+    return await call_next(request)
+
+
 @app.middleware("http")
 async def hosted_guard(request: Request, call_next):
-    """On the hosted site, deny by default: only reads, plus pre-defined SQL (checked in `sql`), get through.
+    """On the hosted site, deny by default: only reads, plus pre-defined SQL (checked in `sql`) and login and logout, get through.
 
     Anything that writes, makes playlists or uses AI is refused, including routes added later
     (specs/009-public-dataset, research R4).
@@ -63,7 +105,7 @@ async def hosted_guard(request: Request, call_next):
     if config.HOSTED:
         path, method = request.url.path, request.method
         allowed = (method in ("GET", "HEAD") and not path.startswith(REFUSED_PREFIXES)) or (
-            method == "POST" and path == "/api/sql"
+            method == "POST" and path in ("/api/sql", "/api/login", "/api/logout")
         )
         if not allowed:
             return _refused()
@@ -115,8 +157,83 @@ def _records(df: pd.DataFrame, columns: dict[str, str] | list[str]) -> list[dict
 
 @app.get("/api/health")
 def health() -> dict:
+    if config.HOSTED:  # a stranger can ask this: say only that the app is up
+        return {"ok": True}
     exists = config.DB_PATH.exists()
     return {"ok": True, "db": exists, "db_mtime": config.DB_PATH.stat().st_mtime if exists else None, "hosted": config.HOSTED}
+
+
+# ---- Login (specs/011-viewer-access, contracts/api.md) -----------------------------------------------------
+
+COOKIE_DAYS = config.SESSION_DAYS
+
+
+class LoginRequest(BaseModel):
+    code: str = Field(max_length=64)
+
+
+def _me(session: viewers.Session) -> dict:
+    return {"logged_in": True, "name": session.name, "tier": session.tier, "pages": sorted(session.pages)}
+
+
+def _same_origin(request: Request) -> bool:
+    """A login or logout must come from the site's own pages, not from a form on another site."""
+    origin = request.headers.get("origin")
+    return origin is None or urlsplit(origin).netloc == request.headers.get("host", request.url.netloc)
+
+
+@app.get("/api/me")
+async def me(request: Request):
+    if not config.HOSTED:
+        return {"local": True}  # on your Mac there is no login and every page opens
+    try:
+        session = await _session(request)
+    except neon.NeonUnavailable:
+        return _error(503, *UNAVAILABLE)
+    return _me(session) if session else {"logged_in": False}
+
+
+@app.post("/api/login")
+async def login(body: LoginRequest, request: Request):
+    if not config.HOSTED:
+        raise HTTPException(404)
+    if not _same_origin(request):
+        return _error(403, "refused", config.REFUSAL)
+    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    address = forwarded or (request.client.host if request.client else "unknown")
+    try:
+        session_id, session = await run_in_threadpool(viewers.attempt_login, config.DATABASE_URL, body.code, address)
+    except viewers.SlowDown:
+        return _error(429, "slow_down", "Too many tries. Wait a minute.")
+    except viewers.Locked:
+        return _error(423, "locked", "Too many tries. Try again later.")
+    except viewers.BadCode:
+        return _error(401, "bad_code", "That code didn't work.")
+    except neon.NeonUnavailable:
+        return _error(503, *UNAVAILABLE)
+    response = JSONResponse(_me(session))
+    response.set_cookie(
+        "session", viewers.sign_cookie(session_id), max_age=COOKIE_DAYS * 86400, path="/",
+        httponly=True, secure=viewers.cookie_secure(request), samesite="lax",
+    )
+    return response
+
+
+@app.post("/api/logout", status_code=204)
+async def logout(request: Request):
+    if not config.HOSTED:
+        raise HTTPException(404)
+    if not _same_origin(request):
+        return _error(403, "refused", config.REFUSAL)
+    session_id = _session_cookie(request)
+    if session_id:
+        try:
+            await run_in_threadpool(viewers.end_session, config.DATABASE_URL, session_id)
+        except neon.NeonUnavailable:
+            return _error(503, *UNAVAILABLE)
+    response = Response(status_code=204)
+    response.delete_cookie("session", path="/", httponly=True, secure=viewers.cookie_secure(request), samesite="lax")
+    return response
 
 
 @app.get("/api/overview")
@@ -467,6 +584,32 @@ def playlists_create(body: CreateRequest) -> StreamingResponse:
             yield item
 
     return StreamingResponse(stream(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
+
+
+# ---- Every data route must say who may use it --------------------------------------------------------------
+
+def check_routes() -> None:
+    """Stop the app from starting if an /api route that reads data has no entry in access.API_ACCESS.
+
+    Routes under REFUSED_PREFIXES, and anything that isn't a GET or a listed POST, are refused by hosted_guard
+    for everyone, so they need no entry (FR-017, constitution VII).
+    """
+    listed = set(access.API_ACCESS) | set(access.PUBLIC_ROUTES)
+    local_only = {"/api/docs", "/api/openapi.json"}  # not served at all when hosted
+    missing = sorted(
+        f"{method} {route.path}"
+        for route in app.routes
+        if getattr(route, "path", "").startswith("/api/")
+        and not route.path.startswith(REFUSED_PREFIXES)
+        and route.path not in local_only
+        for method in (getattr(route, "methods", None) or ())
+        if method in ("GET", "POST") and (method, route.path) not in listed
+    )
+    if missing:
+        raise RuntimeError("These routes have no access rule in access.py: " + ", ".join(missing))
+
+
+check_routes()
 
 
 # ---- Built frontend ----------------------------------------------------------
