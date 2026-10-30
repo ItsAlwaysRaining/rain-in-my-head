@@ -15,6 +15,12 @@ resource "vercel_project" "site" {
   }
 }
 
+# No redirect, so the .vercel.app address keeps serving the site as a backup. The DNS record is added by hand at Spaceship.
+resource "vercel_project_domain" "site" {
+  project_id = vercel_project.site.id
+  domain     = var.site_domain
+}
+
 resource "random_password" "session_prod" {
   length  = 64
   special = false

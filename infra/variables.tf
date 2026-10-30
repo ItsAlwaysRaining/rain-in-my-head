@@ -31,6 +31,12 @@ variable "github_repository" {
   default     = "rain-in-my-head"
 }
 
+variable "site_domain" {
+  description = "Custom domain for the site, a subdomain of a domain whose DNS is kept at Spaceship. Not a secret. The DNS record is added by hand (README, Hosting infrastructure)."
+  type        = string
+  default     = "rain.storyandstructure.studio"
+}
+
 variable "neon_region" {
   description = "Neon region, close to Vercel's default function region (iad1)."
   type        = string
