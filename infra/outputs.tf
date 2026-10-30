@@ -2,6 +2,10 @@ output "vercel_project_id" {
   value = vercel_project.site.id
 }
 
+output "site_domain" {
+  value = vercel_project_domain.site.domain
+}
+
 output "neon_project_id" {
   value = neon_project.visitors.id
 }

@@ -116,6 +116,13 @@ Change hosting only here, through a pull request, never in the dashboards. The s
 
 Every Monday, a drift check opens an issue called "Infrastructure drift" if a dashboard setting no longer matches the code.
 
+**Custom domain.** The site's address is `rain.storyandstructure.studio` (the `site_domain` variable in `infra/variables.tf`). OpenTofu attaches it to the Vercel project, but the DNS lives at Spaceship, so you add one record by hand after the apply:
+1. In Vercel, open the project's **Settings → Domains** and read the value it shows for the domain. Use that value, not one from an old guide.
+2. At Spaceship, open the domain's **Nameservers & DNS**. Leave the nameservers as Spaceship's. Delete any default record for the `rain` host (such as a parking page), then add a **CNAME** with host `rain` and the value from step 1.
+3. Check it has spread (a few minutes, sometimes an hour). It should print a Vercel name and IP addresses: `dig +short rain.storyandstructure.studio`
+
+Until phase 6 deploys the site, the address shows Vercel's "deployment not found" page over https. That is expected. The `.vercel.app` address keeps working as a backup, and the bare `storyandstructure.studio` is not attached.
+
 **Renewing tokens.** The Vercel, Neon and GitHub tokens last 90 days. When one expires, plans fail and the drift check fails. Create a new token with the same name, then update the matching secret with `gh secret set VERCEL_API_TOKEN` (or `NEON_API_KEY`, or `GH_INFRA_TOKEN`).
 
 **Lost passphrase.** The state can't be decrypted. Choose a new passphrase, delete `infra/terraform.tfstate`, then `tofu import` each resource by its ID: the Vercel project, then the Neon project, branch, endpoint, role and database. The IDs are in each dashboard. Passwords made by `random_password` will be regenerated, so the next apply rotates them.
