@@ -13,6 +13,7 @@ The app's public interface is its URLs, which people bookmark. The API is unchan
 | `/dashboards/mainstream` | Mainstream vs. niche (Coming Soon, #12) | Dashboards | Home › Dashboards › Mainstream vs. niche |
 | `/playlists?type=` | Playlist Generator | Playlist Generator | Home › Playlist Generator |
 | `/analyst` | Analyst (SQL + Schema) | Analyst | Home › Analyst |
+| `/ai` | AI (Coming Soon, #32) | AI | Home › AI |
 | `/about` | About (Coming Soon, #33) | About | Home › About |
 | `/contact` | Contact Me (Coming Soon, #34) | Contact Me | Home › Contact Me |
 | `/storm` | Storm (Coming Soon, #28) | — | Home › Storm |

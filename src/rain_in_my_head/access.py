@@ -9,17 +9,17 @@ from __future__ import annotations
 
 # One key per page. The same keys are used by the `viewer grant` command and by web/src/routes.ts.
 PAGES = (
-    "overview", "new-artists", "genre", "artist", "slot", "mainstream", "analyst", "storm", "about", "contact",
+    "overview", "new-artists", "genre", "artist", "slot", "mainstream", "analyst", "ai", "storm", "about", "contact",
 )
 
-GUEST_PAGES = frozenset({"overview", "new-artists", "genre", "artist", "slot", "mainstream", "about", "contact"})
+GUEST_PAGES = frozenset({"overview", "new-artists", "genre", "artist", "slot", "mainstream", "ai", "about", "contact"})
 TIER_PAGES = {
     "guest": GUEST_PAGES,
     "trusted": GUEST_PAGES | {"analyst", "storm"},
 }
 
 # (method, path) -> the pages that unlock it. Any one of them is enough: Overview and New artists both use
-# /api/overview. Pages with no entry (About, Contact, Storm, the coming-soon pages) load no data.
+# /api/overview. Pages with no entry (About, Contact, Storm, AI, the coming-soon pages) load no data.
 API_ACCESS: dict[tuple[str, str], frozenset[str]] = {
     ("GET", "/api/overview"): frozenset({"overview", "new-artists"}),
     ("GET", "/api/genre"): frozenset({"genre"}),
