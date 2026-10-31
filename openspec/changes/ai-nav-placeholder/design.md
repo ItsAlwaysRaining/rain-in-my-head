@@ -20,6 +20,8 @@ The top nav is generated from `SECTIONS` in `web/src/routes.ts`. The breadcrumbs
 
 **Shared card component.** Export `AiPlaylistComingSoon` from `Placeholders.tsx`, holding the current tab copy unchanged. The tab and the `Ai` page both render it. *Alternative:* copy the text. Rejected because the two copies would drift.
 
+**Access key `ai`, in the guest tier.** The hosted site decides who sees each page by an access key (`access.py`, `routes.ts`). The page loads no data, and the owner wants visitors to see what's planned, so `ai` joins `GUEST_PAGES`. *Alternatives:* trusted tier only, or no tier (like Playlist Generator, so nobody sees it). Both rejected by the owner. No `API_ACCESS` entry is needed, and the app's startup route check only covers `/api` routes.
+
 **Page title "AI".** `PageHeader title="AI"` with no intro line, like the About placeholder had. The card already explains the feature.
 
 **No layout change for the nav.** At 1440 px the extra item still fits on one line. Below 800 px the nav already wraps. The spec scenario checks 390 px.

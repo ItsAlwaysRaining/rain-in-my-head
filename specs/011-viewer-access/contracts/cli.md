@@ -14,4 +14,4 @@ Run on the owner's Mac only. Every command takes `--env dev|prod` (default `dev`
 
 **Never printed**: a code after `add`, a connection string, or a password.
 
-**Page keys**: `overview`, `new-artists`, `genre`, `artist`, `slot`, `mainstream`, `analyst`, `storm`, `about`, `contact`.
+**Page keys**: `overview`, `new-artists`, `genre`, `artist`, `slot`, `mainstream`, `analyst`, `ai`, `storm`, `about`, `contact`.

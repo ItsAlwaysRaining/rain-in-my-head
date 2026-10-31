@@ -15,6 +15,7 @@ import { Chips, Field, RangeSlider, Slider } from "../components/Form";
 import { Button, ChipGroup, ErrorState, Loading, Notice, PageHeader, Tabs } from "../components/ui";
 import { formatDayMonthYear } from "../format";
 import styles from "./Playlists.module.css";
+import { AiPlaylistComingSoon } from "./Placeholders";
 
 const KINDS: Record<PlaylistKind, string> = { slot: "Time Slot", discoveries: "Discovery", binges: "Binge" };
 type Tab = PlaylistKind | "ai" | "sql";
@@ -65,12 +66,7 @@ export default function Playlists() {
           {
             key: "ai",
             label: "AI",
-            content: (
-              <ComingSoon title="Describe a playlist in your own words" issue={32}>
-                Ask for a mood, a time or a memory, like “songs I binged at the end of 2023 but haven't played since”, and get a playlist built only from your
-                own listening history, with a reason for every track.
-              </ComingSoon>
-            ),
+            content: <AiPlaylistComingSoon />,
           },
           {
             key: "sql",

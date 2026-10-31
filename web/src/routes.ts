@@ -6,6 +6,7 @@ export const SECTIONS = [
   { path: "/dashboards", label: "Dashboards", pages: ["overview", "new-artists", "genre", "artist", "slot", "mainstream"] },
   { path: "/playlists", label: "Playlist Generator", pages: ["playlists"] },
   { path: "/analyst", label: "Analyst", pages: ["analyst"] },
+  { path: "/ai", label: "AI", pages: ["ai"] },
   { path: "/about", label: "About", pages: ["about"] },
   { path: "/contact", label: "Contact Me", pages: ["contact"] },
 ] as const;
@@ -20,6 +21,7 @@ export const PAGE_KEYS = {
   "/dashboards/mainstream": "mainstream",
   "/playlists": "playlists",
   "/analyst": "analyst",
+  "/ai": "ai",
   "/storm": "storm",
   "/about": "about",
   "/contact": "contact",
