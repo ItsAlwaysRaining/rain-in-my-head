@@ -176,6 +176,8 @@ Each night the visitor records are copied to a private `analytics` branch in the
 - **FR-028**: Everything in this phase MUST fit the free plans with no card (constitution VII). It MUST NOT add a paid service or a new account.
 - **FR-029**: Dev and prod MUST use separate usage records. A record from one MUST NOT appear in the other.
 
+- **FR-030**: Because the browser reports page views and time on page, a person MUST NOT be able to flood the site with those reports. Each person is capped at 120 reports a minute. Reports over the cap are dropped without an error, and the visitor sees nothing. Added during planning (2026-11-01), when the plan found that this path costs processing time like a heavy route.
+
 ### Key Entities
 
 - **Usage record**: one thing a person did: a page view, a feature use, a time-on-page measurement, or a limit hit. Has the person, the page or feature, the time, and where it applies the length of time or the query's name. Kept 12 months.
@@ -206,7 +208,7 @@ Each night the visitor records are copied to a private `analytics` branch in the
 
 - The visitor database is the Neon project from phase 3, with separate dev and prod branches. The prod tables and the site's database role were created on 2026-11-01 (`viewer init --env prod`). This phase adds more tables there, and `viewer init` stays safe to run twice.
 - The site's servers remember nothing between requests, so the limit counters live in the visitor database. This is why the limit adds a small cost to each heavy request, which is acceptable.
-- The owner reads usage on their Mac through the existing owner connection (the same one the `viewer` commands use). The hosted site's own database role can add usage records and limit counters but can't read other people's records or change anything about people (as in phase 4).
+- The owner reads usage on their Mac through the existing owner connection (the same one the `viewer` commands use). The hosted site's own database role can add usage records and read back the few columns it needs to count them for the limit. It can't change or delete a usage record, or change anything about people (as in phase 4). It already reads people, including code hashes, so this adds no new kind of exposure.
 - "Heavy routes" start as the pre-defined query route and the genre song list route, because those cost the most processing time. Other routes cost little and aren't limited.
 - The starting limits (30 a minute, 1,000 a day) are the owner's to review. A normal visitor clicking around never gets near them.
 - A "day" and a "month" run on UTC.
