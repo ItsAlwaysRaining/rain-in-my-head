@@ -52,11 +52,11 @@ The preview SHALL serve the built dashboard and the API. The API SHALL read the 
 - **THEN** it is refused exactly as on the hosted site
 
 ### Requirement: No dataset older than the window
-The dataset in a preview SHALL contain no play older than 730 days before it was built, and it SHALL be built fresh for each deploy. It SHALL NOT be committed.
+The dataset in a preview SHALL follow the public dataset's window (spec 009): 730 days, ending 7 days before the build. It SHALL contain no play older than that, it SHALL be built fresh for each deploy, and it SHALL NOT be committed.
 
 #### Scenario: Check the dataset
 - **WHEN** the oldest play in the deployed dataset is queried
-- **THEN** it is no more than 730 days older than the deploy date
+- **THEN** it is no more than 737 days (730 plus the 7-day lag) older than the deploy date
 
 ### Requirement: Pull requests from outside this repository do not deploy
 A pull request from a fork SHALL NOT be deployed and SHALL NOT be given access to any secret. The workflow SHALL end without error.

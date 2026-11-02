@@ -46,6 +46,7 @@ jobs:
           uv run --no-default-groups rain-in-my-head build
           uv run --no-default-groups rain-in-my-head publish
 
+      # The window is 730 days ending 7 days ago (specs/009-public-dataset), so the oldest play may be 737 days old.
       - name: Check the two-year window
         run: |
           python3 - <<'PY'
@@ -53,7 +54,7 @@ jobs:
           oldest, plays = sqlite3.connect("data/public.db").execute("select min(played_at), count(*) from scrobbles").fetchone()
           days = (time.time() - oldest) / 86400
           print(f"{plays:,} plays; the oldest is {days:.1f} days old")
-          assert days <= 731, "public.db holds a play older than the 730-day window"
+          assert days <= 737, "public.db holds a play older than the 730-day window plus the 7-day lag"
           PY
 
       - name: Build the frontend
