@@ -236,6 +236,8 @@ export function ErrorState({ error }: { error: unknown }) {
       </Notice>
     );
   if (error instanceof ApiError && error.kind === "refused") return <Notice>{error.message}</Notice>;
+  // Too many heavy requests: an ordinary notice with the wait, and the rest of the page stays usable.
+  if (error instanceof ApiError && error.kind === "limited") return <Notice tone="warning">{error.message}</Notice>;
   if (error instanceof ApiError && error.kind === "unreachable")
     return (
       <Notice tone="warning">

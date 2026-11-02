@@ -3,7 +3,9 @@
 
 // "refused": the hosted site turned the request down (403, "This DJ doesn't take requests.").
 // "locked": the hosted site wants a login (403 login_required): there's no session, or it was ended.
-export type ApiErrorKind = "no_database" | "unreachable" | "http" | "refused" | "locked";
+// "limited": this person has used up their heavy requests for now (429 rate_limited, specs/012-usage-tracking). The
+// message says how long to wait.
+export type ApiErrorKind = "no_database" | "unreachable" | "http" | "refused" | "locked" | "limited";
 
 export class ApiError extends Error {
   constructor(
@@ -45,11 +47,12 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   if ([502, 503, 504].includes(response.status) || !response.headers.get("content-type")?.includes("json")) {
     const body = await response.json().catch(() => null);
     if (body?.error === "no_database") throw new ApiError("no_database", body.message);
-    if (body?.error === "unavailable") throw new ApiError("http", body.message);
+    if (body?.error === "unavailable" || body?.error === "not_configured") throw new ApiError("http", body.message);
     throw new ApiError("unreachable", "The data service isn't running.");
   }
   const body = await response.json();
   if (response.status === 403 && body?.error === "login_required") throw new ApiError("locked", body.message);
+  if (response.status === 429 && body?.error === "rate_limited") throw new ApiError("limited", body.message);
   if (response.status === 403 && (body?.error === "refused" || body?.error === "not_available")) throw new ApiError("refused", body.message);
   if (!response.ok) {
     const text = typeof body?.detail === "string" ? body.detail : typeof body?.message === "string" ? body.message : JSON.stringify(body);
@@ -362,3 +365,69 @@ export async function createPlaylist(body: PlaylistRequest & { name: string; pub
     }
   }
 }
+
+// ---- Usage reports (specs/012-usage-tracking, contracts/api.md) -------------------------------------------
+
+export type UsageEvent =
+  | { event: "open"; visit: string; page: string }
+  | { event: "leave"; visit: string; page: string; seconds: number };
+
+/**
+ * Tell the site a page was opened or left. Fire and forget: the answer is always 204, a failure is dropped, and
+ * nothing here ever reaches the page. A leave goes by `sendBeacon` so it survives the tab closing.
+ */
+export function sendEvent(body: UsageEvent): void {
+  const json = JSON.stringify(body);
+  try {
+    if (body.event === "leave" && navigator.sendBeacon?.("/api/events", new Blob([json], { type: "application/json" }))) return;
+    void fetch("/api/events", { method: "POST", headers: { "content-type": "application/json" }, body: json, keepalive: true }).catch(() => {});
+  } catch {
+    /* a lost report is fine */
+  }
+}
+
+// ---- Visitors report (owner's Mac only; specs/012-usage-tracking, contracts/api.md) ------------------------
+
+export type VisitorsEnv = "prod" | "dev";
+export type VisitorsRange = "7d" | "30d" | "12m";
+
+export interface VisitorPerson {
+  name: string;
+  tier: "guest" | "trusted";
+  status: "active" | "revoked";
+  last_login_at: string | null;
+  visits: number;
+  seconds: number;
+  pages: { page: string; views: number; seconds: number }[];
+  features: { feature: string; detail: string | null; uses: number }[];
+  limit_hits: number;
+}
+
+export interface VisitorEvent {
+  kind: "view" | "time" | "feature" | "limit";
+  page: string | null;
+  feature: string | null;
+  detail: string | null;
+  seconds: number | null;
+  at: string;
+}
+
+export interface Visitors {
+  env: VisitorsEnv;
+  range: VisitorsRange;
+  generated_at: string;
+  people: VisitorPerson[];
+  person: { name: string; events: VisitorEvent[] } | null;
+  free_plan: {
+    month: string;
+    requests: number;
+    heavy_page_seconds: number;
+    requests_limit: number | null;
+    database_bytes: number;
+    database_limit_bytes: number | null;
+    notes: string[];
+  };
+}
+
+export const fetchVisitors = (p: { env: VisitorsEnv; range: VisitorsRange; person?: string }) =>
+  getJson<Visitors>("/api/visitors", { env: p.env, range: p.range, person: p.person });

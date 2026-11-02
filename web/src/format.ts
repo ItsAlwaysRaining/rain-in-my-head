@@ -26,3 +26,11 @@ export const percent = (x: number) => `${Math.round(x * 100)}%`;
 
 /** "month" -> "Month" */
 export const capitalize = (s: string) => s[0].toUpperCase() + s.slice(1);
+
+/** 4320 -> "1h 12m", 95 -> "1m", 40 -> "40s" (time on site is an estimate, so no finer than this) */
+export function formatDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours) return `${hours}h ${String(minutes).padStart(2, "0")}m`;
+  return minutes ? `${minutes}m` : `${seconds}s`;
+}
