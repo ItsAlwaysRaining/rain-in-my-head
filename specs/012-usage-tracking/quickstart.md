@@ -41,7 +41,7 @@ Also check:
 - A page opened and left within 3 seconds is stored, and a reload within 5 seconds adds no second `view`.
 - Leave a tab open and idle for 2 minutes: its `seconds` stops growing after about 60 seconds of no input.
 - Open the landing page and the login page without logging in: no rows.
-- Stop the dev database from answering (set a wrong `DATABASE_URL` for a minute) and click around as a logged-in person: pages still load. Heavy requests answer "try again in a minute".
+- If only the recording fails (for example the `usage_events` table is missing), pages still load and the report is silently dropped. With the whole visitor database unreachable, the site can't check anyone's session, so every locked page and heavy request answers "try again in a minute" (the phase 4 behaviour). Check both: `POST /api/events` with a failing store answers 204, and a wrong `DATABASE_URL` answers 503.
 
 ## 2. The limit (story 3, SC-002, SC-003)
 
@@ -91,7 +91,7 @@ Run `uv run rain-in-my-head viewer prune`. Expect `deleted 1 usage records older
 
 ```bash
 mkdir -p /tmp/usage-export && uv run rain-in-my-head viewer export /tmp/usage-export
-grep -E -c '([0-9]{1,3}\.){3}[0-9]{1,3}|([0-9a-fA-F]{1,4}:){2,}' /tmp/usage-export/*.csv     # expect 0 and 0
+grep -E -c '([0-9]{1,3}\.){3}[0-9]{1,3}|([0-9a-fA-F]{1,4}:){3,7}[0-9a-fA-F]{1,4}|::1' /tmp/usage-export/*.csv   # expect 0 and 0 (a time like 22:45:17 has too few colons to match)
 grep -c -i 'code_hash\|session' /tmp/usage-export/*.csv                                        # expect 0 and 0
 ```
 

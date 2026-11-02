@@ -74,15 +74,16 @@ The data for the Visitors page. On the hosted site it is refused for everyone wi
   "free_plan": {
     "month": "2026-11",
     "requests": 412,
+    "requests_limit": 1000000,
     "heavy_page_seconds": 5200,
     "database_bytes": 9120000,
-    "database_limit_bytes": 0,
+    "database_limit_bytes": 1073741824,
     "notes": ["Vercel's processing time is shown only on Vercel's own dashboard."]
   }
 }
 ```
 
-`database_limit_bytes` comes from the `FREE_LIMITS` constants in `usage.py` (research R7); the `0` above is a placeholder. `person` holds, when asked for, `{ "name": ..., "events": [ { "kind", "page", "feature", "detail", "seconds", "at" } ] }`, newest first, the latest 200. No field anywhere holds an address, a code or a hash.
+`requests_limit` and `database_limit_bytes` come from the `FREE_LIMITS` constants in `usage.py` (research R7). `person` holds, when asked for, `{ "name": ..., "events": [ { "kind", "page", "feature", "detail", "seconds", "at" } ] }`, newest first, the latest 200. No field anywhere holds an address, a code or a hash.
 
 **Errors**: `503` `{"error": "not_configured", "message": "Set VIEWERS_OWNER_URL_PROD in .env (see .env.example)."}` if the owner connection is missing (names the variable, never a value). `503` `unavailable` if the database can't be reached. `422` for an unknown `env`, `range` or name.
 

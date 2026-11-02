@@ -15,7 +15,7 @@ where (select count(*) from usage_events where viewer_id = $1::bigint and kind =
          and at > now() - interval '1 minute') < $5::int
   and (select count(*) from usage_events where viewer_id = $1::bigint and kind = 'feature'
          and at >= date_trunc('day', now() at time zone 'utc') at time zone 'utc') < $6::int
-returning id
+returning 1 as ok
 ```
 
 If a row comes back, the request is allowed and already recorded. If none comes back, the limit was reached. A refused request leaves no row, so it can't use up the day's allowance (FR-011).
@@ -92,7 +92,7 @@ The free-plan limits are constants in `usage.py` (`FREE_LIMITS`), each with a co
 
 **Rationale**: the site can measure its own requests and its database size. It can't read Vercel's CPU use, so it doesn't pretend to (the owner asked for this, 2026-10-29).
 
-**Open check for implementation**: confirm the current Neon free-plan storage figure and the Vercel Hobby limits on their pricing pages before writing the constants. The plan doesn't hard-code a number so a stale one can't be wrong in the spec.
+**Checked on 2026-11-01** against the providers' pages: Neon's Free plan gives 1 GB of storage per project (some older Neon pages still say 0.5 GB; the docs and changelog say 1 GB), and Vercel's Hobby plan gives 4 Active CPU hours and 1,000,000 function invocations a month (a project without Fluid compute is held to the older 100,000, so the owner should check that setting on Vercel). The constants and their sources are in `FREE_LIMITS` in `usage.py`. The report shows recorded requests against the 1,000,000 as a ceiling only, because Vercel counts every API call, which is more than the site records.
 
 **Alternatives considered**: reading Vercel's usage through its API (needs another token and a paid-looking scope; rejected for the free-plan rule and secrets).
 
