@@ -29,9 +29,11 @@ For every change:
 
 PRs are merged with a merge commit (squash is off), so every commit on the branch stays in main's history: keep commits small and clearly described.
 
-Never push to `main` or force-push. The sync workflow's own commits to `main` are expected.
+Never push to `main`. The sync workflow's own commits to `main` are expected.
 
-One deliberate exception: the scheduled `analytics` workflow (`.github/workflows/analytics.yml`) replaces the private `analytics` branch with one fresh commit each night, so only the latest usage export is kept (spec 012). Only that workflow, and only that branch. Never force-push anything else.
+You may rebase a feature branch onto `origin/main` (for example to clear merge conflicts on a PR) and force-push it, on branches you created (`feature/`, `fix/`, `docs/`, `chore/`). Prefer `git push --force-with-lease`, which refuses to overwrite commits you haven't seen. Never force-push `main`.
+
+One deliberate exception: the scheduled `analytics` workflow (`.github/workflows/analytics.yml`) replaces the private `analytics` branch with one fresh commit each night, so only the latest usage export is kept (spec 012). Only that workflow, and only that branch. That workflow may also force-push the `analytics` branch; no other workflow may force-push.
 
 ## Hosting and infrastructure
 
