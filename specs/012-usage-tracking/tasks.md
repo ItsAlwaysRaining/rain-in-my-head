@@ -104,7 +104,7 @@
 - [x] T037 [P] docs/streamlit-vs-typescript.md: note that the Visitors page and tracking are TypeScript only, and why (Streamlit is never hosted).
 - [x] T038 [P] README.md: a "Usage and limits" section: what is recorded, the limits (30 a minute, 1,000 a day) and where they are changed, the new `viewer usage`, `prune` and `export` commands with `--env`, the nightly `analytics` branch (one commit, latest copy only, and the note that GitHub may keep an old commit reachable by its hash for a while), and the setup step: run `viewer init` on each database after pulling this change.
 - [x] T039 Run the whole of [quickstart](quickstart.md) once on dev (steps 0 to 9, and step 8 for local mode: nothing recorded, no limit, the phase 4 checks still pass). Fix anything found. Make sure `uv run rain-in-my-head` still runs with `--no-default-groups`, and `npm run build` in web/ passes.
-- [ ] T040 Open the PR with `.github/pull_request_template.md`, list what was checked in a real browser and what was not (Vercel's real processing time, and a nightly run on the real schedule), and add `Closes #N` for any issue. Never merge.
+- [x] T040 Open the PR with `.github/pull_request_template.md`, list what was checked in a real browser and what was not (Vercel's real processing time, and a nightly run on the real schedule), and add `Closes #N` for any issue. Never merge.
 - [ ] T041 **Owner**, after the merge: (a) run `uv run rain-in-my-head viewer init --env prod` and expect `[prod] ready: 5 tables, role rain_app`; (b) in Actions → analytics, run the workflow once with `dev`, then once with `prod`, and check the branches and that `main` is unchanged ([quickstart](quickstart.md) step 7). Claude adds both steps to the to-do page.
 
 ## Dependencies and order
