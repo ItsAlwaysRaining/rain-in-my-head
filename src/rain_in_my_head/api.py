@@ -30,7 +30,7 @@ from fastapi.responses import (
 )
 from pydantic import BaseModel, Field
 
-from rain_in_my_head import access, neon, viewers
+from rain_in_my_head import access, neon, usage, viewers
 from rain_in_my_head import artist as ar
 from rain_in_my_head import config
 from rain_in_my_head import genre as gn
@@ -49,7 +49,8 @@ app = FastAPI(
     docs_url=None if config.HOSTED else "/api/docs",
     openapi_url=None if config.HOSTED else "/api/openapi.json",
 )
-REFUSED_PREFIXES = ("/api/playlists", "/api/ai")
+# /api/visitors is the owner's usage report: it needs the owner connection, which only the Mac has (spec 012).
+REFUSED_PREFIXES = ("/api/playlists", "/api/ai", "/api/visitors")
 
 
 def _refused() -> JSONResponse:
@@ -90,8 +91,9 @@ async def access_guard(request: Request, call_next):
             return _error(503, *UNAVAILABLE)
         if session is None:
             return _error(403, "login_required", "Log in with your invite code.")
-        if not access.allowed(session.pages, method, path):
+        if not (access.allowed(session.pages, method, path) or access.session_allowed(session.pages, method, path)):
             return _error(403, "not_available", "That page isn't available to you.")
+        request.state.session = session  # the heavy routes and /api/events use it, so there's no second lookup
     return await call_next(request)
 
 
@@ -105,7 +107,7 @@ async def hosted_guard(request: Request, call_next):
     if config.HOSTED:
         path, method = request.url.path, request.method
         allowed = (method in ("GET", "HEAD") and not path.startswith(REFUSED_PREFIXES)) or (
-            method == "POST" and path in ("/api/sql", "/api/login", "/api/logout")
+            method == "POST" and path in ("/api/sql", "/api/login", "/api/logout", "/api/events")
         )
         if not allowed:
             return _refused()
@@ -236,6 +238,54 @@ async def logout(request: Request):
     return response
 
 
+# ---- Usage reports (specs/012-usage-tracking, contracts/api.md) --------------------------------------------
+
+class EventRequest(BaseModel):
+    event: Literal["open", "leave"]
+    visit: str = Field(max_length=32)
+    page: str = Field(max_length=40)
+    seconds: int | None = None  # leave only; clamped to 0..1800 when stored
+
+
+@app.post("/api/events", status_code=204)
+async def events(body: EventRequest, request: Request):
+    """The browser says a page was opened or left. Always answers 204: a dropped, capped or failed report is not
+    something the visitor should ever see (FR-005, FR-030). On your Mac (not hosted) nothing is stored."""
+    if not config.HOSTED:
+        return Response(status_code=204)
+    if not _same_origin(request):
+        return _error(403, "refused", config.REFUSAL)
+    session = request.state.session
+    try:
+        if body.event == "open":
+            await run_in_threadpool(usage.report_open, config.DATABASE_URL, session.viewer_id, session.pages, body.page, body.visit)
+        else:
+            await run_in_threadpool(
+                usage.report_leave, config.DATABASE_URL, session.viewer_id, session.pages, body.page, body.visit, body.seconds or 0
+            )
+    except (neon.NeonUnavailable, neon.NeonError):
+        pass  # a lost report is fine
+    return Response(status_code=204)
+
+
+@app.get("/api/visitors")
+def visitors(env: str = "prod", range: str = "30d", person: str | None = None):
+    """The owner's usage report, for the Visitors page. It needs the owner connection from .env, which only your
+    Mac has, so on the hosted site it is refused for everyone (REFUSED_PREFIXES, and again here)."""
+    if config.HOSTED:
+        return _refused()
+    try:
+        return usage.visitors_payload(env, range, person)
+    except usage.UsageError as e:
+        return _error(422, "bad_request", str(e))
+    except SystemExit as e:  # the owner connection string isn't in .env: the message names the variable, never a value
+        return _error(503, "not_configured", str(e))
+    except neon.NeonError as e:  # shown to the owner only: this route never runs on the hosted site
+        return _error(503, "unavailable", f"The visitor database refused the query ({e}). If the usage table is missing, run `viewer init --env {env}`.")
+    except neon.NeonUnavailable:
+        return _error(503, "unavailable", "The visitor database can't be reached right now.")
+
+
 @app.get("/api/overview")
 def overview(
     preset: Literal["last30", "last12m", "ytd", "all", "custom"] = "last12m",
@@ -313,6 +363,25 @@ def overview(
     return result
 
 
+# ---- The per-person limit on heavy routes (specs/012-usage-tracking) -------------------------------------------
+
+def _heavy(request: Request, page: str, feature: str, detail: str | None = None) -> JSONResponse | None:
+    """On the hosted site, count one heavy request for this person. Returns the response to send if they're over
+    their limit (429) or the visitor database can't say (503), else None. Nothing is checked on your Mac."""
+    if not config.HOSTED:
+        return None
+    try:
+        usage.heavy_request(config.DATABASE_URL, request.state.session.viewer_id, page, feature, detail)
+    except usage.RateLimited as e:
+        return JSONResponse(
+            {"error": "rate_limited", "message": e.message, "retry_after": e.retry_after},
+            status_code=429, headers={"Retry-After": str(e.retry_after)},
+        )
+    except (neon.NeonUnavailable, neon.NeonError):
+        return _error(503, *UNAVAILABLE)
+    return None
+
+
 # ---- Genre -------------------------------------------------------------------
 
 def _genre_view(genre: str | None, start: date | None, end: date | None):
@@ -345,7 +414,11 @@ def genre(genre: str | None = None, start: date | None = None, end: date | None 
 
 
 @app.get("/api/genre/songs")
-def genre_songs(artist_key: str, genre: str | None = None, start: date | None = None, end: date | None = None) -> dict:
+def genre_songs(request: Request, artist_key: str, genre: str | None = None, start: date | None = None, end: date | None = None):
+    # Checked before the work is done, so a limited person costs the free plan almost nothing. A not-found answer
+    # below still counts as a use.
+    if (limited := _heavy(request, "genre", "genre-songs")) is not None:
+        return limited
     _, chosen, _, _, plays = _genre_view(genre, start, end)
     if chosen is None or plays.empty or artist_key not in set(plays["artist_key"]):
         raise HTTPException(404, "No plays by that artist in this genre and range")
@@ -400,13 +473,16 @@ class SqlRequest(BaseModel):
 
 
 @app.post("/api/sql")
-def sql(body: SqlRequest):
+def sql(body: SqlRequest, request: Request):
     """Typed SQL locally. On the hosted site only a pre-defined query, by name: visitor text never runs."""
     _require_db()
     if config.HOSTED and (body.sql is not None or body.example not in sq.EXAMPLES):
         return _refused()
     if body.example is not None and body.example not in sq.EXAMPLES:
         raise HTTPException(422, f"Unknown example {body.example!r}")
+    # Only a pre-defined query gets here when hosted, and only now: the refusals above leave no record (FR-011).
+    if body.example and (limited := _heavy(request, "analyst", "query", body.example)) is not None:
+        return limited
     try:
         result = sq.run_example(config.DB_PATH, body.example) if body.example else sq.run_readonly(config.DB_PATH, body.sql or "")
     except Exception as e:  # shown on the page, as Streamlit does
@@ -594,7 +670,7 @@ def check_routes() -> None:
     Routes under REFUSED_PREFIXES, and anything that isn't a GET or a listed POST, are refused by hosted_guard
     for everyone, so they need no entry (FR-017, constitution VII).
     """
-    listed = set(access.API_ACCESS) | set(access.PUBLIC_ROUTES)
+    listed = set(access.API_ACCESS) | set(access.PUBLIC_ROUTES) | set(access.SESSION_ROUTES)
     local_only = {"/api/docs", "/api/openapi.json"}  # not served at all when hosted
     missing = sorted(
         f"{method} {route.path}"

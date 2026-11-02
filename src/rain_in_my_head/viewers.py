@@ -78,7 +78,7 @@ def cookie_secure(request) -> bool:
 
 APP_ROLE = "rain_app"
 SCHEMA_FILE = Path(__file__).with_name("viewer_schema.sql")
-TABLES = ("viewers", "viewer_pages", "sessions", "login_attempts")
+TABLES = ("viewers", "viewer_pages", "sessions", "login_attempts", "usage_events")
 
 
 def _statements(sql: str) -> list[str]:

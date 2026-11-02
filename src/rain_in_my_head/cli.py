@@ -224,12 +224,12 @@ def cmd_serve(args) -> None:
 
 def _viewer(args, work) -> None:
     """Print which database the command is using, run it, and turn a database or lookup error into one plain line."""
-    from . import neon, viewers
+    from . import neon, usage, viewers
 
     print(f"[{args.env}]", end=" ", flush=True)
     try:
         work()
-    except viewers.ViewerError as e:
+    except (viewers.ViewerError, usage.UsageError) as e:
         raise SystemExit(f"\n{e}")
     except neon.NeonError as e:
         raise SystemExit(f"\nThe database refused that: {e}")
@@ -294,6 +294,81 @@ def cmd_viewer_grant(args) -> None:
             config.viewers_url(args.env, "owner"), args.name, add_page=args.page, remove_page=args.remove_page, tier=args.tier
         )
         print(f"{name}: {', '.join(changes)}")
+
+    _viewer(args, work)
+
+
+def _duration(seconds: int) -> str:
+    hours, rest = divmod(int(seconds), 3600)
+    minutes = rest // 60
+    if hours:
+        return f"{hours}h {minutes:02d}m"
+    return f"{minutes}m" if minutes else f"{int(seconds)}s"
+
+
+def _stamp(iso: str | None) -> str:
+    """'2026-10-30T18:02:11Z' as '30 Oct 18:02' (UTC), or 'never'."""
+    if not iso:
+        return "never"
+    from datetime import datetime
+
+    return datetime.strptime(iso, "%Y-%m-%dT%H:%M:%SZ").strftime("%d %b %H:%M").lstrip("0")
+
+
+def cmd_viewer_usage(args) -> None:
+    from . import usage
+
+    def work():
+        data = usage.visitors_payload(args.env, args.range, args.person)
+        if data["person"]:
+            who = data["person"]
+            print(f"latest records for {who['name']} (UTC)")
+            print(f"{'when':<14}{'kind':<9}{'page':<12}{'feature':<13}{'detail':<22}seconds")
+            for e in who["events"]:
+                seconds = "" if e["seconds"] is None else e["seconds"]
+                print(f"{_stamp(e['at']):<14}{e['kind']:<9}{e['page'] or '-':<12}{e['feature'] or '-':<13}{e['detail'] or '-':<22}{seconds}")
+            return
+        print(f"usage, last {usage.RANGES[args.range]} (UTC)\n")
+        print(f"{'name':<18}{'tier':<9}{'last login':<14}{'visits':<8}{'time':<9}{'top pages':<26}{'features':<24}limit hits")
+        for p in data["people"]:
+            pages = ", ".join(f"{r['page']} {r['views']}" for r in p["pages"][:2]) or "-"
+            by_feature: dict[str, int] = {}
+            for f in p["features"]:
+                by_feature[f["feature"]] = by_feature.get(f["feature"], 0) + f["uses"]
+            features = ", ".join(f"{k} {v}" for k, v in by_feature.items()) or "-"
+            status = "" if p["status"] == "active" else " (revoked)"
+            print(f"{p['name'] + status:<18}{p['tier']:<9}{_stamp(p['last_login_at']):<14}{p['visits']:<8}{_duration(p['seconds']):<9}{pages:<26}{features:<24}{p['limit_hits']}")
+        fp = data["free_plan"]
+        limit = fp["database_limit_bytes"]
+        size = f"{fp['database_bytes'] / 1048576:.1f} MB" + (f" of {limit / 1048576:.0f} MB" if limit else " (limit not set)")
+        requests_limit = f" of {fp['requests_limit']:,}" if fp["requests_limit"] else ""
+        print(f"\nfree plan, {fp['month']} (UTC)")
+        print(f"  recorded requests         {fp['requests']}{requests_limit}")
+        print(f"  time on heavy pages       {_duration(fp['heavy_page_seconds'])}")
+        print(f"  visitor database          {size}")
+        for note in fp["notes"]:
+            print(f"  {note}")
+        print("  Time on a page is an estimate sent by the visitor's browser.")
+
+    _viewer(args, work)
+
+
+def cmd_viewer_prune(args) -> None:
+    from . import config, usage
+
+    def work():
+        deleted = usage.prune(config.viewers_url(args.env, "owner"))
+        print(f"deleted {deleted} usage record{'' if deleted == 1 else 's'} older than {usage.RETENTION_MONTHS} months")
+
+    _viewer(args, work)
+
+
+def cmd_viewer_export(args) -> None:
+    from . import config, usage
+
+    def work():
+        events, people = usage.export_files(config.viewers_url(args.env, "owner"), args.directory)
+        print(f"wrote 2 files: {events} usage records, {people} people")
 
     _viewer(args, work)
 
@@ -381,6 +456,18 @@ def main() -> None:
     q = viewer.add_parser("list", help="show everyone invited")
     q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
     q.set_defaults(func=cmd_viewer_list)
+    q = viewer.add_parser("usage", help="who used what (the same report as the Visitors page)")
+    q.add_argument("--range", choices=["7d", "30d", "12m"], default="30d", help="how far back to look")
+    q.add_argument("--person", help="show one person's latest records instead")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_usage)
+    q = viewer.add_parser("prune", help="delete usage records older than 12 months")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_prune)
+    q = viewer.add_parser("export", help="write the usage records and people as two CSV files (the nightly copy)")
+    q.add_argument("directory", help="where to write usage_events.csv and viewers.csv")
+    q.add_argument("--env", choices=["dev", "prod"], default="dev", help=env_help)
+    q.set_defaults(func=cmd_viewer_export)
     args = parser.parse_args()
     args.func(args)
 
