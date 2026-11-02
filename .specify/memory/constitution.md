@@ -18,8 +18,8 @@ Rationale: the history is personal and irreplaceable; everything derived from it
 
 ### II. Spec First, Small Changes
 
-- Every change except docs and chores starts with a spec: OpenSpec for fixes and small additions,
-  Spec Kit for new features (see `CLAUDE.md`).
+- Every change except docs and chores starts with a spec: OpenSpec by default (fixes and new
+  features alike), Spec Kit only for major overhauls that touch every part of the app (see `CLAUDE.md`).
 - When code needs to differ from the spec, the spec is updated first.
 - Work happens on a branch and lands through a pull request that the repository owner reviews and
   merges. PRs stay small, with commits that each describe one step.
@@ -129,4 +129,4 @@ any deviation MUST be justified in the plan's Complexity Tracking. Amendments go
 `chore/` pull request that states the version bump: MAJOR for removing or redefining a principle,
 MINOR for adding one or materially expanding guidance, PATCH for wording.
 
-**Version**: 1.2.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-10-26
+**Version**: 1.2.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-11-02

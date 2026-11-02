@@ -9,13 +9,15 @@ context: |
   dashboard/app.py and dashboard/views/ (one module per page).
   data/raw/lastfm/YYYY-MM.jsonl is the source of truth and is appended by a scheduled
   GitHub Action; data/listening.db is rebuilt from it and gitignored.
-  OpenSpec is for fixes and small additions to existing behaviour. New features use
-  GitHub Spec Kit (specs/). See CLAUDE.md for which to use.
+  OpenSpec is the default for almost everything: fixes, new features, new pages, CLI
+  commands, data sources, dependencies and schema changes. GitHub Spec Kit (specs/) is only
+  for major overhauls that touch every part of the app. See CLAUDE.md.
 
 rules:
   proposal:
-    - Keep proposals short. If the change needs a new page, CLI command, data source,
-      dependency or schema change, say so and recommend Spec Kit instead.
+    - Keep proposals short. Only recommend Spec Kit if the change touches every part of
+      the app (for example converting the whole app to a new language). A new feature,
+      even a large one, stays in OpenSpec.
 
 # Project context (optional)
 # This is shown to AI when creating artifacts.
