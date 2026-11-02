@@ -17,7 +17,9 @@ import Overview from "./pages/Overview";
 import { Ai, ListeningSlot, Mainstream } from "./pages/Placeholders";
 import Playlists from "./pages/Playlists";
 import Storm from "./pages/Storm";
+import Visitors from "./pages/Visitors";
 import { breadcrumbs, visibleSections } from "./routes";
+import { useTracking } from "./usage";
 
 // A data request the hosted site answers with "log in" (no session, or it was ended) sends the visitor to the login page.
 const sessionEnded = (error: unknown) => {
@@ -102,6 +104,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
 function Shell() {
   const { pathname } = useLocation();
+  useTracking();
   return (
     <>
       <TopBar />
@@ -121,6 +124,7 @@ function Shell() {
               <Route path="/dashboards/mainstream" element={<RequireAccess page="mainstream"><Mainstream /></RequireAccess>} />
               <Route path="/playlists" element={<RequireAccess page="playlists"><Playlists /></RequireAccess>} />
               <Route path="/analyst" element={<RequireAccess page="analyst"><Analyst /></RequireAccess>} />
+              <Route path="/visitors" element={<RequireAccess page="visitors"><Visitors /></RequireAccess>} />
               <Route path="/ai" element={<RequireAccess page="ai"><Ai /></RequireAccess>} />
               <Route path="/about" element={<RequireAccess page="about"><About /></RequireAccess>} />
               <Route path="/contact" element={<RequireAccess page="contact"><Contact /></RequireAccess>} />

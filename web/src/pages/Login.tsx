@@ -1,4 +1,5 @@
-// Login: one field for the invite code (specs/011-viewer-access). Public. The notice says what the site stores.
+// Login: one field for the invite code (specs/011-viewer-access). Public. The notice says what the site records
+// (specs/012-usage-tracking, research R10): keep it in step with what usage.py stores and how long it keeps it.
 import { useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router";
@@ -64,7 +65,8 @@ export default function Login() {
         </div>
       </form>
       <p className={styles.privacy}>
-        This site stores your name, tied to your code, and when you log in. Raw IP addresses are never stored.
+        This site records which pages you open, which features you use, and how long you stay, against your name. Records are kept for 12
+        months, then deleted. Raw IP addresses are never stored.
       </p>
     </>
   );

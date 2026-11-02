@@ -31,6 +31,8 @@ PRs are merged with a merge commit (squash is off), so every commit on the branc
 
 Never push to `main` or force-push. The sync workflow's own commits to `main` are expected.
 
+One deliberate exception: the scheduled `analytics` workflow (`.github/workflows/analytics.yml`) replaces the private `analytics` branch with one fresh commit each night, so only the latest usage export is kept (spec 012). Only that workflow, and only that branch. Never force-push anything else.
+
 ## Hosting and infrastructure
 
 The site is hosted on Vercel (Hobby) with visitor data in Neon, both on free plans with no card (constitution VII). Everything is declared with OpenTofu in `infra/`.

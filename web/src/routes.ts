@@ -6,6 +6,7 @@ export const SECTIONS = [
   { path: "/dashboards", label: "Dashboards", pages: ["overview", "new-artists", "genre", "artist", "slot", "mainstream"] },
   { path: "/playlists", label: "Playlist Generator", pages: ["playlists"] },
   { path: "/analyst", label: "Analyst", pages: ["analyst"] },
+  { path: "/visitors", label: "Visitors", pages: ["visitors"] },
   { path: "/ai", label: "AI", pages: ["ai"] },
   { path: "/about", label: "About", pages: ["about"] },
   { path: "/contact", label: "Contact Me", pages: ["contact"] },
@@ -21,6 +22,8 @@ export const PAGE_KEYS = {
   "/dashboards/mainstream": "mainstream",
   "/playlists": "playlists",
   "/analyst": "analyst",
+  // The owner's usage report. On no hosted tier, so only your Mac opens it (specs/012-usage-tracking).
+  "/visitors": "visitors",
   "/ai": "ai",
   "/storm": "storm",
   "/about": "about",

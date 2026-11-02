@@ -166,6 +166,10 @@ The TypeScript app was restyled to match the Figma Prototype page. Streamlit is 
 
 _TypeScript only (specs/011-viewer-access)._ The hosted site asks for an invite code and hides the pages a person can't open. Streamlit is never hosted, so it has no login, and on your Mac neither app asks for one. The numbers on every page are unchanged.
 
+## Usage tracking and the Visitors page
+
+_TypeScript only (specs/012-usage-tracking)._ The hosted site records which pages invited people open, which features they use and roughly how long they stay, and limits how much heavy work one person can ask for. The Visitors page, which shows it, opens only on your Mac (the `viewer usage` command shows the same numbers). Streamlit is never hosted, so it records nothing and has no Visitors page. The numbers on every dashboard page are unchanged.
+
 ## Same-change test
 
 _Added after all pages are done: one identical small change made in both apps._

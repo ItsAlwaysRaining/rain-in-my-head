@@ -154,6 +154,25 @@ The hosted site has no public pages except the landing page and the login page. 
 
 **Trying the hosted site on your Mac** (against the dev branch): `uv run rain-in-my-head publish`, then set `LISTENING_HOSTED=1`, `LISTENING_DB=data/public.db`, `DATABASE_URL` (the `VIEWERS_APP_URL_DEV` value) and `SESSION_SECRET` (any random string) and run `uv run rain-in-my-head serve`. The full checklist is `specs/011-viewer-access/quickstart.md`.
 
+## Usage and limits
+
+The hosted site records what each invited person does, so you can see how it's used and spot trouble before the free plans run out. On your Mac nothing is recorded and nothing is limited.
+
+**What is recorded** (in the visitor database, with each person's name): the pages they open, the features they use (a pre-defined query by name, a genre's song list), and about how long they stay on each page. Never what they type into a filter or search, and never an IP address or a code. The login page says all of this in plain words. Records older than 12 months are deleted every night.
+
+**The limit.** A person can ask for 30 heavy requests a minute and 1,000 a day (a pre-defined query or a genre's song list). Past that they see "You're going a bit fast. Try again in N seconds." (or that today's limit is reached), and nobody else is affected. The numbers are `HEAVY_PER_MINUTE` and `HEAVY_PER_DAY` at the top of `src/rain_in_my_head/usage.py`. The browser's own page-view reports are capped separately at 120 a minute, quietly.
+
+**Seeing it** (on your Mac only, never on the hosted site):
+- The **Visitors** page in the top bar (choose the live site or dev, and a range). Click a person to see their latest records.
+- `uv run rain-in-my-head viewer usage [--range 7d|30d|12m] [--person NAME] [--env dev|prod]` shows the same numbers. The bottom section shows this month's recorded requests and the visitor database's size against the free limits. Vercel's processing time appears only on Vercel's own dashboard.
+- Time on a page is an estimate sent by the visitor's browser. Days and months are UTC.
+
+**The nightly copy.** `.github/workflows/analytics.yml` runs every night at 02:43 UTC. It deletes records older than 12 months (`viewer prune`), writes `usage_events.csv` and `viewers.csv` (`viewer export DIR`, no codes or hashes), and replaces the private `analytics` branch with **one** commit holding them, only if they changed. Older copies leave the branch, so the 12-month promise holds there too. `main` is never touched. Run it by hand from Actions → Analytics export; choosing `dev` writes the branch `analytics-dev` instead. GitHub can keep an unreferenced commit fetchable by its hash for a while after the branch moves on; the repository is private.
+
+**After pulling this change**, run `uv run rain-in-my-head viewer init` once for each database (`--env prod` for production). It adds the `usage_events` table and is safe to run again. Until it has run, recording is quietly dropped and heavy requests are refused with "try again in a minute".
+
+The full checklist is `specs/012-usage-tracking/quickstart.md`.
+
 ## Renamed from spotify-music-analysis
 
 The project was called `spotify-music-analysis`, with a package and command called `listening`. It is now `rain-in-my-head` everywhere: the repository, the `rain-in-my-head` command and the `src/rain_in_my_head/` package. The database is still `data/listening.db`, and the `LISTENING_DB` and `LISTENING_RAW_DIR` settings keep their names, so no data moves.

@@ -39,6 +39,13 @@ PUBLIC_ROUTES = frozenset({
 })
 
 
+# Routes any logged-in person with at least one page may call (specs/012-usage-tracking): the browser's page-view
+# and time-on-page reports. They carry no data back, so no particular page unlocks them.
+SESSION_ROUTES = frozenset({
+    ("POST", "/api/events"),
+})
+
+
 def pages_for(tier: str, granted: set[str] | frozenset[str]) -> frozenset[str]:
     """The pages a visitor can open: their tier's starting pages plus their grants."""
     return TIER_PAGES.get(tier, frozenset()) | (frozenset(granted) & set(PAGES))
@@ -48,3 +55,8 @@ def allowed(pages: set[str] | frozenset[str], method: str, path: str) -> bool:
     """True if a visitor with these pages may call this route. An unlisted route is never allowed."""
     unlock = API_ACCESS.get((method, path))
     return bool(unlock and unlock & set(pages))
+
+
+def session_allowed(pages: set[str] | frozenset[str], method: str, path: str) -> bool:
+    """True for a SESSION_ROUTES route when the visitor has at least one page."""
+    return (method, path) in SESSION_ROUTES and bool(pages)
