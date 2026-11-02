@@ -5,6 +5,9 @@
       "Bash(git push origin main*)",
       "Bash(git push * origin main*)",
       "Bash(git push * origin HEAD:main*)"
+    ],
+    "additionalDirectories": [
+      "/Users/oliver/.claude/projects/-Users-oliver-Documents-claude-projects-rain-in-my-head/fb4e9ec1-9fef-41e4-8461-2429f8b5cb47/tool-results"
     ]
   }
 }
