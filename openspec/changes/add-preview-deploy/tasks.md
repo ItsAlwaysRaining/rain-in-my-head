@@ -2,9 +2,9 @@
 
 ## 1. The function and the routing
 
-- [ ] 1.1 Add `api/index.py` (shim from design decision 1) and verify: `LISTENING_HOSTED=1 LISTENING_DB=data/public.db uv run python -c "import sys; sys.path.insert(0,'.'); from api.index import app; print(app.title)"` prints "Rain in My Head" after `build` and `publish` have made `data/public.db`
-- [ ] 1.2 Add `vercel.json` with the output directory, the `/api/*` route, the SPA rewrite, and the include and exclude lists (decisions 2 and 4), and verify `python3 -m json.tool vercel.json` parses and that no pattern includes `data/raw`, `data/cache` or `infra`
-- [ ] 1.3 Add `requirements.txt` to `.gitignore` and verify `uv export --only-group web --no-dev --no-hashes --no-emit-project` lists `fastapi` and `pandas` and does not list `streamlit`
+- [x] 1.1 Add `api/index.py` (shim from design decision 1) and verify: `LISTENING_HOSTED=1 LISTENING_DB=data/public.db uv run python -c "import sys; sys.path.insert(0,'.'); from api.index import app; print(app.title)"` prints "Rain in My Head" after `build` and `publish` have made `data/public.db`
+- [x] 1.2 Add `vercel.json` with the output directory, the `/api/*` route, the SPA rewrite, and the include and exclude lists (decisions 2 and 4), and verify `python3 -m json.tool vercel.json` parses and that no pattern includes `data/raw`, `data/cache` or `infra`
+- [x] 1.3 Add `requirements.txt` to `.gitignore` and verify `uv export --no-default-groups --group web --no-dev --no-hashes --no-emit-project` lists `fastapi`, `pandas`, `httpx` and `python-dotenv` and does not list `streamlit`
 
 ## 2. Preview deploy workflow, proved with a real deploy
 
