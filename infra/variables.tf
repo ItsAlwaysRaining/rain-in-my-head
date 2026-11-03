@@ -32,7 +32,7 @@ variable "github_repository" {
 }
 
 variable "site_domain" {
-  description = "Custom domain for the site, a subdomain of a domain whose DNS is kept at Spaceship. Not a secret. The DNS record is added by hand (README, Hosting infrastructure)."
+  description = "Custom domain for the site, a subdomain of a domain whose DNS is kept at Cloudflare (registered at Spaceship). Not a secret. The DNS record is added by hand (README, Hosting infrastructure)."
   type        = string
   default     = "rain.storyandstructure.studio"
 }

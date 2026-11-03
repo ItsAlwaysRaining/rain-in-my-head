@@ -15,7 +15,7 @@ resource "vercel_project" "site" {
   }
 }
 
-# No redirect, so the .vercel.app address keeps serving the site as a backup. The DNS record is added by hand at Spaceship.
+# No redirect, so the .vercel.app address keeps serving the site as a backup. The DNS record is added by hand at Cloudflare.
 resource "vercel_project_domain" "site" {
   project_id = vercel_project.site.id
   domain     = var.site_domain

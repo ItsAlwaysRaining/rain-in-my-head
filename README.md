@@ -116,10 +116,12 @@ Change hosting only here, through a pull request, never in the dashboards. The s
 
 Every Monday, a drift check opens an issue called "Infrastructure drift" if a dashboard setting no longer matches the code.
 
-**Custom domain.** The site's address is `rain.storyandstructure.studio` (the `site_domain` variable in `infra/variables.tf`). OpenTofu attaches it to the Vercel project, but the DNS lives at Spaceship, so you add one record by hand after the apply:
+**Custom domain.** The site's address is `rain.storyandstructure.studio` (the `site_domain` variable in `infra/variables.tf`). OpenTofu attaches it to the Vercel project. The name is registered and renewed each year at Spaceship (auto-renew is on), but its nameservers point at Cloudflare, so the DNS lives at Cloudflare. You add one record by hand there after the apply:
 1. In Vercel, open the project's **Settings → Domains** and read the value it shows for the domain. Use that value, not one from an old guide.
-2. At Spaceship, open the domain's **Nameservers & DNS**. Leave the nameservers as Spaceship's. Delete any default record for the `rain` host (such as a parking page), then add a **CNAME** with host `rain` and the value from step 1.
+2. At Cloudflare, open the domain's **DNS → Records**. Delete any record for the `rain` host (such as a parking page), and leave records you didn't make, especially email ones (MX, TXT). Add a **CNAME** with name `rain` (just the word) and the value from step 1. Set **Proxy status** to **DNS only** (grey cloud) and TTL to Auto. Vercel has to see the record itself to issue the https certificate, so don't turn the orange proxy on.
 3. Check it has spread (a few minutes, sometimes an hour). It should print a Vercel name and IP addresses: `dig +short rain.storyandstructure.studio`
+
+If the nameservers ever go back to Spaceship's, add the record there instead. In Spaceship, the domain's **Nameservers & DNS** page shows where they point.
 
 Until phase 7 deploys the site to production, the address shows Vercel's "deployment not found" page over https. That is expected. The `.vercel.app` address keeps working as a backup, and the bare `storyandstructure.studio` is not attached.
 
