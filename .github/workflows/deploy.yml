@@ -78,6 +78,18 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
         run: npx --yes "$VERCEL_CLI" build
 
+      # Runs before the deploy, so a bundle that holds raw data stops the run instead of going live.
+      - name: Check what the function bundle holds
+        run: |
+          find .vercel/output/functions -type f | sed 's|^\.vercel/output/functions/||' | sort > bundle-files.txt
+          echo "$(wc -l < bundle-files.txt) files in the bundle"
+          grep -q 'data/public\.db$' bundle-files.txt || { echo "data/public.db is missing from the bundle"; exit 1; }
+          grep -q 'src/rain_in_my_head/' bundle-files.txt || { echo "src/rain_in_my_head is missing from the bundle"; exit 1; }
+          if grep -nE '(^|/)(data/raw|data/cache|infra)/' bundle-files.txt; then
+            echo "The bundle holds a path that must stay out of it"; exit 1
+          fi
+          echo "Clean: public.db and the package are in; data/raw, data/cache and infra are out"
+
       - name: Deploy the preview
         id: deploy
         env:
