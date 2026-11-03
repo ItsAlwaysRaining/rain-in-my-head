@@ -10,3 +10,6 @@ data/*.log
 data/schema_layout.json
 web/node_modules/
 web/dist/
+# Made in CI from pyproject.toml for the Vercel build (openspec/changes/add-preview-deploy); never committed
+/requirements.txt
+/.vercel/

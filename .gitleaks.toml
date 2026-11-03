@@ -1,0 +1,19 @@
+# Settings for the secret scan in .github/workflows/ci.yml (openspec/changes/add-preview-deploy).
+# Every rule gitleaks ships with stays on. Each entry below allows one known false alarm, and says why.
+
+title = "Rain in My Head"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = ".env.example lists variable names for people to copy into .env. It never holds a real value (CLAUDE.md: secrets are never committed)."
+paths = ['''^\.env\.example$''']
+
+[[allowlists]]
+description = "The Last.fm cache has fields called artist_key and track_key, followed by an artist's name. The generic-api-key rule reads `key: value` as a secret. Both the file and the field name must match, so a real secret pasted anywhere else, or under another field name in these files, is still caught."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''^data/cache/(artists|tracks)\.jsonl$''']
+regexTarget = "match"
+regexes = ['''(artist|track)_key":"''']

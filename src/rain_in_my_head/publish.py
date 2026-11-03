@@ -62,11 +62,11 @@ def publish(db_path: Path, out: Path, window_days: int = 730, lag_days: int = 7,
             conn.execute("INSERT INTO tracks SELECT * FROM src.tracks WHERE track_key IN (SELECT track_key FROM scrobbles)")
             for table in ("artists", "artist_tags"):
                 conn.execute(
-                    f"INSERT INTO {table} SELECT * FROM src.{table} WHERE artist_key IN (SELECT artist_key FROM scrobbles)"
+                    f"INSERT INTO {table} SELECT * FROM src.{table} WHERE artist_key IN (SELECT artist_key FROM scrobbles)"  # noqa: S608 table names come from a fixed tuple
                 )
             conn.execute("DROP TABLE spotify_matches")
         conn.execute("DETACH src")
-        counts = [conn.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in ("scrobbles", "tracks", "artists", "artist_tags")]
+        counts = [conn.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in ("scrobbles", "tracks", "artists", "artist_tags")]  # noqa: S608 table names come from a fixed tuple
         conn.execute("VACUUM")
     except sqlite3.Error:
         conn.close()

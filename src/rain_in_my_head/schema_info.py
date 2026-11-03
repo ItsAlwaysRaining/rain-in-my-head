@@ -43,7 +43,7 @@ def read_schema(db_path: Path) -> list[dict]:
                 {"name": c[1], "type": c[2] or "", "required": bool(c[3]), "key": c[5] > 0}
                 for c in conn.execute(f"PRAGMA table_info({_quote(name)})")
             ]
-            rows = conn.execute(f"SELECT COUNT(*) FROM {_quote(name)}").fetchone()[0] if kind == "table" else None
+            rows = conn.execute(f"SELECT COUNT(*) FROM {_quote(name)}").fetchone()[0] if kind == "table" else None  # noqa: S608 the name is quoted by _quote
             schema.append({"name": name, "kind": kind, "columns": columns, "rows": rows})
     return schema
 

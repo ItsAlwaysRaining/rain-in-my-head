@@ -205,7 +205,7 @@ def login(url: str, code: str) -> tuple[str, Session]:
         raise BadCode()
     session_id = new_session_id()
     neon.transaction(url, [
-        (f"insert into sessions (id_hash, viewer_id, expires_at) values ($1, $2, now() + interval '{int(config.SESSION_DAYS)} days')",
+        (f"insert into sessions (id_hash, viewer_id, expires_at) values ($1, $2, now() + interval '{int(config.SESSION_DAYS)} days')",  # noqa: S608 only constants are interpolated; values are bound
          [hash_session_id(session_id), rows[0]["id"]]),
         ("update viewers set last_login_at = now() where id = $1", [rows[0]["id"]]),
         ("delete from sessions where expires_at < now()", []),
@@ -310,7 +310,7 @@ def check_rate(url: str, key: str) -> None:
 def record_failure(url: str, key: str) -> None:
     neon.query(
         url,
-        "insert into login_attempts as a (source_key, window_start, window_failures, day_failures, updated_at) "
+        "insert into login_attempts as a (source_key, window_start, window_failures, day_failures, updated_at) "  # noqa: S608 only constants are interpolated; values are bound
         "values ($1, now(), 1, 1, now()) on conflict (source_key) do update set "
         "window_failures = case when a.window_start > now() - interval '1 minute' then a.window_failures + 1 else 1 end, "
         "window_start = case when a.window_start > now() - interval '1 minute' then a.window_start else now() end, "

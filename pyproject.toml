@@ -34,3 +34,11 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/rain_in_my_head"]
+
+# CI runs only Ruff's security rules (flake8-bandit), as a lint, not a formatter or a style check
+# (openspec/changes/add-preview-deploy). Run it with: uvx ruff@0.17.3 check src api tests
+[tool.ruff.lint]
+select = ["S"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"] # pytest tests use bare assert

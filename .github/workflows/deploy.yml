@@ -1,0 +1,136 @@
+name: Deploy
+
+# Preview half only (openspec/changes/add-preview-deploy): every pull request from this repo is built here and
+# deployed to Vercel as a preview, which is the dev environment: Neon `dev` data, locked to the owner's Vercel
+# team. Production deploys (merge and nightly) come in phase 7.
+#
+# The project has no Git connection on purpose (infra/vercel.tf), so nothing deploys except this workflow.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: deploy-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  VERCEL_CLI: vercel@64.7.0 # pinned; bump on purpose
+  # Written by infra/github.tf. Not secrets, but not worth guessing either.
+  VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+
+jobs:
+  preview:
+    # Fork and Dependabot pull requests get no secrets, so they get no deploy and no failure.
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # The same two commands the nightly sync uses, so the preview serves what the Mac would.
+      - name: Build the full database, then the two-year copy
+        run: |
+          uv run --no-default-groups rain-in-my-head build
+          uv run --no-default-groups rain-in-my-head publish
+
+      # The window is 730 days ending 7 days ago (specs/009-public-dataset), so the oldest play may be 737 days old.
+      - name: Check the two-year window
+        run: |
+          python3 - <<'PY'
+          import sqlite3, time
+          oldest, plays = sqlite3.connect("data/public.db").execute("select min(played_at), count(*) from scrobbles").fetchone()
+          days = (time.time() - oldest) / 86400
+          print(f"{plays:,} plays; the oldest is {days:.1f} days old")
+          assert days <= 737, "public.db holds a play older than the 730-day window plus the 7-day lag"
+          PY
+
+      - name: Build the frontend
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      # Vercel installs from requirements.txt. It is made from pyproject.toml here so there is one list, not two.
+      # The project's own httpx and python-dotenv stay in; the Streamlit group stays out.
+      - name: List the API's Python packages
+        run: uv export --no-default-groups --group web --no-dev --no-hashes --no-emit-project --no-header --no-annotate -o requirements.txt
+
+      - name: Fetch the preview settings from Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+        run: npx --yes "$VERCEL_CLI" pull --yes --environment=preview
+
+      - name: Build for Vercel
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+        run: npx --yes "$VERCEL_CLI" build
+
+      # Runs before the deploy, so a bundle that holds raw data stops the run instead of going live.
+      - name: Check what the function bundle holds
+        run: |
+          # The build folder holds only the handler and its config. The app's own files are named in
+          # .vc-config.json (filePathMap) and uploaded from the repo at deploy time, so read both lists.
+          find -L .vercel/output/functions -type f | sed 's|^\.vercel/output/functions/||' > bundle-files.txt
+          for cfg in $(find .vercel/output/functions -name .vc-config.json); do
+            echo "$cfg: top-level fields and how many entries each holds (values are not printed)"
+            jq -c 'del(.environment) | with_entries(.value |= (if type=="object" or type=="array" then length else "scalar" end))' "$cfg"
+            jq -r '(.filePathMap // {}) | keys[]' "$cfg" >> bundle-files.txt
+          done
+          sort -u -o bundle-files.txt bundle-files.txt
+          echo "$(wc -l < bundle-files.txt) files in the bundle, by top-level folder:"
+          cut -d/ -f1 bundle-files.txt | sort | uniq -c | sort -rn | head -n 15
+          echo "The files outside the packages:"
+          grep -vE '^_vendor/|site-packages|\.dist-info' bundle-files.txt | head -n 80
+          grep -q 'data/public\.db$' bundle-files.txt || { echo "data/public.db is missing from the bundle"; exit 1; }
+          grep -q 'src/rain_in_my_head/' bundle-files.txt || { echo "src/rain_in_my_head is missing from the bundle"; exit 1; }
+          if grep -nE '(^|/)(data/raw|data/cache|infra|\.claude|\.specify)/|(^|/)\.env$|(^|/)data/listening\.db' bundle-files.txt; then
+            echo "The bundle holds a path that must stay out of it"; exit 1
+          fi
+          echo "Clean: public.db and the package are in; data/raw, data/cache and infra are out"
+
+      - name: Deploy the preview
+        id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+        run: |
+          url=$(npx --yes "$VERCEL_CLI" deploy --prebuilt)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # One comment per pull request, found by its hidden marker so the infrastructure plan comment is left alone.
+      - name: Put the preview address on the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          URL: ${{ steps.deploy.outputs.url }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          {
+            echo "<!-- preview-deploy -->"
+            echo "### Preview"
+            echo
+            echo "$URL"
+            echo
+            echo "Opens only for people logged in to the owner's Vercel team. It reads and writes visitor data on the Neon \`dev\` branch."
+            echo
+            echo "Commit \`${SHA:0:7}\`"
+          } > comment.md
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq '.[] | select(.body | contains("<!-- preview-deploy -->")) | .id' | head -n1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@comment.md > /dev/null
+          else
+            gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@comment.md > /dev/null
+          fi

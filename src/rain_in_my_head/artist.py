@@ -59,7 +59,7 @@ def new_artists(db_path: Path, start: date, end: date) -> pd.DataFrame:
                 SELECT {PLAY_COLUMNS}
                 FROM scrobbles s JOIN firsts USING (artist_key)
                 WHERE s.played_at >= {MIN_PLAYED_AT}
-                  AND date(s.played_at, 'unixepoch', 'localtime') BETWEEN :start AND :end""",
+                  AND date(s.played_at, 'unixepoch', 'localtime') BETWEEN :start AND :end""",  # noqa: S608 only module constants are interpolated; visitor values are bound
             conn,
             params={"start": start.isoformat(), "end": end.isoformat()},
         )
@@ -87,7 +87,7 @@ def artist_page(db_path: Path, artist_key: str, start: date | None, end: date | 
     """One artist's header counts and songs in the period (all time without one). None if they have no plays."""
     with closing(connect_readonly(db_path)) as conn:
         plays = pd.read_sql(
-            f"SELECT {PLAY_COLUMNS} FROM scrobbles s WHERE s.artist_key = ? AND s.played_at >= {MIN_PLAYED_AT}",
+            f"SELECT {PLAY_COLUMNS} FROM scrobbles s WHERE s.artist_key = ? AND s.played_at >= {MIN_PLAYED_AT}",  # noqa: S608 only module constants are interpolated; visitor values are bound
             conn,
             params=(artist_key,),
         )

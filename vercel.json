@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "web/dist",
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "{src/rain_in_my_head/**,data/public.db}",
+      "excludeFiles": "{web/**,dashboard/**,.claude/**,.specify/**,.streamlit/**,CLAUDE.md,README.md,.env.example,.gitattributes,data/raw/**,data/cache/**,data/listening.db*,infra/**,specs/**,openspec/**,docs/**,.github/**,tests/**}"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

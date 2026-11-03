@@ -46,7 +46,7 @@ def genre_plays(db_path: Path, genre: str, start: str, end: str) -> pd.DataFrame
                 FROM scrobbles s JOIN v_artist_genre g USING (artist_key)
                 WHERE g.primary_genre = ?
                   AND s.played_at >= {MIN_PLAYED_AT}
-                  AND date(s.played_at, 'unixepoch', 'localtime') BETWEEN ? AND ?""",
+                  AND date(s.played_at, 'unixepoch', 'localtime') BETWEEN ? AND ?""",  # noqa: S608 only module constants are interpolated; visitor values are bound
             conn,
             params=(genre, start, end),
         )

@@ -23,7 +23,7 @@ import httpx
 from .build import normalize, normalize_track
 
 AUTH_URL = "https://accounts.spotify.com/authorize"
-TOKEN_URL = "https://accounts.spotify.com/api/token"
+TOKEN_URL = "https://accounts.spotify.com/api/token"  # noqa: S105 a URL, not a secret
 API_URL = "https://api.spotify.com/v1"
 REDIRECT_PORT = 8888
 REDIRECT_URI = f"http://127.0.0.1:{REDIRECT_PORT}/callback"
