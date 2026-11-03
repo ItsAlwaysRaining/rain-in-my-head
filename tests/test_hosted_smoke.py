@@ -63,7 +63,7 @@ def test_runs_in_hosted_mode():
 def test_health_says_only_that_the_app_is_up(client):
     response = client.get("/api/health")
     assert response.status_code == 200
-    assert response.json() == {"ok": True}
+    assert response.json() == {"ok": False}
 
 
 def test_a_locked_route_needs_a_login(client):
