@@ -81,8 +81,15 @@ jobs:
       # Runs before the deploy, so a bundle that holds raw data stops the run instead of going live.
       - name: Check what the function bundle holds
         run: |
-          # -L because vercel build may link files into the function folder instead of copying them.
-          find -L .vercel/output/functions -type f | sed 's|^\.vercel/output/functions/||' | sort > bundle-files.txt
+          # The build folder holds only the handler and its config. The app's own files are named in
+          # .vc-config.json (filePathMap) and uploaded from the repo at deploy time, so read both lists.
+          find -L .vercel/output/functions -type f | sed 's|^\.vercel/output/functions/||' > bundle-files.txt
+          for cfg in $(find .vercel/output/functions -name .vc-config.json); do
+            echo "$cfg: top-level fields and how many entries each holds (values are not printed)"
+            jq -c 'del(.environment) | with_entries(.value |= (if type=="object" or type=="array" then length else "scalar" end))' "$cfg"
+            jq -r '(.filePathMap // {}) | keys[]' "$cfg" >> bundle-files.txt
+          done
+          sort -u -o bundle-files.txt bundle-files.txt
           echo "$(wc -l < bundle-files.txt) files in the bundle; the ones outside site-packages:"
           grep -vE 'site-packages|\.dist-info' bundle-files.txt | head -n 80
           grep -q 'data/public\.db$' bundle-files.txt || { echo "data/public.db is missing from the bundle"; exit 1; }
