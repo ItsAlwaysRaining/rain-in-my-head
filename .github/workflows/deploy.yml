@@ -81,8 +81,10 @@ jobs:
       # Runs before the deploy, so a bundle that holds raw data stops the run instead of going live.
       - name: Check what the function bundle holds
         run: |
-          find .vercel/output/functions -type f | sed 's|^\.vercel/output/functions/||' | sort > bundle-files.txt
-          echo "$(wc -l < bundle-files.txt) files in the bundle"
+          # -L because vercel build may link files into the function folder instead of copying them.
+          find -L .vercel/output/functions -type f | sed 's|^\.vercel/output/functions/||' | sort > bundle-files.txt
+          echo "$(wc -l < bundle-files.txt) files in the bundle; the ones outside site-packages:"
+          grep -vE 'site-packages|\.dist-info' bundle-files.txt | head -n 80
           grep -q 'data/public\.db$' bundle-files.txt || { echo "data/public.db is missing from the bundle"; exit 1; }
           grep -q 'src/rain_in_my_head/' bundle-files.txt || { echo "src/rain_in_my_head is missing from the bundle"; exit 1; }
           if grep -nE '(^|/)(data/raw|data/cache|infra)/' bundle-files.txt; then
