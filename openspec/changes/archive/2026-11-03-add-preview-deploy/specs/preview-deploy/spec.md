@@ -58,6 +58,17 @@ The dataset in a preview SHALL follow the public dataset's window (spec 009): 73
 - **WHEN** the oldest play in the deployed dataset is queried
 - **THEN** it is no more than 737 days (730 plus the 7-day lag) older than the deploy date
 
+### Requirement: The function bundle holds only what the site needs
+The files uploaded as the preview's function SHALL include the two-year dataset (`data/public.db`) and the app's code (`src/rain_in_my_head`). They SHALL NOT include the raw scrobbles (`data/raw`), the lookup cache (`data/cache`), `infra`, the tooling folders (`.claude`, `.specify`), a `.env` file, or any file of the full database, including its SQLite side files (`data/listening.db`, `-wal` and `-shm`). The workflow SHALL list the bundle before deploying and SHALL stop without deploying if a required file is missing or a forbidden path is present.
+
+#### Scenario: A clean bundle
+- **WHEN** the deploy workflow lists the function's files after the build
+- **THEN** `data/public.db` and `src/rain_in_my_head` are in the list, and no forbidden path is, and the deploy goes ahead
+
+#### Scenario: A forbidden file
+- **WHEN** a forbidden path is in the list
+- **THEN** the run fails before the deploy step and names the check that stopped it
+
 ### Requirement: Pull requests from outside this repository do not deploy
 A pull request from a fork SHALL NOT be deployed and SHALL NOT be given access to any secret. The workflow SHALL end without error.
 

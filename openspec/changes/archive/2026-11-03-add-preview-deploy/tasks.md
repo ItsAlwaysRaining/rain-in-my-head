@@ -27,4 +27,4 @@
 
 - [x] 4.1 Add a "Previews" section to `README.md` (how to open a preview, the Vercel login it needs, how to make a dev test code with `viewer add --env dev`, the cold-start delay measured in task 2.3) and verify each command in it runs as written on the Mac
 - [x] 4.2 Add the new owner steps to the to-do page (create a dev test code, open the preview and log in, check the Visitors page shows the session under `dev`) and tick the phase-6 items as each is done
-- [ ] 4.3 Run `openspec validate add-preview-deploy --strict`, then `/opsx:archive` on the branch, `git pull` and merge the latest `origin/main`, push, mark the PR ready, and fill in `.github/pull_request_template.md` with what was checked and what was not (including that the preview was not called from CI)
+- [x] 4.3 Run `openspec validate add-preview-deploy --strict`, then `/opsx:archive` on the branch, `git pull` and merge the latest `origin/main`, push, mark the PR ready, and fill in `.github/pull_request_template.md` with what was checked and what was not (including that the preview was not called from CI)
