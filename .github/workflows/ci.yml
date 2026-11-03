@@ -1,0 +1,85 @@
+name: CI
+
+# Four checks on every pull request (openspec/changes/add-preview-deploy, decision 7). They are separate jobs on
+# purpose: a red smoke test must not hide a leaked secret, and the other way round. None of them uses a repository
+# secret, so a pull request from a fork can run them too.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Hosted smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      # The same two commands as the preview deploy, so the test runs on the data the preview would serve.
+      - name: Build the full database, then the two-year copy
+        run: |
+          uv run --no-default-groups rain-in-my-head build
+          uv run --no-default-groups rain-in-my-head publish
+
+      # pytest is not a project dependency: it is added for this one run.
+      - name: Run the smoke test
+        run: uv run --no-default-groups --group web --with pytest --with httpx pytest tests
+
+  web:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build the frontend
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # the action lists the pull request's commits
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # the whole history, not just the newest commit
+          persist-credentials: false
+      # Free for a personal account (no licence key). It reads .gitleaks.toml from the repository root.
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  lint:
+    name: Security lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      # Ruff's flake8-bandit rules only (the [tool.ruff] block in pyproject.toml). Pinned; bump on purpose.
+      - name: Check the Python code
+        run: uvx ruff@0.17.3 check src api tests
