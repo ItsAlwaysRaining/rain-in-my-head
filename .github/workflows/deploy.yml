@@ -90,11 +90,13 @@ jobs:
             jq -r '(.filePathMap // {}) | keys[]' "$cfg" >> bundle-files.txt
           done
           sort -u -o bundle-files.txt bundle-files.txt
-          echo "$(wc -l < bundle-files.txt) files in the bundle; the ones outside site-packages:"
-          grep -vE 'site-packages|\.dist-info' bundle-files.txt | head -n 80
+          echo "$(wc -l < bundle-files.txt) files in the bundle, by top-level folder:"
+          cut -d/ -f1 bundle-files.txt | sort | uniq -c | sort -rn | head -n 15
+          echo "The files outside the packages:"
+          grep -vE '^_vendor/|site-packages|\.dist-info' bundle-files.txt | head -n 80
           grep -q 'data/public\.db$' bundle-files.txt || { echo "data/public.db is missing from the bundle"; exit 1; }
           grep -q 'src/rain_in_my_head/' bundle-files.txt || { echo "src/rain_in_my_head is missing from the bundle"; exit 1; }
-          if grep -nE '(^|/)(data/raw|data/cache|infra)/' bundle-files.txt; then
+          if grep -nE '(^|/)(data/raw|data/cache|infra|\.claude|\.specify)/|(^|/)\.env$' bundle-files.txt; then
             echo "The bundle holds a path that must stay out of it"; exit 1
           fi
           echo "Clean: public.db and the package are in; data/raw, data/cache and infra are out"
