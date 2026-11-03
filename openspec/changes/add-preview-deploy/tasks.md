@@ -21,7 +21,7 @@
 - [x] 3.2 Add `.github/workflows/ci.yml` with the four jobs from decision 7, no secrets, pinned actions, and verify with `actionlint` and by seeing all four results on the draft PR
 - [x] 3.3 Add a `[tool.ruff]` block to `pyproject.toml` (config only, `select = ["S"]`, `S101` ignored for `tests/`) and verify `uvx ruff check --select S src api tests` runs; fix each finding or add a `# noqa: S… <reason>` comment, and verify the check is green
 - [x] 3.4 Add `.gitleaks.toml` with an allowlist for `.env.example`, each entry with a comment, and verify `gitleaks detect` passes on the repo, then fails on a throwaway branch with a fake token file (delete the branch; do not push it)
-- [ ] 3.5 Verify a failing smoke test shows red without hiding the other three results (push a deliberately failing commit to the draft PR, then revert it)
+- [x] 3.5 Verify a failing smoke test shows red without hiding the other three results (push a deliberately failing commit to the draft PR, then revert it)
 
 ## 4. Docs and hand-over
 
