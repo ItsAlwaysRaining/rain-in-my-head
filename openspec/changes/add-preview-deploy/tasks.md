@@ -13,7 +13,7 @@
 - [x] 2.3 Fix whatever the first deploy shows (import paths, bundle contents, missing packages, `uvicorn`), reading the function log with `npx vercel logs`, and verify the preview address, opened logged in to Vercel, shows the site's login page and `/api/health` answers `{"ok": true}`
 - [x] 2.4 Verify the bundle is clean: the deployed function's file list (from `vercel build` output in `.vercel/output/functions`) contains `data/public.db` and `src/rain_in_my_head` and contains no `data/raw`, `data/cache` or `infra` path
 - [x] 2.5 Verify the preview is locked: open the preview address in a private window with no Vercel login and confirm it goes to Vercel's login (write the result in the PR description)
-- [ ] 2.6 Verify the dataset window against the deployed file by opening a SQL check on the CI-built `public.db` in the run (`select min(played_at)`), and that it is no older than 737 days (730-day window plus the 7-day lag from spec 009); record the number in the PR description
+- [x] 2.6 Verify the dataset window against the deployed file by opening a SQL check on the CI-built `public.db` in the run (`select min(played_at)`), and that it is no older than 737 days (730-day window plus the 7-day lag from spec 009); record the number in the PR description
 
 ## 3. CI checks
 
