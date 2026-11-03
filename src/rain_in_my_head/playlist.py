@@ -92,7 +92,7 @@ def rank_tracks(conn: sqlite3.Connection, slot: Slot, min_slot_plays: int = 3) -
                    SUM({in_slot}) AS slot_plays, COUNT(*) AS total_plays,
                    MAX(date(played_local)) AS last_played
             FROM v_plays WHERE {' AND '.join(where)}
-            GROUP BY track_key""",
+            GROUP BY track_key""",  # noqa: S608 fixed fragments with ? placeholders; playlists are local only
         conn,
         params=[*slot_params, *params],
     )

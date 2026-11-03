@@ -67,7 +67,7 @@ def cmd_stats(args) -> None:
         "SELECT COUNT(*), date(MIN(played_at),'unixepoch'), date(MAX(played_at),'unixepoch') FROM scrobbles"
     )[0]
     print(f"Scrobbles: {n}  ({first} → {last})")
-    (bad,), = q(f"SELECT COUNT(*) FROM scrobbles WHERE played_at < {MIN_PLAYED_AT}")
+    (bad,), = q(f"SELECT COUNT(*) FROM scrobbles WHERE played_at < {MIN_PLAYED_AT}")  # noqa: S608 only module constants are interpolated
     if bad:
         print(f"  {bad} have placeholder timestamps before 2000 and are excluded from v_plays/dashboard")
     (tracks, artists), = q("SELECT COUNT(DISTINCT track_key), COUNT(DISTINCT artist_key) FROM scrobbles")
@@ -86,7 +86,7 @@ def cmd_stats(args) -> None:
                     COUNT(*) OVER (PARTITION BY track_key ORDER BY played_at
                                    RANGE BETWEEN CURRENT ROW AND 300 FOLLOWING) AS n
              FROM scrobbles WHERE played_at >= {MIN_PLAYED_AT})
-           WHERE n >= 20 GROUP BY track_key, played_at / 3600 ORDER BY 4 DESC LIMIT 10"""
+           WHERE n >= 20 GROUP BY track_key, played_at / 3600 ORDER BY 4 DESC LIMIT 10"""  # noqa: S608 only module constants are interpolated
     )
     if bursts:
         print("\nSuspicious bursts (≥20 plays of one track in 5 min):")

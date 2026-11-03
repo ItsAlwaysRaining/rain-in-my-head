@@ -19,7 +19,7 @@
 
 - [x] 3.1 Add `tests/test_hosted_smoke.py` (decision 8) covering health, a locked route with no session, typed SQL refused, and a data route answering with a stubbed session, and verify `uv run --with pytest --with httpx pytest tests` passes locally and fails when `api/index.py` is renamed (then restore it)
 - [ ] 3.2 Add `.github/workflows/ci.yml` with the four jobs from decision 7, no secrets, pinned actions, and verify with `actionlint` and by seeing all four results on the draft PR
-- [ ] 3.3 Add a `[tool.ruff]` block to `pyproject.toml` (config only, `select = ["S"]`, `S101` ignored for `tests/`) and verify `uvx ruff check --select S src api tests` runs; fix each finding or add a `# noqa: S… <reason>` comment, and verify the check is green
+- [x] 3.3 Add a `[tool.ruff]` block to `pyproject.toml` (config only, `select = ["S"]`, `S101` ignored for `tests/`) and verify `uvx ruff check --select S src api tests` runs; fix each finding or add a `# noqa: S… <reason>` comment, and verify the check is green
 - [ ] 3.4 Add `.gitleaks.toml` with an allowlist for `.env.example`, each entry with a comment, and verify `gitleaks detect` passes on the repo, then fails on a throwaway branch with a fake token file (delete the branch; do not push it)
 - [ ] 3.5 Verify a failing smoke test shows red without hiding the other three results (push a deliberately failing commit to the draft PR, then revert it)
 

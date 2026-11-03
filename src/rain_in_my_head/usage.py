@@ -77,7 +77,7 @@ def report_open(url: str, viewer_id: str | int, pages: set[str] | frozenset[str]
         return
     neon.query(
         url,
-        "insert into usage_events (viewer_id, kind, page, visit) "
+        "insert into usage_events (viewer_id, kind, page, visit) "  # noqa: S608 only module constants are interpolated; values are bound
         f"select $1::bigint, 'view', $3::text, $4::text where {_UNDER_CAP} "
         "and not exists (select 1 from usage_events where viewer_id = $1::bigint and kind = 'view' "
         "and page = $3::text and at > now() - ($5::int * interval '1 second'))",
@@ -139,14 +139,14 @@ def report(url: str, range_key: str) -> list[dict]:
             [span],
         ),
         (
-            "select e.viewer_id, e.page, count(*) filter (where e.kind = 'view') as views, "
+            "select e.viewer_id, e.page, count(*) filter (where e.kind = 'view') as views, "  # noqa: S608 only module constants are interpolated; values are bound
             "coalesce(sum(e.seconds) filter (where e.kind = 'time'), 0) as seconds "
             f"from usage_events e where {recent} and e.page is not null and e.kind in ('view', 'time') "
             "group by e.viewer_id, e.page order by views desc, seconds desc, e.page",
             [span],
         ),
         (
-            "select e.viewer_id, e.feature, e.detail, count(*) as uses "
+            "select e.viewer_id, e.feature, e.detail, count(*) as uses "  # noqa: S608 only module constants are interpolated; values are bound
             f"from usage_events e where {recent} and e.kind = 'feature' "
             "group by e.viewer_id, e.feature, e.detail order by uses desc, e.feature, e.detail",
             [span],
@@ -171,7 +171,7 @@ def person_detail(url: str, name: str, limit: int = 200) -> dict:
         raise UsageError(f"Nobody called {name!r} has been invited.")
     rows = neon.query(
         url,
-        "select kind, page, feature, detail, seconds, " + ISO_AT + " as at from usage_events where viewer_id = $1::bigint "
+        "select kind, page, feature, detail, seconds, " + ISO_AT + " as at from usage_events where viewer_id = $1::bigint "  # noqa: S608 only module constants are interpolated; values are bound
         "order by at desc, id desc limit $2::int",
         [found[0]["id"], limit],
     )
@@ -186,7 +186,7 @@ def free_plan(url: str) -> dict:
     month = "date_trunc('month', now() at time zone 'utc') at time zone 'utc'"
     counts, size = neon.transaction(url, [
         (
-            "select to_char(now() at time zone 'utc', 'YYYY-MM') as month, "
+            "select to_char(now() at time zone 'utc', 'YYYY-MM') as month, "  # noqa: S608 only module constants are interpolated; values are bound
             "count(*) filter (where kind in ('view', 'feature', 'limit')) as requests, "
             "coalesce(sum(seconds) filter (where kind = 'time' and page = any($1::text[])), 0) as heavy_seconds "
             f"from usage_events where at >= {month}",
@@ -263,14 +263,14 @@ def heavy_request(url: str, viewer_id: str | int, page: str, feature: str, detai
     # Refused. Work out how long to wait, and record that the limit was hit (at most once a minute).
     info, _ = neon.transaction(url, [
         (
-            f"select (select count(*) {_FEATURE_ROWS} and at >= {_DAY_START}) as day_count, "
+            f"select (select count(*) {_FEATURE_ROWS} and at >= {_DAY_START}) as day_count, "  # noqa: S608 only module constants are interpolated; values are bound
             f"(select ceil(extract(epoch from (at + interval '1 minute' - now())))::int {_FEATURE_ROWS} "
             "and at > now() - interval '1 minute' order by at desc offset ($2::int - 1) limit 1) as minute_wait, "
             f"ceil(extract(epoch from ((date_trunc('day', now() at time zone 'utc') + interval '1 day') at time zone 'utc' - now())))::int as day_wait",
             [viewer_id, HEAVY_PER_MINUTE],
         ),
         (
-            "insert into usage_events (viewer_id, kind, page, feature) "
+            "insert into usage_events (viewer_id, kind, page, feature) "  # noqa: S608 only module constants are interpolated; values are bound
             "select $1::bigint, 'limit', $2::text, "
             f"case when (select count(*) {_FEATURE_ROWS} and at >= {_DAY_START}) >= $3::int then 'day' else 'minute' end "
             "where not exists (select 1 from usage_events where viewer_id = $1::bigint and kind = 'limit' "
@@ -316,13 +316,13 @@ def export_files(url: str, directory) -> tuple[int, int]:
     out.mkdir(parents=True, exist_ok=True)
     events, people = neon.transaction(url, [
         (
-            "select v.name as viewer, e.kind, e.page, e.feature, e.detail, e.visit, e.seconds, "
+            "select v.name as viewer, e.kind, e.page, e.feature, e.detail, e.visit, e.seconds, "  # noqa: S608 only module constants are interpolated; values are bound
             f"to_char(e.at at time zone 'utc', {_ISO}) as at "
             "from usage_events e join viewers v on v.id = e.viewer_id order by e.at, e.id",
             [],
         ),
         (
-            "select v.name, v.tier, v.status, coalesce(string_agg(p.page, ' ' order by p.page), '') as pages, "
+            "select v.name, v.tier, v.status, coalesce(string_agg(p.page, ' ' order by p.page), '') as pages, "  # noqa: S608 only module constants are interpolated; values are bound
             f"to_char(v.created_at at time zone 'utc', {_ISO}) as created_at, "
             f"to_char(v.revoked_at at time zone 'utc', {_ISO}) as revoked_at, "
             f"to_char(v.last_login_at at time zone 'utc', {_ISO}) as last_login_at "

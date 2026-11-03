@@ -157,9 +157,9 @@ def replay(conn: sqlite3.Connection, cache_dir: Path) -> tuple[int, int, int] | 
     track_rows = [tuple(o.get(k) for k in TRACK_FIELDS) for o in tracks.values() if newer(o, have_tracks, "track_key")]
     new_artists = [o for o in artists.values() if newer(o, have_artists, "artist_key")]
     with conn:
-        conn.executemany(f"INSERT OR REPLACE INTO tracks VALUES ({','.join('?' * len(TRACK_FIELDS))})", track_rows)
+        conn.executemany(f"INSERT OR REPLACE INTO tracks VALUES ({','.join('?' * len(TRACK_FIELDS))})", track_rows)  # noqa: S608 the placeholder count comes from a constant tuple
         conn.executemany(
-            f"INSERT OR REPLACE INTO artists VALUES ({','.join('?' * len(ARTIST_FIELDS))})",
+            f"INSERT OR REPLACE INTO artists VALUES ({','.join('?' * len(ARTIST_FIELDS))})",  # noqa: S608 the placeholder count comes from a constant tuple
             [tuple(o.get(k) for k in ARTIST_FIELDS) for o in new_artists],
         )
         conn.executemany("DELETE FROM artist_tags WHERE artist_key = ?", [(o["artist_key"],) for o in new_artists])

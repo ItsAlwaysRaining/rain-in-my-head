@@ -21,7 +21,7 @@ PUBLIC_DB = ROOT / "data" / "public.db"
 os.environ["LISTENING_HOSTED"] = "1"
 os.environ["LISTENING_DB"] = str(PUBLIC_DB)
 os.environ["DATABASE_URL"] = ""
-os.environ["SESSION_SECRET"] = "smoke-test-secret-not-used-anywhere-else"
+os.environ["SESSION_SECRET"] = "smoke-test-secret-not-used-anywhere-else"  # noqa: S105 a throwaway value for the test run
 sys.path.insert(0, str(ROOT))
 
 if not PUBLIC_DB.exists():
