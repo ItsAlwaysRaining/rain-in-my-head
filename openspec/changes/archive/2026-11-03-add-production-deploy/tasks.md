@@ -17,10 +17,4 @@
 
 - [x] 3.1 Add the phase 7 owner steps to the to-do page as a `p7-*` group and republish: watch the first production run after the merge, open `https://rain.storyandstructure.studio` and check it asks for a code, make your own prod code with `viewer add --env prod`, log in and click through the pages, check the Visitors page shows the session under `prod`, make and send the friends' codes, and renew the three tokens before about 26 Jan 2027. Verify by reading the db back with `ArtifactData`
 - [x] 3.2 Update the `phase-6-preview-deploy` memory (or add `phase-7-production-deploy`) with the merge state, and remove the Cloudflare README note once 2.2 is merged
-- [ ] 3.3 Run `openspec validate add-production-deploy --strict`, then `/opsx:archive` on the branch, `git pull` and merge the latest `origin/main`, push, open the pull request with `.github/pull_request_template.md` filled in (say plainly that the production path first runs for real at merge, staged and checked before it goes live), and stop. Never merge it
-
-## 4. After the owner merges (checked together, not part of the pull request)
-
-- [ ] 4.1 Watch the merge's `Deploy` run: green, the check step shows 200 and 403, the promote step ran. Verify `curl -s https://rain.storyandstructure.studio/api/health` prints `{"ok":true}` and the root page loads
-- [ ] 4.2 Trigger one run by hand (`gh workflow run deploy.yml --ref main`) to prove `workflow_dispatch`, and check the next 03:00 UTC run started, then tick the matching to-do items
-- [ ] 4.3 Remove the worktree: `git worktree remove ../rain-in-my-head-production-deploy`
+- [x] 3.3 Run `openspec validate add-production-deploy --strict`, then `/opsx:archive` on the branch, `git pull` and merge the latest `origin/main`, push, open the pull request with `.github/pull_request_template.md` filled in (say plainly that the production path first runs for real at merge, staged and checked before it goes live), and stop. Never merge it

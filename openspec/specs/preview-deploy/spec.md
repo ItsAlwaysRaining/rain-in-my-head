@@ -18,8 +18,8 @@ When a pull request from a branch of this repository is opened or updated, a wor
 - **THEN** the existing comment shows the new preview address and the pull request still has one preview comment
 
 #### Scenario: Never production
-- **WHEN** the workflow runs on any pull request
-- **THEN** the production deployment and the `rain.storyandstructure.studio` address are unchanged
+- **WHEN** the workflow runs for a pull request
+- **THEN** the production deployment and the `rain.storyandstructure.studio` address are unchanged, even though the same workflow file also deploys production after a merge
 
 ### Requirement: Previews are locked
 A preview SHALL open only for people logged in to the owner's Vercel team. Someone with the address but no Vercel login SHALL NOT see the site.
@@ -52,11 +52,15 @@ The preview SHALL serve the built dashboard and the API. The API SHALL read the 
 - **THEN** it is refused exactly as on the hosted site
 
 ### Requirement: No dataset older than the window
-The dataset in a preview SHALL follow the public dataset's window (spec 009): 730 days, ending 7 days before the build. It SHALL contain no play older than that, it SHALL be built fresh for each deploy, and it SHALL NOT be committed.
+The dataset in a preview SHALL follow the public dataset's window (spec 009): 730 days, ending 7 days before the build. It SHALL contain no play older than that, it SHALL be built fresh for each deploy, and it SHALL NOT be committed. The deploy SHALL stop if the oldest play is more than 738 days old, which is the window and lag (737 days) plus one day of margin, because the oldest play sits at 737.0 days and rounding must not fail a run.
 
 #### Scenario: Check the dataset
 - **WHEN** the oldest play in the deployed dataset is queried
-- **THEN** it is no more than 737 days (730 plus the 7-day lag) older than the deploy date
+- **THEN** it is no more than 738 days older than the deploy date
+
+#### Scenario: A play outside the window
+- **WHEN** the built dataset holds a play 739 days old
+- **THEN** the run fails before the deploy step
 
 ### Requirement: The function bundle holds only what the site needs
 The files uploaded as the preview's function SHALL include the two-year dataset (`data/public.db`) and the app's code (`src/rain_in_my_head`). They SHALL NOT include the raw scrobbles (`data/raw`), the lookup cache (`data/cache`), `infra`, the tooling folders (`.claude`, `.specify`), a `.env` file, or any file of the full database, including its SQLite side files (`data/listening.db`, `-wal` and `-shm`). The workflow SHALL list the bundle before deploying and SHALL stop without deploying if a required file is missing or a forbidden path is present.
@@ -82,3 +86,14 @@ The workflow SHALL read the Vercel token only from the repository's Actions secr
 #### Scenario: Read the logs
 - **WHEN** the logs and the pull request comment of a deploy run are searched for the token and for `postgres://`
 - **THEN** neither is found
+
+### Requirement: A preview answers its health check
+After deploying a preview, the workflow SHALL ask it for `/api/health` and expect a successful answer saying the app is up, and SHALL ask it for a locked data route with no session and expect a refusal. It SHALL retry for up to two minutes. A preview that fails either check SHALL turn the pull request's deploy check red. The workflow SHALL pass the preview's login without a stored bypass secret and SHALL print only status codes.
+
+#### Scenario: A healthy preview
+- **WHEN** the preview answers health and refuses the locked route
+- **THEN** the deploy check on the pull request is green
+
+#### Scenario: A broken preview
+- **WHEN** the preview does not answer health within two minutes
+- **THEN** the deploy check on the pull request is red and names the failed check
