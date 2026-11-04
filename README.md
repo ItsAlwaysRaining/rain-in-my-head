@@ -77,7 +77,7 @@ Both dashboards have the list and the page, with the same numbers (`src/rain_in_
 
 ## Scheduled sync (GitHub Actions)
 
-1. Push this repo to a **private** GitHub repository. It contains your listening history.
+1. Push this repo to your own GitHub repository. It contains your listening history in `data/raw/`, so make the repository private unless you are happy to share that history.
 2. Add the repo secrets `LASTFM_API_KEY` and `LASTFM_USER` (Settings → Secrets and variables → Actions).
 3. Run the "Sync scrobbles" workflow once by hand from the Actions tab. After that it runs every 6 hours: it fetches new scrobbles, looks up up to 100 new tracks and 100 new artists, and commits both to `data/`.
 4. Locally: `git pull && uv run rain-in-my-head build` to refresh the database, including the sync's lookups.
@@ -201,7 +201,7 @@ The hosted site has no public pages except the landing page and the login page. 
 
 The hosted site records what each invited person does, so you can see how it's used and spot trouble before the free plans run out. On your Mac nothing is recorded and nothing is limited.
 
-**What is recorded** (in the visitor database, with each person's name): the pages they open, the features they use (a pre-defined query by name, a genre's song list), and about how long they stay on each page. Never what they type into a filter or search, and never an IP address or a code. The login page says all of this in plain words. Records older than 12 months are deleted every night.
+**What is recorded** (in the visitor database, with each person's name): the pages they open, the features they use (a pre-defined query by name, a genre's song list), and about how long they stay on each page. Never what they type into a filter or search, and never an IP address or a code. The login page says all of this in plain words. Records older than 12 months are deleted every night at 02:43 UTC by `.github/workflows/prune.yml`.
 
 **The limit.** A person can ask for 30 heavy requests a minute and 1,000 a day (a pre-defined query or a genre's song list). Past that they see "You're going a bit fast. Try again in N seconds." (or that today's limit is reached), and nobody else is affected. The numbers are `HEAVY_PER_MINUTE` and `HEAVY_PER_DAY` at the top of `src/rain_in_my_head/usage.py`. The browser's own page-view reports are capped separately at 120 a minute, quietly.
 
@@ -210,7 +210,7 @@ The hosted site records what each invited person does, so you can see how it's u
 - `uv run rain-in-my-head viewer usage [--range 7d|30d|12m] [--person NAME] [--env dev|prod]` shows the same numbers. The bottom section shows this month's recorded requests and the visitor database's size against the free limits. Vercel's processing time appears only on Vercel's own dashboard.
 - Time on a page is an estimate sent by the visitor's browser. Days and months are UTC.
 
-**The nightly copy.** `.github/workflows/analytics.yml` runs every night at 02:43 UTC. It deletes records older than 12 months (`viewer prune`), writes `usage_events.csv` and `viewers.csv` (`viewer export DIR`, no codes or hashes), and replaces the private `analytics` branch with **one** commit holding them, only if they changed. Older copies leave the branch, so the 12-month promise holds there too. `main` is never touched. Run it by hand from Actions → Analytics export; choosing `dev` writes the branch `analytics-dev` instead. GitHub can keep an unreferenced commit fetchable by its hash for a while after the branch moves on; the repository is private.
+**Where visitor data lives.** Only in the visitor database (Neon). It is never copied to this repository, because the repository is public. `.github/workflows/prune.yml` deletes records older than 12 months every night and prints only how many it deleted. Run it by hand from Actions → Prune usage records; choosing `dev` prunes the test database instead. If you want a copy of the records on your own Mac, run `uv run rain-in-my-head viewer export DIR`: it writes `usage_events.csv` and `viewers.csv` (no codes or hashes) into that folder and does not touch git.
 
 **After pulling this change**, run `uv run rain-in-my-head viewer init` once for each database (`--env prod` for production). It adds the `usage_events` table and is safe to run again. Until it has run, recording is quietly dropped and heavy requests are refused with "try again in a minute".
 

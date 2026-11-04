@@ -39,3 +39,4 @@ Observed in the repo: the visitor CSVs exist on exactly two refs, `origin/analyt
 - [Branch protection now free, but `sync.yml` pushes to `main` every 6 hours] → Not enabled here. If the owner enables it later, the Actions bot needs a bypass. Noted in CLAUDE.md.
 - [Encrypted state is public] → Depends on the passphrase. Owner confirmed it is strong and single-use.
 - [Public repository invites pull requests and forks] → Fork PRs already get no secrets (production-deploy spec). Owner may also set "Require approval for first-time contributors" in Settings, which is not part of this change.
+- [A new workflow cannot be run by hand until it is on `main`, so `prune.yml` is untested before merge] → The command and secrets are copied unchanged from the analytics workflow, which ran green; the first manual run (tasks 5.1) happens right after merge, before anything is made public, so a failure costs nothing.

@@ -1,5 +1,7 @@
 # Quickstart: check usage tracking and the limit
 
+> **Superseded in part (2026-11-04):** the nightly export to the `analytics` branch was removed so the repository can be public (see `openspec/changes/make-repo-public`, or `openspec/specs/usage-retention` once archived). Visitor data now stays only in the visitor database. The nightly job only deletes records older than 12 months (`.github/workflows/prune.yml`). Anything below about the `analytics` branch, `analytics.yml` or the private copy is history.
+
 Run on the `feature/usage-tracking` branch, against the Neon **dev** branch only. Never put a connection string in chat. Values live in `.env`, which is gitignored. Contracts: [api.md](contracts/api.md), [cli.md](contracts/cli.md). Tables: [data-model.md](data-model.md).
 
 ## 0. One-time setup (dev)
