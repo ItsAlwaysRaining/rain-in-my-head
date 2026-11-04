@@ -15,10 +15,10 @@ All work is on branch `chore/make-repo-public` in the worktree. Never merge; the
 
 ## 3. Make the docs say "public"
 
-- [ ] 3.1 Amend `.specify/memory/constitution.md` Data and Privacy: the repository is public; of `data/` only `data/raw/` and `data/cache/` are committed and all scrobbles since 2011 are public; OpenTofu state is committed only encrypted; visitor data never enters any branch. Set **Version** to 1.3.0 and **Last Amended** to 2026-11-04, and state "MINOR" in the PR. Verify `grep -n "private" .specify/memory/constitution.md` shows no claim that the repository or the `analytics` branch is private.
+- [x] 3.1 Amend `.specify/memory/constitution.md` Data and Privacy: the repository is public; of `data/` only `data/raw/` and `data/cache/` are committed and all scrobbles since 2011 are public; OpenTofu state is committed only encrypted; visitor data never enters any branch. Set **Version** to 1.3.0 and **Last Amended** to 2026-11-04, and state "MINOR" in the PR. Verify `grep -n "private" .specify/memory/constitution.md` shows no claim that the repository or the `analytics` branch is private.
 - [x] 3.2 Update `README.md` "Scheduled sync" step 1 so it no longer says to push to a private repository: say it contains your listening history and is public if you make it public. Verify by reading the step.
-- [ ] 3.3 Update `CLAUDE.md`: line 20 (branch protection is free on public repos and can now be enabled; `sync.yml` commits to `main` so it needs a bypass) and delete the force-push exception at line 46 (the analytics workflow is gone). Verify `grep -n "analytics" CLAUDE.md` finds nothing and `grep -rnE "push.*--force|force-with-lease" .github` finds nothing.
-- [ ] 3.4 Run the checks the new specs describe against the tracked files: `git ls-files data | cut -d/ -f1-2 | sort -u` prints only `data/cache` and `data/raw`, and `git ls-files | grep -iE "\.env$|\.pem|\.key"` prints nothing. Verify the output is pasted in the PR.
+- [x] 3.3 Update `CLAUDE.md`: line 20 (branch protection is free on public repos and can now be enabled; `sync.yml` commits to `main` so it needs a bypass) and delete the force-push exception at line 46 (the analytics workflow is gone). Verify `grep -n "analytics" CLAUDE.md` finds nothing and `grep -rnE "push.*--force|force-with-lease" .github` finds nothing.
+- [x] 3.4 Run the checks the new specs describe against the tracked files: `git ls-files data | cut -d/ -f1-2 | sort -u` prints only `data/cache` and `data/raw`, and `git ls-files | grep -iE "\.env$|\.pem|\.key"` prints nothing. Verify the output is pasted in the PR.
 - [ ] 3.5 `openspec validate make-repo-public --strict` passes, and CI on the PR is green.
 
 ## 4. Pull request

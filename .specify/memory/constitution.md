@@ -105,9 +105,12 @@ able to run up a bill.
 
 ## Data and Privacy
 
-The repository is private and holds personal listening history. Nothing from `data/` other than
-`data/raw/` and `data/cache/` is committed. The OpenTofu state in `infra/` is committed only
-encrypted. Visitor data may be exported to the private `analytics` branch, never to `main`. Published artifacts (screenshots, shared pages) contain only what the
+The repository is public. It holds the owner's full listening history, because `data/raw/` and
+`data/cache/` are committed, so every scrobble since 2011 is public by the owner's choice. Nothing else
+from `data/` is committed. The OpenTofu state in `infra/` is committed only encrypted, with a strong
+single-use passphrase. Secrets (tokens, passphrases, connection strings) are never committed. Visitor data
+lives only in the visitor database and never enters the repository: no branch, file, release or log holds
+it, and no workflow copies it out. Published artifacts (screenshots, shared pages) contain only what the
 owner chooses to share.
 
 ## Development Workflow
@@ -129,4 +132,4 @@ any deviation MUST be justified in the plan's Complexity Tracking. Amendments go
 `chore/` pull request that states the version bump: MAJOR for removing or redefining a principle,
 MINOR for adding one or materially expanding guidance, PATCH for wording.
 
-**Version**: 1.2.1 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-11-02
+**Version**: 1.3.0 | **Ratified**: 2026-10-14 | **Last Amended**: 2026-11-04

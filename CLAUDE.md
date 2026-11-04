@@ -17,7 +17,7 @@ Every change except docs and chores starts with a spec. There are two tracks, an
 
 ## Branches, worktrees and pull requests
 
-`main` only changes by merging a reviewed pull request. GitHub doesn't enforce this on this repo (branch protection needs GitHub Pro for private repos), so follow these rules every time.
+`main` only changes by merging a reviewed pull request. GitHub doesn't enforce this on this repo yet. Branch protection is free on public repos, so the owner can now turn it on; the sync workflow commits to `main` every 6 hours, so it would need a bypass. Until then, follow these rules every time.
 
 **Always work in a worktree.** Every change, including docs and chores, gets its own git worktree so the main checkout stays clean and builds can run in parallel. Never edit files in the main checkout.
 
@@ -42,8 +42,6 @@ PRs are merged with a merge commit (squash is off), so every commit on the branc
 Never push to `main`. The sync workflow's own commits to `main` are expected.
 
 You may rebase a feature branch onto `origin/main` (for example to clear merge conflicts on a PR) and force-push it, on branches you created (`feature/`, `fix/`, `docs/`, `chore/`). Prefer `git push --force-with-lease`, which refuses to overwrite commits you haven't seen. Never force-push `main`.
-
-One deliberate exception: the scheduled `analytics` workflow (`.github/workflows/analytics.yml`) replaces the private `analytics` branch with one fresh commit each night, so only the latest usage export is kept (spec 012). Only that workflow, and only that branch. That workflow may also force-push the `analytics` branch; no other workflow may force-push.
 
 ## Hosting and infrastructure
 
