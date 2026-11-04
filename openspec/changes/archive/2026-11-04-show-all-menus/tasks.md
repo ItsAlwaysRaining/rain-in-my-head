@@ -31,4 +31,4 @@
 ## 5. Finish
 
 - [x] 5.1 Update `docs/` or README text that says playlists are not hosted, if any
-- [ ] 5.2 Run `/opsx:archive`, then push and open the PR with `Closes #63`
+- [x] 5.2 Run `/opsx:archive`, then push and open the PR with `Closes #63`
