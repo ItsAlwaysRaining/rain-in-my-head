@@ -13,11 +13,11 @@ PAGES = (
 )
 
 GUEST_PAGES = frozenset({
-    "overview", "new-artists", "genre", "artist", "slot", "mainstream", "playlists", "ai", "about", "contact",
+    "overview", "new-artists", "genre", "artist", "slot", "mainstream", "playlists", "analyst", "ai", "about", "contact",
 })
 TIER_PAGES = {
     "guest": GUEST_PAGES,
-    "trusted": GUEST_PAGES | {"analyst", "storm"},
+    "trusted": GUEST_PAGES | {"storm"},
 }
 
 # (method, path) -> the pages that unlock it. Any one of them is enough: Overview and New artists both use

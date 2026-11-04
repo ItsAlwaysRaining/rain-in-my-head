@@ -25,7 +25,7 @@ A section the visitor cannot open SHALL be marked locked with a lock icon and a 
 
 #### Scenario: Guest and Analyst
 - **WHEN** a logged-in guest looks at the top bar
-- **THEN** Analyst shows a lock icon and a screen reader announces it as locked with "Not in your invite code"
+- **THEN** Analyst has no lock, and Visitors shows a lock icon that a screen reader announces as locked with "Owner only"
 
 #### Scenario: Open sections look as before
 - **WHEN** a section is one the visitor can open
@@ -39,7 +39,7 @@ A locked section SHALL stay a link to its normal address. Opening it SHALL send 
 - **THEN** they are sent to the login page and no data request is made
 
 #### Scenario: Guest click
-- **WHEN** a guest clicks Analyst
+- **WHEN** a guest clicks Visitors
 - **THEN** the page "Not available to you" shows and no data request is made
 
 ### Requirement: The menu fits narrow screens

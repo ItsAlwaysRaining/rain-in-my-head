@@ -30,7 +30,7 @@ if not PUBLIC_DB.exists():
 from fastapi.testclient import TestClient  # noqa: E402
 
 from api.index import app  # noqa: E402  (the file Vercel runs; if it can't import, every test here fails)
-from rain_in_my_head import access, config, viewers  # noqa: E402
+from rain_in_my_head import access, config, usage, viewers  # noqa: E402
 
 REFUSAL = "This DJ doesn't take requests."
 
@@ -136,8 +136,26 @@ def test_a_data_route_answers_for_a_logged_in_guest(client):
     assert "genres" in response.json()
 
 
-def test_a_guest_cannot_open_the_analyst_routes(client):
+def test_a_guest_opens_the_analyst_routes_and_runs_a_listed_query(client, monkeypatch):
+    monkeypatch.setattr(usage, "heavy_request", lambda *args, **kwargs: None)  # the per-person count lives in Neon
     log_in_as(client, "guest-session")
+    meta = client.get("/api/sql/meta")
+    assert meta.status_code == 200
+    assert client.get("/api/schema").status_code == 200
+    name = next(iter(meta.json()["examples"]))
+    result = client.post("/api/sql", json={"example": name})
+    assert result.status_code == 200
+    assert "rows" in result.json()
+
+
+def test_typed_sql_is_refused_for_a_guest_too(client):
+    log_in_as(client, "guest-session")
+    response = client.post("/api/sql", json={"sql": "select count(*) from scrobbles"})
+    assert response.status_code == 403
+    assert response.json() == {"error": "refused", "message": REFUSAL}
+
+
+def test_the_analyst_routes_need_a_login(client):
     response = client.get("/api/sql/meta")
     assert response.status_code == 403
-    assert response.json()["error"] == "not_available"
+    assert response.json()["error"] == "login_required"
