@@ -1,10 +1,10 @@
 ## 1. Hosted API and access
 
-- [ ] 1.1 In `access.py`, add `playlists` to `GUEST_PAGES` and list `GET /api/playlists/meta` and `POST /api/playlists/preview` in `API_ACCESS` with `{"playlists"}`
-- [ ] 1.2 In `api.py`, add the `HOSTED_PLAYLIST_READS` set and let `hosted_guard` pass those two routes; keep every other `/api/playlists*` route refused (including `create` and `spotify`)
-- [ ] 1.3 Update the comments on `REFUSED_PREFIXES` and `hosted_guard` to say what is allowed and why
-- [ ] 1.4 In `tests/test_hosted_smoke.py`, replace `test_playlists_are_refused_for_everyone` with tests: guest gets 200 on meta and preview; logged-out gets 403 `login_required`; trusted gets 403 `refused` on create and on spotify; an unlisted `/api/playlists/other` route is refused
-- [ ] 1.5 Run `uv run pytest tests/test_hosted_smoke.py` and confirm it passes
+- [x] 1.1 In `access.py`, add `playlists` to `GUEST_PAGES` and list `GET /api/playlists/meta` and `POST /api/playlists/preview` in `API_ACCESS` with `{"playlists"}`
+- [x] 1.2 In `api.py`, add the `HOSTED_PLAYLIST_READS` set and let `hosted_guard` pass those two routes; keep every other `/api/playlists*` route refused (including `create` and `spotify`)
+- [x] 1.3 Update the comments on `REFUSED_PREFIXES` and `hosted_guard` to say what is allowed and why
+- [x] 1.4 In `tests/test_hosted_smoke.py`, replace `test_playlists_are_refused_for_everyone` with tests: guest gets 200 on meta and preview; logged-out gets 403 `login_required`; trusted gets 403 `refused` on create and on spotify; an unlisted `/api/playlists/other` route is refused
+- [x] 1.5 Run `uv run pytest tests/test_hosted_smoke.py` and confirm it passes
 
 ## 2. Top bar
 

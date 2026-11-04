@@ -86,10 +86,47 @@ def test_typed_sql_is_refused_even_for_a_trusted_visitor(client):
     assert response.json() == {"error": "refused", "message": REFUSAL}
 
 
-def test_playlists_are_refused_for_everyone(client):
+PREVIEW_BODY = {"kind": "slot", "min_plays": 3}
+
+
+def test_a_guest_gets_the_playlist_form_data_and_preview(client):
+    log_in_as(client, "guest-session")
+    meta = client.get("/api/playlists/meta")
+    assert meta.status_code == 200
+    assert "weekdays" in meta.json()
+    preview = client.post("/api/playlists/preview", json=PREVIEW_BODY)
+    assert preview.status_code == 200
+    assert "title" in preview.json()
+
+
+def test_the_playlist_routes_need_a_login(client):
+    for method, path in (("get", "/api/playlists/meta"), ("post", "/api/playlists/preview")):
+        response = getattr(client, method)(path, **({"json": PREVIEW_BODY} if method == "post" else {}))
+        assert response.status_code == 403
+        assert response.json()["error"] == "login_required"
+
+
+def test_creating_a_playlist_is_refused_even_for_a_trusted_visitor(client):
+    log_in_as(client, "trusted-session")
+    response = client.post("/api/playlists/create", json={**PREVIEW_BODY, "name": "x"})
+    assert response.status_code == 403
+    assert response.json() == {"error": "refused", "message": REFUSAL}
+
+
+def test_the_spotify_check_and_unlisted_playlist_routes_are_refused(client):
+    log_in_as(client, "trusted-session")
+    for path in ("/api/playlists/spotify", "/api/playlists/other"):
+        response = client.get(path)
+        assert response.status_code == 403
+        assert response.json() == {"error": "refused", "message": REFUSAL}
+
+
+def test_a_visitor_without_the_playlists_page_is_refused_the_preview(client, monkeypatch):
+    monkeypatch.setitem(SESSIONS, "no-playlists", viewers.Session("v-none", "Test None", "guest", frozenset({"about"})))
+    log_in_as(client, "no-playlists")
     response = client.get("/api/playlists/meta")
     assert response.status_code == 403
-    assert response.json()["message"] == REFUSAL
+    assert response.json()["error"] == "not_available"
 
 
 def test_a_data_route_answers_for_a_logged_in_guest(client):
