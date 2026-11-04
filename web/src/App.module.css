@@ -47,6 +47,24 @@
 .navLink:hover {
   background: var(--surface-raised);
 }
+/* A section the visitor can't open: muted, with a padlock. Still a link; the lock is also in text (.srOnly). */
+.navLocked {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+.lock {
+  flex: none;
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
 .logout {
   padding: 6px var(--space-3);
   border: 0;

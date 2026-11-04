@@ -9,6 +9,8 @@ import {
   createPlaylist, fetchPlaylistsMeta, fetchSpotifyStatus, previewPlaylist,
   type BingeOrder, type CreateEvent, type PlaylistKind, type PlaylistPreview, type PlaylistRequest, type PlaylistsMeta,
 } from "../api";
+import { ApiError } from "../api";
+import { useAuth } from "../auth";
 import { DataTable, type Column } from "../components/DataTable";
 import { ComingSoon } from "../components/ComingSoon";
 import { Chips, Field, RangeSlider, Slider } from "../components/Form";
@@ -250,10 +252,13 @@ type CreateState =
   | { status: "idle" }
   | { status: "running"; fraction: number; message: string }
   | { status: "done"; event: Extract<CreateEvent, { event: "done" }> }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string }
+  | { status: "refused"; message: string };
 
 function CreateOnSpotify({ request, preview }: { request: PlaylistRequest; preview: PlaylistPreview }) {
-  const spotify = useQuery({ queryKey: ["spotify-status"], queryFn: fetchSpotifyStatus });
+  // On the hosted site nobody can create a playlist, so there is no Spotify to check: the button explains it when clicked.
+  const hosted = !useAuth().local;
+  const spotify = useQuery({ queryKey: ["spotify-status"], queryFn: fetchSpotifyStatus, enabled: !hosted });
   const [name, setName] = useState(preview.name!);
   const [isPublic, setPublic] = useState(false);
   const [state, setState] = useState<CreateState>({ status: "idle" });
@@ -267,14 +272,14 @@ function CreateOnSpotify({ request, preview }: { request: PlaylistRequest; previ
       if (e.event === "progress") setState({ status: "running", fraction: e.fraction, message: e.message });
       else if (e.event === "done") setState({ status: "done", event: e });
       else setState({ status: "error", message: e.message });
-    }).catch((e: Error) => setState({ status: "error", message: e.message }));
+    }).catch((e: Error) => setState(e instanceof ApiError && e.kind === "refused" ? { status: "refused", message: e.message } : { status: "error", message: e.message }));
   };
 
   return (
     <div className={`${styles.stack} ${styles.section}`}>
       {spotify.error ? (
         <ErrorState error={spotify.error} />
-      ) : !spotify.data ? null : !spotify.data.connected ? (
+      ) : !hosted && !spotify.data ? null : !hosted && !spotify.data?.connected ? (
         <Notice>
           Connect Spotify once from the terminal: add <code>SPOTIFY_CLIENT_ID</code> to <code>.env</code>, then run <code>uv run rain-in-my-head spotify-login</code>. See the
           README for creating the Spotify app.
@@ -303,6 +308,7 @@ function CreateOnSpotify({ request, preview }: { request: PlaylistRequest; previ
               </div>
             </div>
           )}
+          {state.status === "refused" && <Notice>{state.message}</Notice>}
           {state.status === "error" && <Notice tone="error">{state.message}</Notice>}
           {state.status === "done" && (
             <>

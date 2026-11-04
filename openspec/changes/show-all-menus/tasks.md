@@ -8,16 +8,16 @@
 
 ## 2. Top bar
 
-- [ ] 2.1 In `web/src/routes.ts`, add `ownerOnly: true` to the Visitors section and add `lockReason`; remove `visibleSections`
-- [ ] 2.2 In `App.tsx`, render every section; for a locked one add a lock icon, a locked style and visually hidden text with the reason
-- [ ] 2.3 In `App.module.css`, add the locked style (muted, still readable at 4.5:1 against the top bar) and keep focus rings
-- [ ] 2.4 Check `breadcrumbs()` and the `NotFound` text still read correctly with the full menu
+- [x] 2.1 In `web/src/routes.ts`, add `ownerOnly: true` to the Visitors section and add `lockReason`; remove `visibleSections`
+- [x] 2.2 In `App.tsx`, render every section; for a locked one add a lock icon, a locked style and visually hidden text with the reason
+- [x] 2.3 In `App.module.css`, add the locked style (muted, still readable at 4.5:1 against the top bar) and keep focus rings
+- [x] 2.4 Check `breadcrumbs()` and the `NotFound` text still read correctly with the full menu
 
 ## 3. Playlist page
 
-- [ ] 3.1 In `Playlists.tsx`, on the hosted site (`!auth.local`) skip `fetchSpotifyStatus` and show the Create bar
-- [ ] 3.2 Show the refusal message from Create in a neutral `Notice` and not the error tone; keep the red error for real failures
-- [ ] 3.3 Confirm in `createPlaylist` (`api.ts`) that a 403 JSON body reaches the page as `ApiError.message`; fix there if not
+- [x] 3.1 In `Playlists.tsx`, on the hosted site (`!auth.local`) skip `fetchSpotifyStatus` and show the Create bar
+- [x] 3.2 Show the refusal message from Create in a neutral `Notice` and not the error tone; keep the red error for real failures
+- [x] 3.3 Confirm in `createPlaylist` (`api.ts`) that a 403 JSON body reaches the page as `ApiError.message`; fix there if not
 
 ## 4. Verify in the real app
 
