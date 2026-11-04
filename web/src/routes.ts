@@ -1,16 +1,32 @@
 // Every page's address, breadcrumb label and top-bar section, in one place (contracts/routes.md in
-// specs/005-prototype-redesign). The top bar and the breadcrumbs both read this.
+// specs/005-prototype-redesign). The top bar and the breadcrumbs both read this. Every item is shown to everyone; a locked one is only marked,
+// because the server and RequireAccess check every request.
+
+export interface Section {
+  path: string;
+  label: string;
+  pages: readonly string[];
+  /** On no hosted tier: only the owner's Mac opens it. */
+  ownerOnly?: true;
+}
 
 /** Top-bar items, left to right. `pages` are the access keys (src/rain_in_my_head/access.py) that open each one. */
 export const SECTIONS = [
   { path: "/dashboards", label: "Dashboards", pages: ["overview", "new-artists", "genre", "artist", "slot", "mainstream"] },
   { path: "/playlists", label: "Playlist Generator", pages: ["playlists"] },
   { path: "/analyst", label: "Analyst", pages: ["analyst"] },
-  { path: "/visitors", label: "Visitors", pages: ["visitors"] },
+  { path: "/visitors", label: "Visitors", pages: ["visitors"], ownerOnly: true },
   { path: "/ai", label: "AI", pages: ["ai"] },
   { path: "/about", label: "About", pages: ["about"] },
   { path: "/contact", label: "Contact Me", pages: ["contact"] },
-] as const;
+] as const satisfies readonly Section[];
+
+/** Why a section is locked for this visitor, in words (shown to screen readers beside the lock), or null if they can open it. */
+export function lockReason(section: Section, auth: { can: (page: string) => boolean; loggedIn: boolean }): string | null {
+  if (section.pages.some(auth.can)) return null;
+  if (!auth.loggedIn) return "Log in to open";
+  return section.ownerOnly ? "Owner only" : "Not in your invite code";
+}
 
 /** The access key for each page. "playlists" is on no tier, so on the hosted site nobody can open it. */
 export const PAGE_KEYS = {
@@ -30,9 +46,6 @@ export const PAGE_KEYS = {
   "/contact": "contact",
 } as const;
 export type PageKey = (typeof PAGE_KEYS)[keyof typeof PAGE_KEYS];
-
-/** The top-bar items a visitor can open. Hiding the rest is a convenience; the server checks every request. */
-export const visibleSections = (can: (page: string) => boolean) => SECTIONS.filter((s) => s.pages.some(can));
 
 /** Breadcrumb label for each path below a section (the section's own label comes from SECTIONS). */
 const PAGES: Record<string, string> = {

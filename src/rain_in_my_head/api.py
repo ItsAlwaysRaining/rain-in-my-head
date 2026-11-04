@@ -51,6 +51,10 @@ app = FastAPI(
 )
 # /api/visitors is the owner's usage report: it needs the owner connection, which only the Mac has (spec 012).
 REFUSED_PREFIXES = ("/api/playlists", "/api/ai", "/api/visitors")
+# The only routes under REFUSED_PREFIXES the hosted site answers: the Playlist Generator's form data and track
+# preview, which read the two-year copy. Creating a playlist, the Spotify check and any route added under
+# /api/playlists later stay refused until they are listed here and in access.API_ACCESS.
+HOSTED_PLAYLIST_READS = frozenset({("GET", "/api/playlists/meta"), ("POST", "/api/playlists/preview")})
 
 
 def _refused() -> JSONResponse:
@@ -102,12 +106,15 @@ async def hosted_guard(request: Request, call_next):
     """On the hosted site, deny by default: only reads, plus pre-defined SQL (checked in `sql`) and login and logout, get through.
 
     Anything that writes, makes playlists or uses AI is refused, including routes added later
-    (specs/009-public-dataset, research R4).
+    (specs/009-public-dataset, research R4). The playlist form's data and preview (HOSTED_PLAYLIST_READS) are the
+    two exceptions (openspec/changes/show-all-menus).
     """
     if config.HOSTED:
         path, method = request.url.path, request.method
-        allowed = (method in ("GET", "HEAD") and not path.startswith(REFUSED_PREFIXES)) or (
-            method == "POST" and path in ("/api/sql", "/api/login", "/api/logout", "/api/events")
+        allowed = (
+            (method in ("GET", "HEAD") and not path.startswith(REFUSED_PREFIXES))
+            or (method == "POST" and path in ("/api/sql", "/api/login", "/api/logout", "/api/events"))
+            or (("GET" if method == "HEAD" else method), path) in HOSTED_PLAYLIST_READS
         )
         if not allowed:
             return _refused()
@@ -667,8 +674,8 @@ def playlists_create(body: CreateRequest) -> StreamingResponse:
 def check_routes() -> None:
     """Stop the app from starting if an /api route that reads data has no entry in access.API_ACCESS.
 
-    Routes under REFUSED_PREFIXES, and anything that isn't a GET or a listed POST, are refused by hosted_guard
-    for everyone, so they need no entry (FR-017, constitution VII).
+    Routes under REFUSED_PREFIXES (except HOSTED_PLAYLIST_READS), and anything that isn't a GET or a listed POST,
+    are refused by hosted_guard for everyone, so they need no entry (FR-017, constitution VII).
     """
     listed = set(access.API_ACCESS) | set(access.PUBLIC_ROUTES) | set(access.SESSION_ROUTES)
     local_only = {"/api/docs", "/api/openapi.json"}  # not served at all when hosted
@@ -676,10 +683,10 @@ def check_routes() -> None:
         f"{method} {route.path}"
         for route in app.routes
         if getattr(route, "path", "").startswith("/api/")
-        and not route.path.startswith(REFUSED_PREFIXES)
         and route.path not in local_only
         for method in (getattr(route, "methods", None) or ())
         if method in ("GET", "POST") and (method, route.path) not in listed
+        and (not route.path.startswith(REFUSED_PREFIXES) or (method, route.path) in HOSTED_PLAYLIST_READS)
     )
     if missing:
         raise RuntimeError("These routes have no access rule in access.py: " + ", ".join(missing))

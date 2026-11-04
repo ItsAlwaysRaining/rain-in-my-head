@@ -18,7 +18,7 @@ import { Ai, ListeningSlot, Mainstream } from "./pages/Placeholders";
 import Playlists from "./pages/Playlists";
 import Storm from "./pages/Storm";
 import Visitors from "./pages/Visitors";
-import { breadcrumbs, visibleSections } from "./routes";
+import { breadcrumbs, lockReason, SECTIONS } from "./routes";
 import { useTracking } from "./usage";
 
 // A data request the hosted site answers with "log in" (no session, or it was ended) sends the visitor to the login page.
@@ -41,6 +41,16 @@ function CloudLogo() {
   );
 }
 
+/** A small padlock beside a locked section. The reason is in text for screen readers, so this is decoration. */
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 12 14" width="10" height="12" aria-hidden className={styles.lock}>
+      <rect x="1" y="6" width="10" height="7" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M3.5 6V4a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
 function TopBar() {
   const auth = useAuth();
   const navigate = useNavigate();
@@ -53,11 +63,21 @@ function TopBar() {
           Rain in My Head
         </Link>
         <nav aria-label="Main" className={styles.nav}>
-          {visibleSections(auth.can).map((s) => (
-            <NavLink key={s.path} to={s.path} className={({ isActive }) => (isActive ? styles.navActive : styles.navLink)}>
-              {s.label}
-            </NavLink>
-          ))}
+          {SECTIONS.map((s) => {
+            const locked = lockReason(s, auth);
+            return (
+              // A locked section is still a link: its page shows the login or "not available" screen, never data.
+              <NavLink
+                key={s.path}
+                to={s.path}
+                className={({ isActive }) => `${isActive ? styles.navActive : styles.navLink}${locked ? ` ${styles.navLocked}` : ""}`}
+              >
+                {locked && <LockIcon />}
+                {s.label}
+                {locked && <span className={styles.srOnly}>, locked: {locked}</span>}
+              </NavLink>
+            );
+          })}
           {auth.loggedIn && (
             <button
               type="button"

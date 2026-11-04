@@ -346,8 +346,10 @@ export const previewPlaylist = (body: PlaylistRequest) => sendJson<PlaylistPrevi
 export async function createPlaylist(body: PlaylistRequest & { name: string; public: boolean }, onEvent: (e: CreateEvent) => void) {
   const response = await reach("/api/playlists/create", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
   if (!response.ok || !response.body) {
-    const detail = await response.json().then((b) => b?.detail, () => null);
-    throw new ApiError("http", typeof detail === "string" ? detail : `Request failed (${response.status})`);
+    const body = await response.json().catch(() => null);
+    // The hosted site refuses this on purpose: pass its message on as the refusal it is.
+    if (response.status === 403 && body?.error === "refused") throw new ApiError("refused", body.message);
+    throw new ApiError("http", typeof body?.detail === "string" ? body.detail : `Request failed (${response.status})`);
   }
   const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
   let buffer = "";

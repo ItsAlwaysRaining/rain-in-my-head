@@ -93,7 +93,7 @@ LISTENING_HOSTED=1 LISTENING_DB=data/public.db uv run rain-in-my-head serve   # 
 - **What `LISTENING_HOSTED=1` does:**
   - opens the database immutable, so nothing is written, locked or journaled
   - hides the API docs
-  - turns visitors away with **"This DJ doesn't take requests."** That covers typed SQL, playlists, saving the schema layout, AI, and any other request that isn't a read.
+  - turns visitors away with **"This DJ doesn't take requests."** That covers typed SQL, creating playlists, saving the schema layout, AI, and any other request that isn't a read. The playlist form and its track preview are reads, so they work.
 - **The Analyst page on the hosted site** offers only the pre-defined queries: pick one, read its SQL, run it.
 - **Locally**, without the setting, everything works as before, including free-form SQL.
 - **Only the TypeScript dashboard is hosted.** Streamlit stays local.
@@ -145,7 +145,7 @@ Every pull request from this repository gets its own copy of the hosted site on 
 **Making a test code** (run on your Mac; `dev` is the default branch):
 
 ```sh
-uv run rain-in-my-head viewer add Sam      # prints the code once; add --tier trusted to open Analyst and Storm
+uv run rain-in-my-head viewer add Sam      # prints the code once; add --tier trusted to open Storm
 uv run rain-in-my-head viewer revoke Sam   # when you're done
 ```
 
@@ -154,7 +154,7 @@ Logging in on the preview records your session in the `dev` database, so it show
 **What the preview deploy checks, in order.** It builds the full database, then the two-year copy, and stops if the oldest play is more than 738 days old (the 730-day window plus the 7-day lag is 737, plus a day of margin so rounding never fails a run). It builds `web/`, then lists the files in the function bundle and stops before deploying if `data/raw`, `data/cache`, `infra`, `.claude`, `.specify`, `.env` or any `data/listening.db` file is in it. Pull requests from forks and from Dependabot get no preview. The first request after a quiet spell can be slower while Vercel starts the function.
 
 **CI checks.** `.github/workflows/ci.yml` runs four separate checks on every pull request, none using a repository secret, so one red result never hides another:
-- **Hosted smoke test**: `tests/test_hosted_smoke.py` loads `api/index.py` (the file Vercel runs) in hosted mode on the two-year copy, with the login lookup replaced. It checks health, a locked route, a forged cookie, typed SQL refused, playlists refused, and a guest's access. Run it yourself after `build` and `publish`: `uv run --no-default-groups --group web --with pytest --with httpx pytest tests`
+- **Hosted smoke test**: `tests/test_hosted_smoke.py` loads `api/index.py` (the file Vercel runs) in hosted mode on the two-year copy, with the login lookup replaced. It checks health, a locked route, a forged cookie, typed SQL refused, creating a playlist refused (the form data and preview answer), and a guest's access. Run it yourself after `build` and `publish`: `uv run --no-default-groups --group web --with pytest --with httpx pytest tests`
 - **Frontend build**: `npm ci && npm run build` in `web/`.
 - **Secret scan**: gitleaks, with `.gitleaks.toml`. Every rule stays on, and each allowed false alarm says why. Run it yourself with `gitleaks git .`
 - **Security lint**: Ruff's security rules only (`[tool.ruff.lint]` in `pyproject.toml`). Run it with `uvx ruff@0.17.3 check src api tests`. Where the rule is a false alarm, the line carries a `# noqa` with its reason.
@@ -191,7 +191,7 @@ The hosted site has no public pages except the landing page and the login page. 
 | `viewer revoke NAME` | Ends their code and logs them out on every device, within seconds. |
 | `viewer grant NAME [--page KEY] [--remove-page KEY] [--tier guest\|trusted]` | Gives or takes back a page, or changes the tier. Applies on their next click. |
 
-**What each tier opens.** A guest opens the six dashboard pages (Overview, New artists, Genre, Artist, When you listen, Mainstream vs. niche), AI, About and Contact Me. The AI page is only a Coming soon card, so no AI runs on the hosted site. A trusted visitor also opens Analyst (pre-defined queries and the schema map, never free-form SQL) and Storm. Page keys for `grant`: `overview`, `new-artists`, `genre`, `artist`, `slot`, `mainstream`, `analyst`, `ai`, `storm`, `about`, `contact`. Playlists are off for everyone on the hosted site.
+**What each tier opens.** A guest opens the six dashboard pages (Overview, New artists, Genre, Artist, When you listen, Mainstream vs. niche), Playlist Generator, Analyst (pre-defined queries and the schema map, never free-form SQL), AI, About and Contact Me. Every section shows in the top bar for everyone; the ones a person can't open are marked with a padlock. The AI page is only a Coming soon card, so no AI runs on the hosted site. A trusted visitor also opens Storm. Page keys for `grant`: `overview`, `new-artists`, `genre`, `artist`, `slot`, `mainstream`, `playlists`, `analyst`, `ai`, `storm`, `about`, `contact`. On the hosted site the Playlist Generator shows the form and the track preview, but Create on Spotify answers "This DJ doesn't take requests." for everyone.
 
 **What is stored.** A person's name, the hash of their code (never the code), and when they last logged in. A guessing limit uses a daily-changing scrambled form of the visitor's address, never the address. If a code is lost, revoke it and add the person again.
 

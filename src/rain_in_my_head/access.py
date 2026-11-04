@@ -12,10 +12,12 @@ PAGES = (
     "overview", "new-artists", "genre", "artist", "slot", "mainstream", "analyst", "ai", "storm", "about", "contact",
 )
 
-GUEST_PAGES = frozenset({"overview", "new-artists", "genre", "artist", "slot", "mainstream", "ai", "about", "contact"})
+GUEST_PAGES = frozenset({
+    "overview", "new-artists", "genre", "artist", "slot", "mainstream", "playlists", "analyst", "ai", "about", "contact",
+})
 TIER_PAGES = {
     "guest": GUEST_PAGES,
-    "trusted": GUEST_PAGES | {"analyst", "storm"},
+    "trusted": GUEST_PAGES | {"storm"},
 }
 
 # (method, path) -> the pages that unlock it. Any one of them is enough: Overview and New artists both use
@@ -25,6 +27,10 @@ API_ACCESS: dict[tuple[str, str], frozenset[str]] = {
     ("GET", "/api/genre"): frozenset({"genre"}),
     ("GET", "/api/genre/songs"): frozenset({"genre"}),
     ("GET", "/api/artist"): frozenset({"artist"}),
+    # The Playlist Generator's form and track preview only read the database. Creating a playlist stays refused
+    # on the hosted site (api.HOSTED_PLAYLIST_READS lists the only playlist routes it lets through).
+    ("GET", "/api/playlists/meta"): frozenset({"playlists"}),
+    ("POST", "/api/playlists/preview"): frozenset({"playlists"}),
     ("GET", "/api/sql/meta"): frozenset({"analyst"}),
     ("POST", "/api/sql"): frozenset({"analyst"}),
     ("GET", "/api/schema"): frozenset({"analyst"}),
