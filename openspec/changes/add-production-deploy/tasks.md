@@ -10,8 +10,8 @@
 
 ## 2. README
 
-- [ ] 2.1 Add a "Production" section after "Previews and CI checks": what starts a deploy (a merge, 03:00 UTC, `gh workflow run deploy.yml --ref main`), the stage-check-promote order, what a red run means (the live address is unchanged, read the check step), and how to promote an older deployment by hand (`vercel promote <deployment>`). Verify each command in it runs as written (`gh workflow run deploy.yml --help` and `npx vercel@64.7.0 promote --help` at least)
-- [ ] 2.2 Replace the "Until phase 7 deploys the site to production…" sentence with one that says the address serves the site, and tidy the "Custom domain" paragraph so DNS is always Cloudflare and Spaceship appears only for registration and renewal. Verify with `grep -n -i spaceship README.md infra/*.tf` that every remaining line is about registering or renewing, or the "if the nameservers ever go back" note
+- [x] 2.1 Add a "Production" section after "Previews and CI checks": what starts a deploy (a merge, 03:00 UTC, `gh workflow run deploy.yml --ref main`), the stage-check-promote order, what a red run means (the live address is unchanged, read the check step), and how to promote an older deployment by hand (`vercel promote <deployment>`). Verify each command in it runs as written (`gh workflow run deploy.yml --help` and `npx vercel@64.7.0 promote --help` at least)
+- [x] 2.2 Replace the "Until phase 7 deploys the site to production…" sentence with one that says the address serves the site, and tidy the "Custom domain" paragraph so DNS is always Cloudflare and Spaceship appears only for registration and renewal. Verify with `grep -n -i spaceship README.md infra/*.tf` that every remaining line is about registering or renewing, or the "if the nameservers ever go back" note
 
 ## 3. Hand-over
 

@@ -123,7 +123,7 @@ Every Monday, a drift check opens an issue called "Infrastructure drift" if a da
 
 If the nameservers ever go back to Spaceship's, add the record there instead. In Spaceship, the domain's **Nameservers & DNS** page shows where they point.
 
-Until phase 7 deploys the site to production, the address shows Vercel's "deployment not found" page over https. That is expected. The `.vercel.app` address keeps working as a backup, and the bare `storyandstructure.studio` is not attached.
+Once the site is deployed (see "Production" below), the address serves it over https. The `.vercel.app` address keeps working as a backup, and the bare `storyandstructure.studio` is not attached.
 
 **Renewing tokens.** The Vercel, Neon and GitHub tokens last 90 days. When one expires, plans fail and the drift check fails. Create a new token with the same name, then update the matching secret with `gh secret set VERCEL_API_TOKEN` (or `NEON_API_KEY`, or `GH_INFRA_TOKEN`).
 
@@ -135,7 +135,7 @@ Until phase 7 deploys the site to production, the address shows Vercel's "deploy
 
 ## Previews and CI checks
 
-Every pull request from this repository gets its own copy of the hosted site on Vercel, built by `.github/workflows/deploy.yml`. A preview uses the Neon `dev` branch, never `prod`. Deploying to the live address comes in phase 7.
+Every pull request from this repository gets its own copy of the hosted site on Vercel, built by `.github/workflows/deploy.yml`. A preview uses the Neon `dev` branch, never `prod`. Deploying to the live address is in "Production" below.
 
 **Opening a preview**
 1. Open the pull request. The `github-actions` bot posts one comment headed "Preview" with a `*.vercel.app` address and the commit it was built from. Later pushes edit that comment, so there is only ever one.
@@ -151,13 +151,28 @@ uv run rain-in-my-head viewer revoke Sam   # when you're done
 
 Logging in on the preview records your session in the `dev` database, so it shows on the **Visitors** page (choose `dev`) and in `uv run rain-in-my-head viewer usage`.
 
-**What the preview deploy checks, in order.** It builds the full database, then the two-year copy, and stops if the oldest play is more than 737 days old (the 730-day window plus the 7-day lag). It builds `web/`, then lists the files in the function bundle and stops before deploying if `data/raw`, `data/cache`, `infra`, `.claude`, `.specify`, `.env` or any `data/listening.db` file is in it. Pull requests from forks and from Dependabot get no preview. The first request after a quiet spell can be slower while Vercel starts the function.
+**What the preview deploy checks, in order.** It builds the full database, then the two-year copy, and stops if the oldest play is more than 738 days old (the 730-day window plus the 7-day lag is 737, plus a day of margin so rounding never fails a run). It builds `web/`, then lists the files in the function bundle and stops before deploying if `data/raw`, `data/cache`, `infra`, `.claude`, `.specify`, `.env` or any `data/listening.db` file is in it. Pull requests from forks and from Dependabot get no preview. The first request after a quiet spell can be slower while Vercel starts the function.
 
 **CI checks.** `.github/workflows/ci.yml` runs four separate checks on every pull request, none using a repository secret, so one red result never hides another:
 - **Hosted smoke test**: `tests/test_hosted_smoke.py` loads `api/index.py` (the file Vercel runs) in hosted mode on the two-year copy, with the login lookup replaced. It checks health, a locked route, a forged cookie, typed SQL refused, playlists refused, and a guest's access. Run it yourself after `build` and `publish`: `uv run --no-default-groups --group web --with pytest --with httpx pytest tests`
 - **Frontend build**: `npm ci && npm run build` in `web/`.
 - **Secret scan**: gitleaks, with `.gitleaks.toml`. Every rule stays on, and each allowed false alarm says why. Run it yourself with `gitleaks git .`
 - **Security lint**: Ruff's security rules only (`[tool.ruff.lint]` in `pyproject.toml`). Run it with `uvx ruff@0.17.3 check src api tests`. Where the rule is a false alarm, the line carries a `# noqa` with its reason.
+
+## Production
+
+The same workflow, `.github/workflows/deploy.yml`, deploys the live site at `https://rain.storyandstructure.studio`, on the Neon `prod` branch. Three things start it, all on `main`:
+- a pull request is merged,
+- 03:00 UTC every night (the nightly sync's pushes don't start workflows, so this run is what puts new plays on the site),
+- you start it by hand: `gh workflow run deploy.yml --ref main`. Runs started on another branch are skipped.
+
+**What it does, in order.** The same build and bundle checks as a preview. Then it **stages** the build (`vercel deploy --prod --skip-domain`): it exists, but visitors still get the old version. Then it checks the staged build: `/api/health` must answer `{"ok":true}`, and a locked route (`/api/genre`) asked with no login must answer 403 `login_required`. Only if both pass does `vercel promote` make it the live site. Previews run the same check on their own address. The log shows status codes only.
+
+**A red run** means the check failed or a step before it did. Visitors never saw that build: the live address still serves the last good one. Open the run and read the "Check the deployment answers" step. Fix the cause and push, or run it again by hand.
+
+**Promote an older deployment by hand** (for example to go back after a bad change that passed the check): `npx vercel@64.7.0 promote <deployment-url>` from the repository root, with `VERCEL_TOKEN` set. Deployment addresses are listed in the Vercel project under **Deployments**.
+
+Production runs one at a time and never cut each other off. Two merges in a row deploy the newer one.
 
 ## Visitors and invite codes
 
