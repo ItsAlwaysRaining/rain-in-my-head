@@ -1,32 +1,50 @@
 name: Deploy
 
-# Preview half only (openspec/changes/add-preview-deploy): every pull request from this repo is built here and
-# deployed to Vercel as a preview, which is the dev environment: Neon `dev` data, locked to the owner's Vercel
-# team. Production deploys (merge and nightly) come in phase 7.
+# One workflow, two targets (openspec/specs/preview-deploy and production-deploy):
+# - a pull request from this repo is built and deployed as a preview: the dev environment, Neon `dev` data,
+#   locked to the owner's Vercel team;
+# - a push to main, 03:00 UTC every night, or a hand-started run on main is built and deployed as production:
+#   Neon `prod` data. A production build is staged first (--skip-domain, visitors still get the old one), checked,
+#   and only then promoted to rain.storyandstructure.studio. A failed check leaves the live site untouched.
+# The nightly run is what puts new plays on the site: the sync's pushes use the default token, which does not start
+# other workflows.
 #
 # The project has no Git connection on purpose (infra/vercel.tf), so nothing deploys except this workflow.
 
 on:
   pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
   pull-requests: write
 
+# A pull request cancels its own older run. Production runs queue and are never cut off halfway; GitHub keeps one
+# waiting run, which builds main as it is when it starts.
 concurrency:
-  group: deploy-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: ${{ github.event_name == 'pull_request' && format('deploy-{0}', github.event.pull_request.number) || 'deploy-production' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   VERCEL_CLI: vercel@64.7.0 # pinned; bump on purpose
+  TARGET: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
   # Written by infra/github.tf. Not secrets, but not worth guessing either.
   VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
 
 jobs:
-  preview:
-    # Fork and Dependabot pull requests get no secrets, so they get no deploy and no failure.
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+  deploy:
+    # Fork and Dependabot pull requests get no secrets, so they get no deploy and no failure. Anything that is not a
+    # pull request must be on main, so a hand-started run on another branch cannot reach production.
+    if: >-
+      (github.event_name == 'pull_request'
+        && github.event.pull_request.head.repo.full_name == github.repository
+        && github.actor != 'dependabot[bot]')
+      || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -46,7 +64,8 @@ jobs:
           uv run --no-default-groups rain-in-my-head build
           uv run --no-default-groups rain-in-my-head publish
 
-      # The window is 730 days ending 7 days ago (specs/009-public-dataset), so the oldest play may be 737 days old.
+      # The window is 730 days ending 7 days ago (specs/009-public-dataset), so the oldest play is 737.0 days old.
+      # One day of margin, so rounding never fails a run (a nightly deploy can't stop for that).
       - name: Check the two-year window
         run: |
           python3 - <<'PY'
@@ -54,7 +73,7 @@ jobs:
           oldest, plays = sqlite3.connect("data/public.db").execute("select min(played_at), count(*) from scrobbles").fetchone()
           days = (time.time() - oldest) / 86400
           print(f"{plays:,} plays; the oldest is {days:.1f} days old")
-          assert days <= 737, "public.db holds a play older than the 730-day window plus the 7-day lag"
+          assert days <= 738, "public.db holds a play older than the 730-day window plus the 7-day lag plus a day of margin"
           PY
 
       - name: Build the frontend
@@ -68,15 +87,16 @@ jobs:
       - name: List the API's Python packages
         run: uv export --no-default-groups --group web --no-dev --no-hashes --no-emit-project --no-header --no-annotate -o requirements.txt
 
-      - name: Fetch the preview settings from Vercel
+      - name: Fetch the ${{ env.TARGET }} settings from Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
-        run: npx --yes "$VERCEL_CLI" pull --yes --environment=preview
+        run: npx --yes "$VERCEL_CLI" pull --yes --environment="$TARGET"
 
       - name: Build for Vercel
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
-        run: npx --yes "$VERCEL_CLI" build
+        run: |
+          if [ "$TARGET" = production ]; then npx --yes "$VERCEL_CLI" build --prod; else npx --yes "$VERCEL_CLI" build; fi
 
       # Runs before the deploy, so a bundle that holds raw data stops the run instead of going live.
       - name: Check what the function bundle holds
@@ -101,16 +121,38 @@ jobs:
           fi
           echo "Clean: public.db and the package are in; data/raw, data/cache and infra are out"
 
-      - name: Deploy the preview
+      # Production is staged: --skip-domain builds it with the production settings but leaves the live address on the
+      # old deployment until the promote step below.
+      - name: Deploy the ${{ env.TARGET }} build
         id: deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
         run: |
-          url=$(npx --yes "$VERCEL_CLI" deploy --prebuilt)
+          if [ "$TARGET" = production ]; then
+            url=$(npx --yes "$VERCEL_CLI" deploy --prebuilt --prod --skip-domain)
+          else
+            url=$(npx --yes "$VERCEL_CLI" deploy --prebuilt)
+          fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # `vercel curl` gets through the deployment's login protection itself, so no bypass secret is stored. The script
+      # prints status codes and a verdict only, never a body or a header.
+      - name: Check the deployment answers
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+          URL: ${{ steps.deploy.outputs.url }}
+        run: .github/scripts/check-deployment.sh "$URL"
+
+      - name: Make it the live site
+        if: env.TARGET == 'production'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+          URL: ${{ steps.deploy.outputs.url }}
+        run: npx --yes "$VERCEL_CLI" promote "$URL" --yes
 
       # One comment per pull request, found by its hidden marker so the infrastructure plan comment is left alone.
       - name: Put the preview address on the pull request
+        if: github.event_name == 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
