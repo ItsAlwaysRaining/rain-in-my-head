@@ -21,14 +21,14 @@
 
 ## 4. Verify in the real app
 
-- [ ] 4.1 Run the hosted build locally with guest, trusted and logged-out sessions: all seven sections appear for each, and the right ones are locked
-- [ ] 4.2 Click Analyst as logged-out (login page) and as a guest ("Not available to you"), and confirm in the network tab that no data request was made
-- [ ] 4.3 As a guest open Playlist Generator, change a setting, see the preview, click Create on Spotify, and see "This DJ doesn't take requests."; confirm no request reached Spotify
-- [ ] 4.4 On the Mac build, create a playlist as before (or confirm the Create bar and Spotify status still show)
-- [ ] 4.5 Check the top bar at 360 px wide and with keyboard only; confirm a screen reader reads "locked" and the reason
-- [ ] 4.6 Cross-check one preview's rows against a direct SQLite query on `public.db` (constitution III)
+- [x] 4.1 Run the hosted build locally with guest, trusted and logged-out sessions: all seven sections appear for each, and the right ones are locked
+- [x] 4.2 Click Analyst as logged-out (login page) and as a guest ("Not available to you"), and confirm in the network tab that no data request was made
+- [x] 4.3 As a guest open Playlist Generator, change a setting, see the preview, click Create on Spotify, and see "This DJ doesn't take requests."; confirm no request reached Spotify
+- [x] 4.4 On the Mac build, create a playlist as before (or confirm the Create bar and Spotify status still show)
+- [x] 4.5 Check the top bar at 360 px wide and with keyboard only; confirm a screen reader reads "locked" and the reason
+- [x] 4.6 Cross-check one preview's rows against a direct SQLite query on `public.db` (constitution III)
 
 ## 5. Finish
 
-- [ ] 5.1 Update `docs/` or README text that says playlists are not hosted, if any
+- [x] 5.1 Update `docs/` or README text that says playlists are not hosted, if any
 - [ ] 5.2 Run `/opsx:archive`, then push and open the PR with `Closes #63`
