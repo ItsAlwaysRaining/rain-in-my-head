@@ -23,7 +23,7 @@ for attempt in $(seq 1 12); do
   health_code="${health%% *}"
   locked_code="${locked%% *}"
   echo "attempt $attempt: /api/health -> $health_code, /api/genre with no login -> $locked_code"
-  if [ "$health_code" = 200 ] && [ "${health#* }" = '{"ok":false}' ] \
+  if [ "$health_code" = 200 ] && [ "${health#* }" = '{"ok":true}' ] \
      && [ "$locked_code" = 403 ] && printf '%s' "${locked#* }" | grep -q 'login_required'; then
     echo "Both checks passed"
     exit 0
