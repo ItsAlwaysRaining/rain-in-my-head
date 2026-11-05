@@ -243,7 +243,7 @@ Every page of the TypeScript app is designed in Figma before it's built.
 - [Rain in My Head: Design process](https://www.figma.com/design/1rbbEne7pW8oA2JCNmjhrm) (Figma). Pages: 0 Cover, 1 Research, 2 Wireframes, 3 Prototype, 4 Visual design and 5 States. Its Color and Spacing variables and text styles mirror `web/src/theme.css`, so a token change goes in both places.
 - [Design reference](https://claude.ai/artifact/SYxFoSaCHYddYzBtnAKT1M): the palette, type, spacing, writing rules and interaction states on one page.
 
-The Figma file is private while the project is in progress and will be made public when it's finished. The About page links to it too.
+The Figma file is public: anyone with the link can view it. The About page links to it too.
 
 ## Notes
 
