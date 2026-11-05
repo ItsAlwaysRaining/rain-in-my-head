@@ -23,7 +23,7 @@ All work is on branch `chore/make-repo-public` in the worktree. Never merge; the
 
 ## 4. Pull request
 
-- [ ] 4.1 `git fetch origin`, rebase on `origin/main` if needed, push with `git push -u origin HEAD`, and open the PR with `.github/pull_request_template.md`. Put the post-merge steps from group 5 in the description. Archive the change with `/opsx:archive` on this branch before opening the PR. Verify `git status` is clean and `git log @{u}..` is empty.
+- [x] 4.1 `git fetch origin`, rebase on `origin/main` if needed, push with `git push -u origin HEAD`, and open the PR with `.github/pull_request_template.md`. Put the post-merge steps from group 5 in the description. Archive the change with `/opsx:archive` on this branch before opening the PR. Verify `git status` is clean and `git log @{u}..` is empty.
 
 ## 5. After the owner merges (owner steps, listed here so nothing is missed)
 
