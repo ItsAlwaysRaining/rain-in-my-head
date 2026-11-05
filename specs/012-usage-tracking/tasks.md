@@ -1,5 +1,7 @@
 # Tasks: Usage tracking and a fair-use limit
 
+> **Superseded in part (2026-11-04):** the nightly export to the `analytics` branch was removed so the repository can be public (see `openspec/changes/make-repo-public`, or `openspec/specs/usage-retention` once archived). Visitor data now stays only in the visitor database. The nightly job only deletes records older than 12 months (`.github/workflows/prune.yml`). Anything below about the `analytics` branch, `analytics.yml` or the private copy is history.
+
 **Input**: [plan.md](plan.md), [spec.md](spec.md), [research.md](research.md), [data-model.md](data-model.md), [contracts/](contracts/), [quickstart.md](quickstart.md)
 
 **Tests**: no suite (as in earlier phases). The checks are in [quickstart.md](quickstart.md), and each story names the part that proves it. Real-browser steps use a headless-Chrome tool started with `npx`, never added to the project (constitution III, IV).

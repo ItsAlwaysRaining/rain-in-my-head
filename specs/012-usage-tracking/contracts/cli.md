@@ -1,5 +1,7 @@
 # Contract: the `viewer` commands (additions)
 
+> **Superseded in part (2026-11-04):** the nightly export to the `analytics` branch was removed so the repository can be public (see `openspec/changes/make-repo-public`, or `openspec/specs/usage-retention` once archived). Visitor data now stays only in the visitor database. The nightly job only deletes records older than 12 months (`.github/workflows/prune.yml`). Anything below about the `analytics` branch, `analytics.yml` or the private copy is history.
+
 Extends [phase 4's commands](../../011-viewer-access/contracts/cli.md). Run on the owner's Mac or, for `prune` and `export`, in the nightly workflow. Every command takes `--env dev|prod` (default `dev`) and prints `[dev]` or `[prod]` on its first line. They read the owner URL from `VIEWERS_OWNER_URL_DEV` or `VIEWERS_OWNER_URL_PROD`. A missing value ends the command with a message naming the variable, never its value.
 
 | Command | What it does | Output |

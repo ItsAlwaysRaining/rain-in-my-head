@@ -1,0 +1,42 @@
+name: Prune usage records
+
+# Every night: delete usage records older than 12 months from the visitor database. Nothing is copied anywhere and
+# nothing is written to the repository, because the repository is public. Specs: openspec/changes/make-repo-public
+# (usage-retention); the records themselves are specs/012-usage-tracking.
+
+on:
+  schedule:
+    - cron: "43 2 * * *"
+  workflow_dispatch:
+    inputs:
+      env:
+        description: "Which visitor database to prune. prod is the live site's; dev is the test copy."
+        type: choice
+        options: [prod, dev]
+        default: prod
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prune
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TARGET: ${{ inputs.env || 'prod' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      # Only the owner connection for the chosen database is passed in. The command prints a count, never a
+      # connection string, a code, an address or a row.
+      - name: Delete records older than 12 months
+        run: uv run --no-default-groups rain-in-my-head viewer prune --env "$TARGET"
+        env:
+          VIEWERS_OWNER_URL_PROD: ${{ inputs.env != 'dev' && secrets.NEON_PROD_OWNER_URL || '' }}
+          VIEWERS_OWNER_URL_DEV: ${{ inputs.env == 'dev' && secrets.NEON_DEV_OWNER_URL || '' }}
