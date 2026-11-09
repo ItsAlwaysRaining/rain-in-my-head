@@ -6,10 +6,10 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
-import { fetchOverview, type Grain, type OverviewFull, type Preset } from "../api";
+import { fetchOverview, type Grain, type NamePlays, type OverviewFull, type Preset } from "../api";
 import * as charts from "../charts/overview";
 import { GENRE_COLORS } from "../charts/config";
-import { DataTable } from "../components/DataTable";
+import { DataTable, type Column } from "../components/DataTable";
 import { Button, Card, ChipGroup, ErrorState, Kpi, Loading, Notice, PageHeader, rememberDashboardsSearch, SegmentedControl, Tabs } from "../components/ui";
 import { VegaChart } from "../components/VegaChart";
 import { capitalize, formatDate, formatDateTime, percent } from "../format";
@@ -34,6 +34,14 @@ const monthOf = (value: unknown) => {
   const d = new Date(value as string | number);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 };
+
+/** A top list's columns: its name and plays, most played first. */
+function topColumns<T extends NamePlays>(label: string): Column<T>[] {
+  return [
+    { key: "name", label },
+    { key: "plays", label: "Plays", kind: "number" },
+  ];
+}
 
 export default function Overview() {
   const [params, setParams] = useSearchParams();
@@ -137,14 +145,6 @@ function OverviewBody({
   const { start, end } = data.range;
   const selected = data.selected?.label ?? null;
   const overTimeSpec = useMemo(() => charts.overTime(data.over_time, measure, data.grain, selected), [data.over_time, measure, data.grain, selected]);
-  const topSpecs = useMemo(
-    () => ({
-      artists: charts.topBar(data.top.artists, "Artist"),
-      tracks: charts.topBar(data.top.tracks, "Track"),
-      albums: charts.topBar(data.top.albums, "Album"),
-    }),
-    [data.top],
-  );
   const heatSpec = useMemo(() => charts.heatmap(data.heatmap), [data.heatmap]);
   const newSpec = useMemo(() => charts.newArtists(data.new_artists, data.inner_grain), [data.new_artists, data.inner_grain]);
   const genreSpec = useMemo(() => (data.genres ? charts.genreLines(data.genres.panels, data.inner_grain) : null), [data.genres, data.inner_grain]);
@@ -183,9 +183,20 @@ function OverviewBody({
         <Card>
           <Tabs
             tabs={[
-              { key: "artists", label: "Artists", content: <VegaChart spec={topSpecs.artists} /> },
-              { key: "tracks", label: "Tracks", content: <VegaChart spec={topSpecs.tracks} /> },
-              { key: "albums", label: "Albums", content: <VegaChart spec={topSpecs.albums} /> },
+              {
+                key: "artists",
+                label: "Artists",
+                content: (
+                  <DataTable
+                    rows={data.top.artists}
+                    columns={topColumns("Artist")}
+                    maxHeight={420}
+                    onRowClick={(artist) => navigate(`/dashboards/artist?${new URLSearchParams({ artist: artist.artist_key, start, end })}`)}
+                  />
+                ),
+              },
+              { key: "tracks", label: "Tracks", content: <DataTable rows={data.top.tracks} columns={topColumns("Track")} maxHeight={420} /> },
+              { key: "albums", label: "Albums", content: <DataTable rows={data.top.albums} columns={topColumns("Album")} maxHeight={420} /> },
               {
                 key: "per-year",
                 label: "#1 per year",

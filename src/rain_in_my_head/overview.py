@@ -131,14 +131,14 @@ def _kpi_values(df: pd.DataFrame) -> dict[str, float]:
 
 
 def top_lists(df: pd.DataFrame, n: int = 20) -> dict[str, pd.DataFrame]:
-    """Top artists, tracks and albums: columns `name`, `plays`, most played first."""
+    """Top artists, tracks and albums: columns `name`, `plays`, most played first. Artists also carry `artist_key`."""
     named = df.assign(
         track=df["artist_name"] + " – " + df["track_name"],
         album=df["artist_name"] + " – " + df["album_name"].fillna(""),
     )
     albums = named[named["album_name"].fillna("") != ""]
     return {
-        "artists": _top(named, "artist_name", n),
+        "artists": _top_artists(named, n),
         "tracks": _top(named, "track", n),
         "albums": _top(albums, "album", n),
     }
@@ -146,6 +146,13 @@ def top_lists(df: pd.DataFrame, n: int = 20) -> dict[str, pd.DataFrame]:
 
 def _top(df: pd.DataFrame, field: str, n: int) -> pd.DataFrame:
     return df.groupby(field).size().nlargest(n).rename("plays").reset_index().rename(columns={field: "name"})
+
+
+def _top_artists(df: pd.DataFrame, n: int) -> pd.DataFrame:
+    """Artists grouped by `artist_key`, so a row's count matches the Artist page. The name is the first spelling seen."""
+    plays = df.groupby("artist_key").size().nlargest(n).rename("plays")
+    names = df.drop_duplicates("artist_key").set_index("artist_key")["artist_name"].rename("name")
+    return plays.to_frame().join(names).reset_index()
 
 
 def top_per_year(data: pd.DataFrame) -> pd.DataFrame:

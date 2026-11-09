@@ -344,7 +344,11 @@ def overview(
         "empty": False,
         "kpis": [{"label": label, "value": _value(value), "delta": _value(change)}
                  for label, (value, change) in ov.kpis(df, ov.previous(data, start_, end_)).items()],
-        "top": {k: _records(v, ["name", "plays"]) for k, v in top.items()},
+        "top": {
+            "artists": _records(top["artists"], ["name", "plays", "artist_key"]),
+            "tracks": _records(top["tracks"], ["name", "plays"]),
+            "albums": _records(top["albums"], ["name", "plays"]),
+        },
         "top_per_year": _records(ov.top_per_year(data), {"year": "year", "artist_name": "artist", "plays": "plays", "share": "share"}),
         "heatmap": _records(ov.heatmap(df), {"weekday_name": "weekday", "hour": "hour", "plays": "plays"}),
         "new_artists": _records(ov.new_artists(data, start_, end_, inner), {"artist_first_play": "start", "new_artists": "count"}),
