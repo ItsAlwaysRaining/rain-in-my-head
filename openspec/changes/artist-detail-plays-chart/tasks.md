@@ -11,11 +11,11 @@
 
 ## 3. Web: types and data
 
-- [ ] 3.1 Extend the `Artist` response type and `fetchArtist` params (`month`) in `web/src/api.ts`; verify with `npm run typecheck` in `web/`
+- [x] 3.1 Extend the `Artist` response type and `fetchArtist` params (`month`) in `web/src/api.ts`; verify with `npm run typecheck` in `web/`
 
 ## 4. Web: header
 
-- [ ] 4.1 Add "first played <date>" to the header caption in `web/src/pages/Artist.tsx`, using the dashboard's date format; verify on a page with plays by running `npm run dev` and checking the line matches the spec scenario
+- [x] 4.1 Add "first played <date>" to the header caption in `web/src/pages/Artist.tsx`, using the dashboard's date format; verify on a page with plays by running `npm run dev` and checking the line matches the spec scenario
 
 ## 5. Web: Plays per month chart
 

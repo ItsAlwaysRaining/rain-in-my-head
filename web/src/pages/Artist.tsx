@@ -8,7 +8,7 @@ import { fetchArtist, NO_ART, type ArtistSong } from "../api";
 import { songColumns } from "../components/columns";
 import { DataTable } from "../components/DataTable";
 import { BackLink, ErrorState, Loading, Notice } from "../components/ui";
-import { formatCount } from "../format";
+import { formatCount, formatDayMonthYear } from "../format";
 import styles from "./Artist.module.css";
 
 export default function Artist() {
@@ -50,6 +50,7 @@ export default function Artist() {
             {data.period === null
               ? `${formatCount(data.all_time_plays)} plays · all time`
               : `${formatCount(data.period_plays)} plays in ${data.period.label} · ${formatCount(data.all_time_plays)} all time`}
+            {data.first_played && ` · first played ${formatDayMonthYear(data.first_played)}`}
           </p>
         </div>
       </div>
