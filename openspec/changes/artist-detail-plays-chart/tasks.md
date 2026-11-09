@@ -2,8 +2,8 @@
 
 ## 1. Data: first play and monthly counts
 
-- [ ] 1.1 Add `first_played` and zero-filled `monthly` (`month`, `plays`) to `ArtistPage` in `src/rain_in_my_head/artist.py`, computed from the existing `plays` frame; verify with a unit test in `tests/` covering a gap month and an artist with one play day
-- [ ] 1.2 Add an optional `month` (YYYY-MM) argument to `artist_page()`; a month outside the period is ignored; verify with a unit test that songs are filtered to that month and that an out-of-period month returns the full song list
+- [x] 1.1 Add `first_played` and zero-filled `monthly` (`month`, `plays`) to `ArtistPage` in `src/rain_in_my_head/artist.py`, computed from the existing `plays` frame; verify with a unit test in `tests/` covering a gap month and an artist with one play day
+- [x] 1.2 Add an optional `month` (YYYY-MM) argument to `artist_page()`; a month outside the period is ignored; verify with a unit test that songs are filtered to that month and that an out-of-period month returns the full song list
 
 ## 2. API
 

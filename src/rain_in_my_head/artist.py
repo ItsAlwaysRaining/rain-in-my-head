@@ -8,6 +8,7 @@ filters as `genre_plays`. Spec: specs/001-new-artist-page/.
 from __future__ import annotations
 
 import base64
+import re
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import date
@@ -76,6 +77,8 @@ class ArtistPage:
     period: tuple[date, date] | None  # None means all time
     period_plays: int
     all_time_plays: int
+    first_played: str | None  # ISO day of the artist's first play, all time
+    monthly: list[tuple[str, int]]  # ("YYYY-MM", plays), zero-filled, one per month of the chart's range
     songs: pd.DataFrame  # track_key, name, album_name, art, thumb, plays; most played first
 
     @property
@@ -83,8 +86,20 @@ class ArtistPage:
         return None if self.period is None else period_label(*self.period)
 
 
-def artist_page(db_path: Path, artist_key: str, start: date | None, end: date | None) -> ArtistPage | None:
-    """One artist's header counts and songs in the period (all time without one). None if they have no plays."""
+def monthly_counts(days: pd.Series, first: str, last: str) -> list[tuple[str, int]]:
+    """Plays per calendar month from `first` to `last` (ISO days), zero for months with none."""
+    counts = days.str[:7].value_counts()
+    months = pd.period_range(first[:7], last[:7], freq="M")
+    return [(str(m), int(counts.get(str(m), 0))) for m in months]
+
+
+def artist_page(
+    db_path: Path, artist_key: str, start: date | None, end: date | None, month: str | None = None
+) -> ArtistPage | None:
+    """One artist's header counts, monthly plays and songs in the period (all time without one).
+
+    `month` ("YYYY-MM") narrows the songs to that month. A month outside the period is ignored.
+    None if they have no plays."""
     with closing(connect_readonly(db_path)) as conn:
         plays = pd.read_sql(
             f"SELECT {PLAY_COLUMNS} FROM scrobbles s WHERE s.artist_key = ? AND s.played_at >= {MIN_PLAYED_AT}",  # noqa: S608 only module constants are interpolated; visitor values are bound
@@ -95,8 +110,15 @@ def artist_page(db_path: Path, artist_key: str, start: date | None, end: date | 
         return None
     period = (start, end) if start is not None and end is not None else None
     in_period = plays if period is None else plays[plays["day"].between(start.isoformat(), end.isoformat())]
+    if period is None:
+        monthly = monthly_counts(plays["day"], plays["day"].min(), plays["day"].max())
+    else:
+        monthly = monthly_counts(in_period["day"], start.isoformat(), end.isoformat())
+    shown = in_period
+    if month is not None and re.fullmatch(r"\d{4}-\d{2}", month) and (period is None or start.isoformat()[:7] <= month <= end.isoformat()[:7]):
+        shown = in_period[in_period["day"].str.startswith(month)]
     songs = (
-        gn.songs(in_period, artist_key) if not in_period.empty
+        gn.songs(shown, artist_key) if not shown.empty
         else pd.DataFrame(columns=["track_key", "name", "album_name", "art", "thumb", "plays"])
     )
     return ArtistPage(
@@ -106,5 +128,7 @@ def artist_page(db_path: Path, artist_key: str, start: date | None, end: date | 
         period=period,
         period_plays=len(in_period),
         all_time_plays=len(plays),
+        first_played=plays["day"].min(),
+        monthly=monthly,
         songs=songs,
     )
