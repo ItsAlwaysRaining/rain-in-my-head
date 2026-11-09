@@ -1,13 +1,14 @@
 """Usage records, the per-person limit and the owner's report (specs/012-usage-tracking).
 
 Every record is a row in `usage_events` in the visitor database (Neon). The limit on heavy requests is counted
-from the same rows. Nothing here takes, stores or logs an IP address, a code or a cookie.
+from the same rows. Nothing here takes, stores or logs an IP address, a code or a cookie, except the hash of a
+client address for visitors with no login (`anonymous_usage`, see heavy_request_anonymous).
 """
 
 from __future__ import annotations
 
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from rain_in_my_head import config, neon
 
@@ -285,7 +286,34 @@ def heavy_request(url: str, viewer_id: str | int, page: str, feature: str, detai
     raise RateLimited(f"You're going a bit fast. Try again in {_seconds(wait)}.", wait)
 
 
-# ---- Retention (research R8) -------------------------------------------------------------------------------
+def heavy_request_anonymous(url: str, visitor_hash: str, page: str, feature: str) -> None:
+    """The same limit for a visitor with no login, counted per hashed client address in `anonymous_usage`.
+
+    `visitor_hash` is a hash of the address (see api._client_hash), so no address is stored. Raises RateLimited
+    when over the limit; lets neon errors through, so the caller refuses the request."""
+    allowed = neon.query(
+        url,
+        "insert into anonymous_usage (visitor_hash, page, feature) select $1::text, $2::text, $3::text "  # noqa: S608 only module constants are interpolated; values are bound
+        "where (select count(*) from anonymous_usage where visitor_hash = $1::text and at > now() - interval '1 minute') < $4::int "
+        f"and (select count(*) from anonymous_usage where visitor_hash = $1::text and at >= {_DAY_START}) < $5::int "
+        "returning 1 as ok",
+        [visitor_hash, page, feature, HEAVY_PER_MINUTE, HEAVY_PER_DAY],
+    )
+    if allowed:
+        return
+    day = neon.query(
+        url,
+        f"select count(*) as n from anonymous_usage where visitor_hash = $1::text and at >= {_DAY_START}",  # noqa: S608 only module constants are interpolated; values are bound
+        [visitor_hash],
+    )
+    if day and _n(day[0].get("n")) >= HEAVY_PER_DAY:
+        now = datetime.now(timezone.utc)
+        midnight = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        raise RateLimited("You've reached today's limit. It resets at midnight UTC.", max(1, int((midnight - now).total_seconds())))
+    raise RateLimited("You're going a bit fast. Try again in a minute.", 60)
+
+
+# ---- Retention (research R8)-------------------------------------------------------------------------------
 
 def prune(url: str) -> int:
     """Delete usage records older than RETENTION_MONTHS and say how many went. Deletes nothing else: not people,
