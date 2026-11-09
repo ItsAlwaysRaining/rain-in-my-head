@@ -110,6 +110,11 @@ export interface NamePlays {
   plays: number;
 }
 
+/** A top artist; `artist_key` opens its Artist page. */
+export interface TopArtist extends NamePlays {
+  artist_key: string;
+}
+
 export interface GenrePanel {
   genre: string;
   points: { start: string; share: number; plays: number }[];
@@ -142,7 +147,7 @@ export interface OverviewEmpty extends Partial<OverviewBase> {
 export interface OverviewFull extends OverviewBase {
   empty: false;
   kpis: Kpi[];
-  top: { artists: NamePlays[]; tracks: NamePlays[]; albums: NamePlays[] };
+  top: { artists: TopArtist[]; tracks: NamePlays[]; albums: NamePlays[] };
   top_per_year: { year: number; artist: string; plays: number; share: number }[];
   heatmap: { weekday: string; hour: number; plays: number }[];
   new_artists: { start: string; count: number }[];

@@ -2,7 +2,7 @@
 // then laid out to match the Figma prototype (specs/005-prototype-redesign). Titles live in the cards
 // around the charts, not in the specs.
 import type { TopLevelSpec } from "vega-lite";
-import type { GenrePanel, InnerGrain, NamePlays, OverTimeRow } from "../api";
+import type { GenrePanel, InnerGrain, OverTimeRow } from "../api";
 import { capitalize } from "../format";
 import { GENRE_COLORS, NIGHT, PAGE, RAIN, RAIN_DIM, RAIN_RAMP } from "./config";
 
@@ -40,23 +40,6 @@ export function overTime(rows: OverTimeRow[], measure: "scrobbles" | "hours", gr
       ],
     },
   };
-}
-
-/** Horizontal bars with the play count at the end of each bar. */
-export function topBar(rows: NamePlays[], label: string): TopLevelSpec {
-  return {
-    data: { values: rows },
-    height: Math.max(120, 24 * rows.length),
-    encoding: {
-      y: { field: "name", type: "nominal", sort: "-x", title: null, axis: { labelLimit: 320, labelOverlap: false, domain: false, ticks: false, labelPadding: 12 } },
-      x: { field: "plays", type: "quantitative", title: null, axis: null },
-      tooltip: [
-        { field: "name", type: "nominal", title: label },
-        { field: "plays", type: "quantitative" },
-      ],
-    },
-    layer: [{ mark: { ...BAR, height: 14 } }, { mark: { ...LABEL, align: "left", dx: 8 }, encoding: { text: { field: "plays", type: "quantitative", format: "," } } }],
-  } as TopLevelSpec;
 }
 
 /** Plays by weekday and hour. Clicking a square selects its weekday and hour. */
