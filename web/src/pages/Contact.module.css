@@ -7,7 +7,7 @@
   white-space: nowrap;
 }
 
-/* Body: "Get in touch", the links and the buttons, 16 apart. */
+/* Body: "Get in touch" and the links, 16 apart. */
 .body {
   display: flex;
   flex-direction: column;
@@ -77,10 +77,4 @@
 .link:hover .address {
   color: var(--rain-strong);
   text-decoration: underline;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
 }
