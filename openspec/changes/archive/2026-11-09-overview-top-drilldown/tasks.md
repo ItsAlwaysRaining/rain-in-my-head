@@ -15,5 +15,5 @@
 
 ## 3. Tests and checks
 
-- [ ] 3.1 Scoped check for the Overview: run the existing overview tests and the dashboard-overview scenarios for period selection. Verify: they pass, and no other page is affected.
+- [x] 3.1 Scoped check for the Overview: run the existing overview tests and the dashboard-overview scenarios for period selection. Verify: they pass, and no other page is affected.
 - [x] 3.2 Run the full regression once before the PR (`uv run pytest`, `npm test` if present, `npm run build`). Verify: all pass, output pasted in the PR description.
