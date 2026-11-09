@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Asks a deployment two questions before it is allowed to serve visitors (openspec/specs/production-deploy):
 #   1. /api/health says the app is up.
-#   2. A locked data route, asked with no login, is refused.
+#   2. A route no visitor may open (an unknown path), asked with no login, is refused with login_required.
 # Retries for two minutes. Prints status codes and a verdict only: no body, header or cookie reaches the log.
 # Needs VERCEL_CLI (the pinned package name) and VERCEL_TOKEN in the environment.
 set -u
@@ -19,10 +19,10 @@ ask() {
 
 for attempt in $(seq 1 12); do
   health="$(ask /api/health)"
-  locked="$(ask /api/genre)"
+  locked="$(ask /api/probe-not-a-route)"
   health_code="${health%% *}"
   locked_code="${locked%% *}"
-  echo "attempt $attempt: /api/health -> $health_code, /api/genre with no login -> $locked_code"
+  echo "attempt $attempt: /api/health -> $health_code, /api/probe-not-a-route with no login -> $locked_code"
   if [ "$health_code" = 200 ] && [ "${health#* }" = '{"ok":true}' ] \
      && [ "$locked_code" = 403 ] && printf '%s' "${locked#* }" | grep -q 'login_required'; then
     echo "Both checks passed"
