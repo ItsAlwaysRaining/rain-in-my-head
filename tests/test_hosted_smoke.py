@@ -66,17 +66,18 @@ def test_health_says_only_that_the_app_is_up(client):
     assert response.json() == {"ok": True}
 
 
-def test_a_locked_route_needs_a_login(client):
-    response = client.get("/api/genre")
+def test_the_visitors_page_stays_closed_to_anonymous_visitors(client):
+    # Guest pages open to anonymous visitors (#81), but Visitors is refused on the hosted site for everyone.
+    response = client.get("/api/visitors")
     assert response.status_code == 403
-    assert response.json()["error"] == "login_required"
+    assert response.json()["error"] == "refused"
 
 
 def test_a_forged_cookie_is_not_a_login(client):
     client.cookies.set("session", "guest-session.not-the-real-signature")
-    response = client.get("/api/genre")
-    assert response.status_code == 403
-    assert response.json()["error"] == "login_required"
+    response = client.get("/api/me")
+    assert response.status_code == 200
+    assert response.json()["logged_in"] is False
 
 
 def test_typed_sql_is_refused_even_for_a_trusted_visitor(client):
@@ -99,11 +100,14 @@ def test_a_guest_gets_the_playlist_form_data_and_preview(client):
     assert "title" in preview.json()
 
 
-def test_the_playlist_routes_need_a_login(client):
-    for method, path in (("get", "/api/playlists/meta"), ("post", "/api/playlists/preview")):
-        response = getattr(client, method)(path, **({"json": PREVIEW_BODY} if method == "post" else {}))
-        assert response.status_code == 403
-        assert response.json()["error"] == "login_required"
+def test_an_anonymous_visitor_gets_the_playlist_form_data_and_preview(client):
+    # Playlist Generator is a guest page, so anonymous visitors open it too (#81). Create stays refused (below).
+    meta = client.get("/api/playlists/meta")
+    assert meta.status_code == 200
+    assert "weekdays" in meta.json()
+    preview = client.post("/api/playlists/preview", json=PREVIEW_BODY)
+    assert preview.status_code == 200
+    assert "title" in preview.json()
 
 
 def test_creating_a_playlist_is_refused_even_for_a_trusted_visitor(client):
@@ -155,7 +159,10 @@ def test_typed_sql_is_refused_for_a_guest_too(client):
     assert response.json() == {"error": "refused", "message": REFUSAL}
 
 
-def test_the_analyst_routes_need_a_login(client):
+def test_an_anonymous_visitor_opens_the_analyst_and_typed_sql_is_still_refused(client):
+    # The Analyst is a guest page, so anonymous visitors open it. Typed SQL stays refused (#81).
     response = client.get("/api/sql/meta")
-    assert response.status_code == 403
-    assert response.json()["error"] == "login_required"
+    assert response.status_code == 200
+    typed = client.post("/api/sql", json={"sql": "select count(*) from scrobbles"})
+    assert typed.status_code == 403
+    assert typed.json() == {"error": "refused", "message": REFUSAL}
