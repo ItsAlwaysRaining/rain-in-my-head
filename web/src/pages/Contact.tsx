@@ -1,9 +1,10 @@
-// Contact Me: Email, LinkedIn, GitHub and Last.fm links, Send email and Download CV (Figma Contact Me ·
+// Contact Me: Email, LinkedIn, GitHub and Last.fm links, Send email and View CV (Figma Contact Me ·
 // Desktop; openspec/specs/contact-page). Icons are the Figma icon components in public/contact/.
 import { ButtonLink, PageHeader } from "../components/ui";
 import styles from "./Contact.module.css";
 
 const EMAIL = "aowheeler@proton.me";
+const CV_URL = "https://app.notion.com/p/R-sum-Data-Product-Designer-407bd4600b7981808f4fef088372c75e";
 
 const LINKS = [
   // The mail icon is the inner group of icon/mail, drawn at 1.25x and centred as in the design.
@@ -42,8 +43,9 @@ export default function Contact() {
           <ButtonLink variant="primary" href={`mailto:${EMAIL}`}>
             Send email
           </ButtonLink>
-          <ButtonLink href="/contact/cv.pdf" download>
-            Download CV
+          <ButtonLink href={CV_URL} target="_blank" rel="noreferrer">
+            View CV
+            <span className={styles.visuallyHidden}> (opens in a new tab)</span>
           </ButtonLink>
         </div>
       </section>
