@@ -5,7 +5,7 @@
 ### Requirement: Contact links
 Below the title **Contact Me** and its intro line, the page SHALL have a section headed **Get in touch** listing, in this order, Email, LinkedIn, GitHub, Last.fm, Résumé and Portfolio. Each entry SHALL show the service's icon, the name and the address. Each entry SHALL be a link: Email SHALL open a `mailto:` link to the shown address, and every other entry SHALL open the shown page in a new tab. Résumé SHALL open the owner's résumé page on Notion (`https://app.notion.com/p/R-sum-Data-Product-Designer-407bd4600b7981808f4fef088372c75e`), and Portfolio SHALL open the owner's portfolio page on Notion (`https://app.notion.com/p/3f3bd4600b7980d088a1e74e415022d3`). Résumé and Portfolio SHALL use the Notion icon. Every entry SHALL point at the owner's real address or page, with no placeholder values: email `August@storyandstructure.studio`, LinkedIn `augustowheeler`, GitHub `ItsAlwaysRaining`, Last.fm `UntiLiUnderstan`.
 
-#### Scenario: Six entries in order
+#### Scenario: Four entries in order
 - **WHEN** the Contact Me page is open
 - **THEN** the Get in touch section lists Email, LinkedIn, GitHub, Last.fm, Résumé and Portfolio in that order, each with an icon, a name and an address
 
