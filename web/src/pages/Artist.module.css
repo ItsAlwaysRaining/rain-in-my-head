@@ -18,6 +18,14 @@
   margin-bottom: var(--space-2);
 }
 
+.selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
 /* Chart title: Lexend SemiBold 18 */
 .subheader {
   font-family: var(--font);

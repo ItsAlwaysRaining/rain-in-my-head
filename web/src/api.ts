@@ -205,6 +205,12 @@ export interface ArtistSong {
   plays: number;
 }
 
+/** "YYYY-MM" and the plays in that month */
+export interface MonthPlays {
+  month: string;
+  plays: number;
+}
+
 export type Artist =
   | { found: false }
   | {
@@ -219,7 +225,7 @@ export type Artist =
       /** ISO day of the first play, all time */
       first_played: string | null;
       /** One point per month of the chart's range, zero for months with no plays */
-      monthly: { month: string; plays: number }[];
+      monthly: MonthPlays[];
       songs: ArtistSong[];
     };
 

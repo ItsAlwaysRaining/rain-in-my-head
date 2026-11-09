@@ -19,11 +19,11 @@
 
 ## 5. Web: Plays per month chart
 
-- [ ] 5.1 Build a Vega-Lite line spec from `monthly` (zero-filled, RAIN line colour from `web/src/charts/config.ts`) and render it with `VegaChart` above the Songs heading; verify the chart shows one point per month with zeros in gaps
-- [ ] 5.2 Wire the point selection to a `month` URL parameter (set on click, cleared by "show every month"); verify clicking a point updates the URL and the Songs list, and that "show every month" restores the list
-- [ ] 5.3 Show the "Oct 2026 only"-style label with a "show every month" button while `month` is set; verify the label text and button appear and disappear with the URL parameter
+- [x] 5.1 Build a Vega-Lite line spec from `monthly` (zero-filled, RAIN line colour from `web/src/charts/config.ts`) and render it with `VegaChart` above the Songs heading; verify the chart shows one point per month with zeros in gaps
+- [x] 5.2 Wire the point selection to a `month` URL parameter (set on click, cleared by "show every month"); verify clicking a point updates the URL and the Songs list, and that "show every month" restores the list
+- [x] 5.3 Show the "Oct 2026 only"-style label with a "show every month" button while `month` is set; verify the label text and button appear and disappear with the URL parameter
 
 ## 6. Verification
 
-- [ ] 6.1 Run `npm run build` in `web/` and `uv run pytest`; both pass with no new warnings
+- [x] 6.1 Run `npm run build` in `web/` and `uv run pytest`; both pass with no new warnings
 - [ ] 6.2 Click through the artist page with a multi-month artist in the dev server, matching Figma nodes 263:1930 and 344:3549; record any visual difference in the PR description
