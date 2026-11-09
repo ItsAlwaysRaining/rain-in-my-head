@@ -63,7 +63,8 @@ def log_in_as(client, session_id):
 
 
 def test_runs_in_hosted_mode():
-    assert config.HOSTED, "LISTENING_HOSTED was not read: the other tests would be testing the Mac's rules"
+    # The hosted_mode fixture sets this for every test. If it stops doing so, the other tests would test the Mac's rules.
+    assert config.HOSTED, "hosted_mode did not set config.HOSTED: the other tests would be testing the Mac's rules"
     assert config.DB_PATH == PUBLIC_DB, "the app is not reading the two-year copy"
 
 
