@@ -16,12 +16,6 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_DB = ROOT / "data" / "public.db"
 
-# config.py reads these once, when it is first imported, so they are set before anything from the app is.
-# They are assigned, not defaulted, so a real .env or shell value can never point the test at a live database.
-os.environ["LISTENING_HOSTED"] = "1"
-os.environ["LISTENING_DB"] = str(PUBLIC_DB)
-os.environ["DATABASE_URL"] = ""
-os.environ["SESSION_SECRET"] = "smoke-test-secret-not-used-anywhere-else"  # noqa: S105 a throwaway value for the test run
 sys.path.insert(0, str(ROOT))
 
 if not PUBLIC_DB.exists():
@@ -38,6 +32,19 @@ SESSIONS = {
     "guest-session": viewers.Session("v-guest", "Test Guest", "guest", access.pages_for("guest", set())),
     "trusted-session": viewers.Session("v-trusted", "Test Trusted", "trusted", access.pages_for("trusted", set())),
 }
+
+
+@pytest.fixture(autouse=True)
+def hosted_mode(monkeypatch):
+    """Sets hosted mode on `config` for each test. The app reads these on every request, so the patch applies.
+
+    config.py reads the environment once, at first import, so setting environment variables here would only work
+    if no other test module had imported the app first. Patching the values keeps this module independent of order.
+    """
+    monkeypatch.setattr(config, "HOSTED", True)
+    monkeypatch.setattr(config, "DB_PATH", PUBLIC_DB)
+    monkeypatch.setattr(config, "DATABASE_URL", "")
+    monkeypatch.setattr(config, "SESSION_SECRET", "smoke-test-secret-not-used-anywhere-else")  # noqa: S105 a throwaway value for the test run
 
 
 @pytest.fixture(autouse=True)
