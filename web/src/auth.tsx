@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     local,
     loggedIn,
     name: me?.name,
-    can: (page) => local || (loggedIn && pages.has(page)),
+    can: (page) => local || pages.has(page),
     logOut: () => logOut.mutateAsync(),
   };
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
@@ -75,7 +75,10 @@ export function RequireAccess({ page, children }: { page: PageKey; children: Rea
   const { pathname, search } = useLocation();
   if (auth.status === "loading") return <Loading />;
   if (auth.status === "error") return <ErrorState error={auth.error} />;
-  if (!auth.local && !auth.loggedIn) return <Navigate to={`/login?next=${encodeURIComponent(pathname + search)}`} replace />;
-  if (!auth.can(page)) return <NotAvailable />;
+  // Visitors with no login open the guest pages (open-dashboards-without-login). Others are sent to log in.
+  if (!auth.can(page)) {
+    if (!auth.loggedIn) return <Navigate to={`/login?next=${encodeURIComponent(pathname + search)}`} replace />;
+    return <NotAvailable />;
+  }
   return <>{children}</>;
 }

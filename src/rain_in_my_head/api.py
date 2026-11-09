@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import contextlib
 import functools
+import hashlib
 import json
 import math
 import queue
@@ -77,7 +78,15 @@ async def _session(request: Request) -> viewers.Session | None:
     return await run_in_threadpool(viewers.lookup_session, config.DATABASE_URL, session_id)
 
 
-UNAVAILABLE = ("unavailable", "The site can't check codes right now. Try again in a minute.")
+def _client_hash(request: Request) -> str:
+    """A hash of the visitor's address, for the limit on visitors with no login. The address is never stored.
+    Vercel sets X-Forwarded-For; the first entry is the visitor."""
+    forwarded = request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    address = forwarded or (request.client.host if request.client else "unknown")
+    return hashlib.sha256(address.encode()).hexdigest()
+
+
+UNAVAILABLE = ("unavailable","The site can't check codes right now. Try again in a minute.")
 
 
 @app.middleware("http")
@@ -94,10 +103,13 @@ async def access_guard(request: Request, call_next):
         except neon.NeonUnavailable:
             return _error(503, *UNAVAILABLE)
         if session is None:
-            return _error(403, "login_required", "Log in with your invite code.")
-        if not (access.allowed(session.pages, method, path) or access.session_allowed(session.pages, method, path)):
-            return _error(403, "not_available", "That page isn't available to you.")
-        request.state.session = session  # the heavy routes and /api/events use it, so there's no second lookup
+            # No login: the guest pages open (open-dashboards-without-login). Anything else asks for a code.
+            if not access.allowed(access.TIER_PAGES["guest"], method, path):
+                return _error(403, "login_required", "Log in with your invite code.")
+        else:
+            if not (access.allowed(session.pages, method, path) or access.session_allowed(session.pages, method, path)):
+                return _error(403, "not_available", "That page isn't available to you.")
+            request.state.session = session  # the heavy routes and /api/events use it, so there's no second lookup
     return await call_next(request)
 
 
@@ -199,7 +211,8 @@ async def me(request: Request):
         session = await _session(request)
     except neon.NeonUnavailable:
         return _error(503, *UNAVAILABLE)
-    return _me(session) if session else {"logged_in": False}
+    # No login: the guest pages, so the dashboards open for anyone (open-dashboards-without-login).
+    return _me(session) if session else {"logged_in": False, "pages": sorted(access.TIER_PAGES["guest"])}
 
 
 @app.post("/api/login")
@@ -381,8 +394,12 @@ def _heavy(request: Request, page: str, feature: str, detail: str | None = None)
     their limit (429) or the visitor database can't say (503), else None. Nothing is checked on your Mac."""
     if not config.HOSTED:
         return None
+    session = getattr(request.state, "session", None)
     try:
-        usage.heavy_request(config.DATABASE_URL, request.state.session.viewer_id, page, feature, detail)
+        if session is None:  # no login: counted per hashed client address
+            usage.heavy_request_anonymous(config.DATABASE_URL, _client_hash(request), page, feature)
+        else:
+            usage.heavy_request(config.DATABASE_URL, session.viewer_id, page, feature, detail)
     except usage.RateLimited as e:
         return JSONResponse(
             {"error": "rate_limited", "message": e.message, "retry_after": e.retry_after},
