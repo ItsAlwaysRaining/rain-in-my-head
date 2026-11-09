@@ -26,4 +26,4 @@
 ## 6. Verification
 
 - [x] 6.1 Run `npm run build` in `web/` and `uv run pytest`; both pass with no new warnings
-- [ ] 6.2 Click through the artist page with a multi-month artist in the dev server, matching Figma nodes 263:1930 and 344:3549; record any visual difference in the PR description
+- [x] 6.2 Click through the artist page with a multi-month artist in the dev server, matching Figma nodes 263:1930 and 344:3549; record any visual difference in the PR description (done: eight differences recorded in PR #80; the build keeps the spec as written by decision)
