@@ -27,7 +27,7 @@ For every change:
 2. Create the worktree and branch from it: `git worktree add ../rain-in-my-head-<short-description> -b <type>/<short-description> origin/main`. Use `feature/`, `fix/`, `docs/` or `chore/`. Do all work inside that worktree.
 3. Commit on the branch.
 4. Push and open a PR: `git push -u origin HEAD`, then `gh pr create`, filling in `.github/pull_request_template.md`. Put `Closes #N` in the description for each issue the PR resolves.
-5. **Never merge.** The user reviews and merges on GitHub (`gh pr merge` is denied in `.claude/settings.json`).
+5. **Merge only PRs the user has approved in this session.** Claude may merge a PR with `gh pr merge` once the user has approved that specific PR in the current session. Approval does not carry over to later sessions or other PRs. Merging `main` deploys to production, so run any database migration first. (`gh pr merge` is denied in `.claude/settings.json`; that denial is separate and must be lifted there before this rule works.)
 6. After the user merges, remove the worktree: `git worktree remove ../rain-in-my-head-<short-description>`.
 
 **Never leave code in limbo.** As soon as code has been written, commit it. Then do one of these before ending the task or the session:
