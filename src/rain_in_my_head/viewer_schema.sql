@@ -66,3 +66,16 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON login_attempts TO rain_app;
 -- change or delete a record; `viewer prune` (the owner role) does the deleting.
 GRANT INSERT ON usage_events TO rain_app;
 GRANT SELECT (viewer_id, kind, page, at) ON usage_events TO rain_app;
+
+-- Heavy requests from visitors with no login (specs/open-dashboards-without-login): counted per hashed client
+-- address, so one visitor can't use up the allowance for everyone. The address itself is never stored.
+CREATE TABLE IF NOT EXISTS anonymous_usage (
+    id           bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    visitor_hash text NOT NULL,  -- sha256 of the client address
+    page         text NOT NULL,
+    feature      text NOT NULL,
+    at           timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS anonymous_usage_hash_at ON anonymous_usage (visitor_hash, at DESC);
+GRANT INSERT ON anonymous_usage TO rain_app;
+GRANT SELECT (visitor_hash, at) ON anonymous_usage TO rain_app;
