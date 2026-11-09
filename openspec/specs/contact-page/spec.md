@@ -1,7 +1,7 @@
 # contact-page Specification
 
 ## Purpose
-The Contact Me page of the TypeScript app: how visitors to the portfolio site reach the owner by email or on LinkedIn, GitHub and Last.fm, and get the owner's CV.
+The Contact Me page of the TypeScript app: how visitors to the portfolio site reach the owner by email or on LinkedIn, GitHub and Last.fm, and open the owner's résumé and portfolio on Notion.
 
 ## Requirements
 
