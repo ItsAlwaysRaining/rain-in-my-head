@@ -210,6 +210,12 @@ export interface ArtistSong {
   plays: number;
 }
 
+/** "YYYY-MM" and the plays in that month */
+export interface MonthPlays {
+  month: string;
+  plays: number;
+}
+
 export type Artist =
   | { found: false }
   | {
@@ -221,6 +227,10 @@ export type Artist =
       period: { start: string; end: string; label: string } | null;
       period_plays: number;
       all_time_plays: number;
+      /** ISO day of the first play, all time */
+      first_played: string | null;
+      /** One point per month of the chart's range, zero for months with no plays */
+      monthly: MonthPlays[];
       songs: ArtistSong[];
     };
 
@@ -228,6 +238,8 @@ export interface ArtistParams {
   artist?: string;
   start?: string;
   end?: string;
+  /** YYYY-MM: narrows the songs to that month */
+  month?: string;
 }
 
 export const fetchArtist = (p: ArtistParams) => getJson<Artist>("/api/artist", { ...p });

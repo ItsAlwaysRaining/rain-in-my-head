@@ -450,10 +450,12 @@ def genre_songs(request: Request, artist_key: str, genre: str | None = None, sta
 # ---- Artist ------------------------------------------------------------------
 
 @app.get("/api/artist")
-def artist(artist: str | None = None, start: date | None = None, end: date | None = None) -> dict:
-    """One artist's page (spec 001): header counts and songs in the period, all time without one."""
+def artist(artist: str | None = None, start: date | None = None, end: date | None = None, month: str | None = None) -> dict:
+    """One artist's page (spec 001): header counts and songs in the period, all time without one.
+
+    `month` (YYYY-MM) narrows the songs to that month; `monthly` and `first_played` are always returned."""
     _require_db()
-    page = ar.artist_page(config.DB_PATH, artist, start, end) if artist else None
+    page = ar.artist_page(config.DB_PATH, artist, start, end, month) if artist else None
     if page is None:
         return {"found": False}
     return {
@@ -466,6 +468,8 @@ def artist(artist: str | None = None, start: date | None = None, end: date | Non
         },
         "period_plays": page.period_plays,
         "all_time_plays": page.all_time_plays,
+        "first_played": page.first_played,
+        "monthly": [{"month": m, "plays": n} for m, n in page.monthly],
         "songs": _records(page.songs, {"track_key": "track_key", "name": "name", "album_name": "album", "thumb": "thumb", "plays": "plays"}),
     }
 
