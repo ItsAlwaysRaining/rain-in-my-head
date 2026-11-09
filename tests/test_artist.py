@@ -88,3 +88,18 @@ def test_month_outside_the_period_is_ignored(db: Path):
 def test_malformed_month_is_ignored(db: Path, bad: str):
     page = artist_page(db, "artist-a", None, None, month=bad)
     assert len(page.songs) == 3
+
+
+def test_api_artist_serialises_first_played_monthly_and_month(db: Path, monkeypatch: pytest.MonkeyPatch):
+    from fastapi.testclient import TestClient
+
+    from rain_in_my_head import api, config
+
+    monkeypatch.setattr(config, "DB_PATH", db)
+    client = TestClient(api.app)
+    body = client.get("/api/artist", params={"artist": "artist-a"}).json()
+    assert body["first_played"] == "2026-03-02"
+    assert body["monthly"][-1] == {"month": "2026-06", "plays": 1}
+    filtered = client.get("/api/artist", params={"artist": "artist-a", "month": "2026-06"}).json()
+    assert [s["name"] for s in filtered["songs"]] == ["Song C"]
+    assert filtered["monthly"] == body["monthly"]

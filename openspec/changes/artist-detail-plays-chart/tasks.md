@@ -7,7 +7,7 @@
 
 ## 2. API
 
-- [ ] 2.1 Serialise `first_played`, `monthly` and the `month` argument in the `/api/artist` route in `src/rain_in_my_head/api.py`; verify with `uv run pytest` and a request to `/api/artist?artist=<key>&month=2026-10` returning the filtered songs
+- [x] 2.1 Serialise `first_played`, `monthly` and the `month` argument in the `/api/artist` route in `src/rain_in_my_head/api.py`; verify with `uv run pytest` and a request to `/api/artist?artist=<key>&month=2026-10` returning the filtered songs
 
 ## 3. Web: types and data
 
