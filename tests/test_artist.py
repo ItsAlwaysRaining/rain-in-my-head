@@ -95,6 +95,7 @@ def test_api_artist_serialises_first_played_monthly_and_month(db: Path, monkeypa
 
     from rain_in_my_head import api, config
 
+    monkeypatch.setattr(config, "HOSTED", False)  # the Mac's rules, whichever test module loaded first
     monkeypatch.setattr(config, "DB_PATH", db)
     client = TestClient(api.app)
     body = client.get("/api/artist", params={"artist": "artist-a"}).json()
