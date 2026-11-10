@@ -229,6 +229,7 @@ def listener_band_artists(df: pd.DataFrame, band: str) -> tuple[pd.DataFrame, fl
         in_band.groupby("artist_key")
         .agg(name=("artist_name", "first"), listeners=("artist_listeners", "first"), plays=("artist_name", "size"))
         .reset_index()
+        .astype({"listeners": int})  # float in v_plays because it can be NULL; these rows all have a count
         .sort_values("plays", ascending=False, kind="stable")
     )
     share = len(in_band) / len(known) if len(known) else 0.0

@@ -8,9 +8,9 @@
 
 ## 2. Web: the page
 
-- [ ] 2.1 In `web/src/api.ts`, add the `MainstreamArtist` and `Mainstream` types and `fetchMainstream(params)`. Verify: `npm run typecheck` in `web/` passes.
-- [ ] 2.2 Create `web/src/pages/Mainstream.tsx`. It shows the band name, its share and the range, a `DataTable` with name, listener count and plays, the empty notice, the unknown-band notice, and `BackLink`. Verify: `npm run dev`, then clicking a bar on the Overview opens the page with the same share and the table's plays add up to the bar's share.
-- [ ] 2.3 Remove the `Mainstream` placeholder from `web/src/pages/Placeholders.tsx` and point the route in `web/src/App.tsx` at the new page. Verify: `npm run typecheck` and `npm run build` pass, and `grep -rn "Mainstream" web/src/pages/Placeholders.tsx` finds nothing.
+- [x] 2.1 In `web/src/api.ts`, add the `MainstreamArtist` and `Mainstream` types and `fetchMainstream(params)`. Verify: `npm run typecheck` in `web/` passes.
+- [x] 2.2 Create `web/src/pages/Mainstream.tsx`. It shows the band name, its share and the range, a `DataTable` with name, listener count and plays, the empty notice, the unknown-band notice, and `BackLink`. Verify: `npm run dev`, then clicking a bar on the Overview opens the page with the same share and the table's plays add up to the bar's share.
+- [x] 2.3 Remove the `Mainstream` placeholder from `web/src/pages/Placeholders.tsx` and point the route in `web/src/App.tsx` at the new page. Verify: `npm run typecheck` and `npm run build` pass, and `grep -rn "Mainstream" web/src/pages/Placeholders.tsx` finds nothing.
 - [ ] 2.4 Check the page at phone width (16px gutters, no horizontal page scroll) and with a band that has no artists in the range. Verify: the browser shows both states as the spec describes.
 
 ## 3. Overview link
@@ -19,5 +19,5 @@
 
 ## 4. Checks
 
-- [ ] 4.1 Scoped check: run `tests/test_mainstream.py` and the existing overview tests (`tests/test_overview_top.py`). Verify: they pass.
-- [ ] 4.2 Full regression once before the PR: `uv run --with pytest --with httpx pytest`, `ruff check src api tests`, `npm run typecheck` and `npm run build` in `web/`. Verify: all pass; output goes in the PR description.
+- [x] 4.1 Scoped check: run `tests/test_mainstream.py` and the existing overview tests (`tests/test_overview_top.py`). Verify: they pass.
+- [x] 4.2 Full regression once before the PR: `uv run --with pytest --with httpx pytest`, `ruff check src api tests`, `npm run typecheck` and `npm run build` in `web/`. Verify: all pass; output goes in the PR description.
