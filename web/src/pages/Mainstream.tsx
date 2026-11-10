@@ -2,7 +2,7 @@
 // ?bucket=&start=&end=. Lists come from /api/mainstream (rain_in_my_head.overview.listener_band_artists).
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { fetchMainstream, type MainstreamArtist, type MainstreamParams } from "../api";
 import { DataTable, type Column } from "../components/DataTable";
 import { BackLink, ErrorState, Loading, Notice, PageHeader } from "../components/ui";
@@ -22,6 +22,7 @@ const columns: Column<MainstreamArtist>[] = [
 
 export function Mainstream() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const asked: MainstreamParams = {
     bucket: params.get("bucket") ?? "",
     start: params.get("start") ?? undefined,
@@ -54,7 +55,12 @@ export function Mainstream() {
       <Notice tone="warning">No artists in the {asked.bucket} band for this range.</Notice>
     ) : (
       <>
-        <DataTable rows={data.artists.slice(0, TOP)} columns={columns} maxHeight={640} />
+        <DataTable
+          rows={data.artists.slice(0, TOP)}
+          columns={columns}
+          maxHeight={640}
+          onRowClick={(artist) => navigate(`/dashboards/artist?${new URLSearchParams({ artist: artist.artist_key, start: data.start ?? "", end: data.end ?? "" })}`)}
+        />
         {data.artists.length > TOP && (
           <p className="caption">
             Showing the top {TOP} of {data.artists.length.toLocaleString("en-GB")} artists.

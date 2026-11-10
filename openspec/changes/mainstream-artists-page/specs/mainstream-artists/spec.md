@@ -43,6 +43,13 @@ The page SHALL use the range carried in its address (`start` and `end`). When th
 - **WHEN** March 2026 is selected on the Overview and the user clicks the `1M–5M` bar
 - **THEN** the page covers 1–31 March 2026 only
 
+### Requirement: Artist rows open the Artist page
+Clicking an artist row on the Mainstream vs. niche page SHALL open the Artist page for that artist, with the same range the Mainstream page shows (`start` and `end`) carried over in the address. The band is not carried over, since each artist belongs to exactly one band.
+
+#### Scenario: Click an artist in a band
+- **WHEN** the Mainstream page shows the band `10k–100k` for 1 March–31 March 2026 and the user clicks the artist Geese
+- **THEN** the Artist page opens for Geese with the range 1–31 March 2026
+
 ### Requirement: The page links back to the Overview
 The page SHALL show a "Back to Dashboards" link that opens the Overview.
 
