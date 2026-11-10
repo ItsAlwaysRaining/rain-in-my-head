@@ -244,6 +244,30 @@ export interface ArtistParams {
 
 export const fetchArtist = (p: ArtistParams) => getJson<Artist>("/api/artist", { ...p });
 
+export interface MainstreamArtist {
+  artist_key: string;
+  name: string;
+  listeners: number;
+  plays: number;
+}
+
+export interface Mainstream {
+  bucket: string;
+  start: string | null;
+  end: string | null;
+  /** The band's share of plays with a known listener count */
+  share: number;
+  artists: MainstreamArtist[];
+}
+
+export interface MainstreamParams {
+  bucket: string;
+  start?: string;
+  end?: string;
+}
+
+export const fetchMainstream = (p: MainstreamParams) => getJson<Mainstream>("/api/mainstream", { ...p });
+
 // ---- SQL ---------------------------------------------------------------------
 
 export interface SqlMeta {

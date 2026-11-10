@@ -216,6 +216,26 @@ def listener_buckets(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def listener_band_artists(df: pd.DataFrame, band: str) -> tuple[pd.DataFrame, float]:
+    """Artists in one listener band with plays in `df`, most played first, and the band's share of plays.
+
+    Columns: `artist_key`, `name`, `listeners`, `plays`. The share divides by the same plays as `listener_buckets`
+    (those with a known listener count), so it matches the bar."""
+    known = df[df["artist_listeners"].notna()].assign(
+        band=lambda d: pd.cut(d["artist_listeners"], LISTENER_BUCKETS, labels=LISTENER_LABELS, right=False)
+    )
+    in_band = known[known["band"] == band]
+    artists = (
+        in_band.groupby("artist_key")
+        .agg(name=("artist_name", "first"), listeners=("artist_listeners", "first"), plays=("artist_name", "size"))
+        .reset_index()
+        .astype({"listeners": int})  # float in v_plays because it can be NULL; these rows all have a count
+        .sort_values("plays", ascending=False, kind="stable")
+    )
+    share = len(in_band) / len(known) if len(known) else 0.0
+    return artists, share
+
+
 def loved(data: pd.DataFrame, df: pd.DataFrame) -> pd.DataFrame:
     """Loved tracks played in `df`, most played first."""
     # `loved` is captured when a scrobble is fetched, so a track counts as loved if any scrobble says so.

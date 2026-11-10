@@ -34,16 +34,3 @@ export function ListeningSlot() {
     </>
   );
 }
-
-export function Mainstream() {
-  return (
-    <>
-      <BackLink />
-      <PageHeader title="Mainstream vs. niche" />
-      <ComingSoon title="The artists behind each bar" issue={12}>
-        Every artist in a Last.fm listener band (for example 100k–1M) that you played in the range, with their listener count and
-        your plays.
-      </ComingSoon>
-    </>
-  );
-}

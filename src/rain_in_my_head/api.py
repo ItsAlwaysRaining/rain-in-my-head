@@ -464,6 +464,33 @@ def genre_songs(request: Request, artist_key: str, genre: str | None = None, sta
     }
 
 
+# ---- Mainstream vs. niche ----------------------------------------------------
+
+@app.get("/api/mainstream")
+def mainstream(bucket: str, start: date | None = None, end: date | None = None) -> dict:
+    """The artists in one Last.fm listener band (openspec/changes/mainstream-artists-page), most played first.
+
+    `start` and `end` default to all time. The share is the band's share of plays with a known listener count."""
+    _require_db()
+    if bucket not in ov.LISTENER_LABELS:
+        raise HTTPException(422, f"Unknown listener band: {bucket}")
+    if start is not None and end is not None and start > end:
+        raise HTTPException(422, "start must not be after end")
+    data = ov.load_plays(config.DB_PATH)
+    if data.empty:
+        return {"bucket": bucket, "start": None, "end": None, "share": 0.0, "artists": []}
+    first_day, last_day = ov.data_bounds(data)
+    start_, end_ = start or first_day, end or last_day
+    artists, share = ov.listener_band_artists(ov.in_range(data, start_, end_), bucket)
+    return {
+        "bucket": bucket,
+        "start": start_.isoformat(),
+        "end": end_.isoformat(),
+        "share": _value(share),
+        "artists": _records(artists, ["artist_key", "name", "listeners", "plays"]),
+    }
+
+
 # ---- Artist ------------------------------------------------------------------
 
 @app.get("/api/artist")
