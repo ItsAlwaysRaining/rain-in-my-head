@@ -18,11 +18,15 @@ The Mainstream vs. niche page SHALL show the band's name, its share of the user'
 - **THEN** the page shows a notice that the band does not exist and no artist table
 
 ### Requirement: The page lists the artists in the band
-The page SHALL list every artist in the band with at least one play in the range. Each row SHALL show the artist's name, the artist's Last.fm listener count, and the user's play count for that artist in the range. Rows SHALL be sorted by play count, highest first. An artist belongs to the band its Last.fm listener count falls in, using the same thresholds as the chart. An artist whose listener count is unknown is not listed.
+The page SHALL list the 100 most played artists in the band with at least one play in the range. When the band has more than 100 such artists, the page SHALL say how many it has in total. Each row SHALL show the artist's name, the artist's Last.fm listener count, and the user's play count for that artist in the range. Rows SHALL be sorted by play count, highest first. An artist belongs to the band its Last.fm listener count falls in, using the same thresholds as the chart. An artist whose listener count is unknown is not listed.
 
 #### Scenario: Artists sorted by plays
 - **WHEN** the band `10k–100k` has artists Geese (42 plays) and Big Thief (57 plays) in the range
 - **THEN** the table lists Big Thief first, then Geese, each with its listener count and play count
+
+#### Scenario: More than 100 artists
+- **WHEN** the band `10k–100k` has 10,000 artists with plays in the range
+- **THEN** the table lists the 100 most played, and the page says "Showing the top 100 of 10,000 artists"
 
 #### Scenario: Plays add up to the bar
 - **WHEN** the page for a band is opened

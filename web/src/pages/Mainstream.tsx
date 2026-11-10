@@ -11,6 +11,9 @@ import { formatDayMonthYear, percent } from "../format";
 // The same five labels as LISTENER_LABELS in rain_in_my_head/overview.py and the Overview chart.
 const LISTENER_BANDS = ["<10k", "10k–100k", "100k–1M", "1M–5M", "5M+"];
 
+// The page shows this many of the most played artists in the band; the API returns them all.
+const TOP = 100;
+
 const columns: Column<MainstreamArtist>[] = [
   { key: "name", label: "Artist" },
   { key: "listeners", label: "Last.fm listeners", kind: "number" },
@@ -50,7 +53,14 @@ export function Mainstream() {
     data.artists.length === 0 ? (
       <Notice tone="warning">No artists in the {asked.bucket} band for this range.</Notice>
     ) : (
-      <DataTable rows={data.artists} columns={columns} maxHeight={640} />
+      <>
+        <DataTable rows={data.artists.slice(0, TOP)} columns={columns} maxHeight={640} />
+        {data.artists.length > TOP && (
+          <p className="caption">
+            Showing the top {TOP} of {data.artists.length.toLocaleString("en-GB")} artists.
+          </p>
+        )}
+      </>
     ),
     <>
       Artists with {asked.bucket} Last.fm listeners · {percent(data.share)} of your plays · {range}
