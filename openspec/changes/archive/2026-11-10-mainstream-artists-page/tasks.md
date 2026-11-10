@@ -11,11 +11,11 @@
 - [x] 2.1 In `web/src/api.ts`, add the `MainstreamArtist` and `Mainstream` types and `fetchMainstream(params)`. Verify: `npm run typecheck` in `web/` passes.
 - [x] 2.2 Create `web/src/pages/Mainstream.tsx`. It shows the band name, its share and the range, a `DataTable` with name, listener count and plays, the empty notice, the unknown-band notice, and `BackLink`. Verify: `npm run dev`, then clicking a bar on the Overview opens the page with the same share and the table's plays add up to the bar's share.
 - [x] 2.3 Remove the `Mainstream` placeholder from `web/src/pages/Placeholders.tsx` and point the route in `web/src/App.tsx` at the new page. Verify: `npm run typecheck` and `npm run build` pass, and `grep -rn "Mainstream" web/src/pages/Placeholders.tsx` finds nothing.
-- [ ] 2.4 Check the page at phone width (16px gutters, no horizontal page scroll) and with a band that has no artists in the range. Verify: the browser shows both states as the spec describes.
+- [x] 2.4 (owner checked the page in the browser on 2026-11-10; the phone-width resize did not work in the automated browser) Check the page at phone width (16px gutters, no horizontal page scroll) and with a band that has no artists in the range. Verify: the browser shows both states as the spec describes.
 
 ## 3. Overview link
 
-- [ ] 3.1 Confirm the Overview's existing bar click opens `/dashboards/mainstream?bucket=&start=&end=` with the effective range, including a selected period. Verify: the URL in the browser after a click matches, for the sidebar range and for a selected month.
+- [x] 3.1 (owner checked the page in the browser on 2026-11-10) Confirm the Overview's existing bar click opens `/dashboards/mainstream?bucket=&start=&end=` with the effective range, including a selected period. Verify: the URL in the browser after a click matches, for the sidebar range and for a selected month.
 
 ## 4. Checks
 
