@@ -5,6 +5,8 @@
 export interface Section {
   path: string;
   label: string;
+  /** Shorter label for tablet widths (Figma Site Header, Tablet). */
+  short?: string;
   pages: readonly string[];
   /** On no hosted tier: only the owner's Mac opens it. */
   ownerOnly?: true;
@@ -13,12 +15,12 @@ export interface Section {
 /** Top-bar items, left to right. `pages` are the access keys (src/rain_in_my_head/access.py) that open each one. */
 export const SECTIONS = [
   { path: "/dashboards", label: "Dashboards", pages: ["overview", "new-artists", "genre", "artist", "slot", "mainstream"] },
-  { path: "/playlists", label: "Playlist Generator", pages: ["playlists"] },
+  { path: "/playlists", label: "Playlist Generator", short: "Playlists", pages: ["playlists"] },
   { path: "/analyst", label: "Analyst", pages: ["analyst"] },
   { path: "/visitors", label: "Visitors", pages: ["visitors"], ownerOnly: true },
   { path: "/ai", label: "AI", pages: ["ai"] },
   { path: "/about", label: "About", pages: ["about"] },
-  { path: "/contact", label: "Contact Me", pages: ["contact"] },
+  { path: "/contact", label: "Contact Me", short: "Contact", pages: ["contact"] },
 ] as const satisfies readonly Section[];
 
 /** Why a section is locked for this visitor, in words (shown to screen readers beside the lock), or null if they can open it. */
