@@ -1,5 +1,5 @@
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Component, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, type ReactNode } from "react";
 import { BrowserRouter, Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from "react-router";
 import { ApiError, type Me } from "./api";
 import styles from "./App.module.css";
@@ -52,44 +52,105 @@ function LockIcon() {
   );
 }
 
-function TopBar() {
+/** The section links and Log out. The desktop bar and the Mobile menu both use this, so locks stay in one place. */
+function NavLinks({ className }: { className: string }) {
   const auth = useAuth();
   const navigate = useNavigate();
+  return (
+    <>
+      {SECTIONS.map((s) => {
+        const locked = lockReason(s, auth);
+        const short = "short" in s ? s.short : undefined;
+        return (
+          // A locked section is still a link: its page shows the login or "not available" screen, never data.
+          <NavLink
+            key={s.path}
+            to={s.path}
+            className={({ isActive }) => `${isActive ? styles.navActive : styles.navLink}${locked ? ` ${styles.navLocked}` : ""} ${className}`}
+          >
+            {locked && <LockIcon />}
+            {/* Tablet widths swap in the short label (Figma Site Header, Tablet). */}
+            {short ? (
+              <>
+                <span className={styles.fullLabel}>{s.label}</span>
+                <span className={styles.shortLabel}>{short}</span>
+              </>
+            ) : (
+              s.label
+            )}
+            {locked && <span className={styles.srOnly}>, locked: {locked}</span>}
+          </NavLink>
+        );
+      })}
+      {auth.loggedIn && (
+        <button type="button" className={`${styles.logout} ${className}`} onClick={() => auth.logOut().then(() => navigate("/login", { replace: true }))}>
+          Log out
+        </button>
+      )}
+    </>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden>
+      <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function TopBar() {
+  const [open, setOpen] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
+  const { pathname } = useLocation();
+
+  // A new page closes the Mobile menu.
+  useEffect(() => setOpen(false), [pathname]);
+
+  // Escape closes it and puts focus back on the button.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      button.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <header className={styles.topBar}>
       <div className={styles.topBarInner}>
         {/* Dissolves home, as the prototype's "Back to home" from Storm does. */}
         <Link to="/" viewTransition className={styles.brand}>
           <CloudLogo />
-          Rain in My Head
+          <span className={styles.wordmark}>Rain in My Head</span>
         </Link>
         <nav aria-label="Main" className={styles.nav}>
-          {SECTIONS.map((s) => {
-            const locked = lockReason(s, auth);
-            return (
-              // A locked section is still a link: its page shows the login or "not available" screen, never data.
-              <NavLink
-                key={s.path}
-                to={s.path}
-                className={({ isActive }) => `${isActive ? styles.navActive : styles.navLink}${locked ? ` ${styles.navLocked}` : ""}`}
-              >
-                {locked && <LockIcon />}
-                {s.label}
-                {locked && <span className={styles.srOnly}>, locked: {locked}</span>}
-              </NavLink>
-            );
-          })}
-          {auth.loggedIn && (
-            <button
-              type="button"
-              className={styles.logout}
-              onClick={() => auth.logOut().then(() => navigate("/login", { replace: true }))}
-            >
-              Log out
-            </button>
-          )}
+          <NavLinks className="" />
         </nav>
+        <button
+          ref={button}
+          type="button"
+          className={styles.menuButton}
+          aria-expanded={open}
+          aria-controls="mobile-menu"
+          onClick={() => setOpen((o) => !o)}
+        >
+          <MenuIcon />
+          <span className={styles.srOnly}>Menu</span>
+        </button>
       </div>
+      {open && (
+        <nav
+          id="mobile-menu"
+          aria-label="Main"
+          className={styles.mobileMenu}
+        >
+          <NavLinks className={styles.mobileItem} />
+        </nav>
+      )}
     </header>
   );
 }

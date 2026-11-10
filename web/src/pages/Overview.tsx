@@ -4,7 +4,7 @@
 // (specs/005-prototype-redesign). Unlike Streamlit, there's no Loved tracks section and the new
 // artists list is its own page.
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { fetchOverview, type Grain, type NamePlays, type OverviewFull, type Preset } from "../api";
 import * as charts from "../charts/overview";
@@ -53,6 +53,9 @@ export default function Overview() {
   const start = params.get("start") ?? undefined;
   const end = params.get("end") ?? undefined;
 
+  // The Custom popup's dates while it's open. Nothing reaches the URL until Apply.
+  const [draft, setDraft] = useState<{ start: string; end: string } | null>(null);
+
   useEffect(() => rememberDashboardsSearch(search), [search]);
 
   const query = useQuery({
@@ -85,26 +88,49 @@ export default function Overview() {
       </PageHeader>
 
       <div className={styles.filters}>
-        <div>
+        <div className={styles.rangeField}>
           <ChipGroup
             label="Date range"
             options={Object.keys(PRESETS) as Preset[]}
             format={(p) => PRESETS[p]}
             value={preset}
-            onChange={(p) =>
-              update(p === "custom" && range ? { preset: p, start: range.base_start, end: range.base_end } : { preset: p, start: undefined, end: undefined })
-            }
+            onChange={(p) => {
+              if (p !== "custom") return update({ preset: p, start: undefined, end: undefined });
+              // Custom opens the popup on the range shown now; Apply makes it the range.
+              if (range) setDraft({ start: start ?? range.base_start, end: end ?? range.base_end });
+            }}
           />
-          {preset === "custom" && range && (
-            <div className={styles.dates}>
-              <label>
-                From
-                <input type="date" value={start ?? range.base_start} min={range.data_first} max={end ?? range.data_last} onChange={(e) => e.target.value && update({ start: e.target.value })} />
-              </label>
-              <label>
-                To
-                <input type="date" value={end ?? range.base_end} min={start ?? range.data_first} max={range.data_last} onChange={(e) => e.target.value && update({ end: e.target.value })} />
-              </label>
+          {draft && range && (
+            <div
+              className={styles.customPopup}
+              role="dialog"
+              aria-label="Custom date range"
+              onKeyDown={(e) => e.key === "Escape" && setDraft(null)}
+            >
+              <div className={styles.dates}>
+                <label>
+                  From
+                  <input type="date" autoFocus value={draft.start} min={range.data_first} max={draft.end} onChange={(e) => e.target.value && setDraft({ ...draft, start: e.target.value })} />
+                </label>
+                <label>
+                  To
+                  <input type="date" value={draft.end} min={draft.start} max={range.data_last} onChange={(e) => e.target.value && setDraft({ ...draft, end: e.target.value })} />
+                </label>
+              </div>
+              <div className={styles.popupActions}>
+                <Button onClick={() => setDraft(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    update({ preset: "custom", start: draft.start, end: draft.end });
+                    setDraft(null);
+                  }}
+                >
+                  Apply
+                </Button>
+              </div>
             </div>
           )}
         </div>
