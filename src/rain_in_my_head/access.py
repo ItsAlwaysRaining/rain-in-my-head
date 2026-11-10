@@ -27,6 +27,7 @@ API_ACCESS: dict[tuple[str, str], frozenset[str]] = {
     ("GET", "/api/genre"): frozenset({"genre"}),
     ("GET", "/api/genre/songs"): frozenset({"genre"}),
     ("GET", "/api/artist"): frozenset({"artist"}),
+    ("GET", "/api/mainstream"): frozenset({"mainstream"}),
     # The Playlist Generator's form and track preview only read the database. Creating a playlist stays refused
     # on the hosted site (api.HOSTED_PLAYLIST_READS lists the only playlist routes it lets through).
     ("GET", "/api/playlists/meta"): frozenset({"playlists"}),

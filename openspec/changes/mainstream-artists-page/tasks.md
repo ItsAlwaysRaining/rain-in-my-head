@@ -2,9 +2,9 @@
 
 ## 1. API: artists in one listener band
 
-- [ ] 1.1 In `src/rain_in_my_head/overview.py`, add a function that returns, for one band label, each artist's name, `artist_key`, Last.fm listener count and play count in the range, most played first, plus the band's share of known-listener plays. Verify: a unit test in `tests/test_mainstream.py` shows two spellings with one key give one row, a 10k artist and a 100k artist land in the right bands, and the share equals the chart's `listener_buckets` value for the same data.
-- [ ] 1.2 In `src/rain_in_my_head/api.py`, add `GET /api/mainstream?bucket=&start=&end=` (start and end default to all time). Return 422 for a band that is not in `LISTENER_LABELS`. Verify: a test in `tests/test_mainstream.py` checks the JSON shape, the 422 for an unknown band, and an empty band returning no artists.
-- [ ] 1.3 In `src/rain_in_my_head/access.py`, add `("GET", "/api/mainstream"): frozenset({"mainstream"})`. Verify: the app still starts (`check_routes()` passes) and a guest's request is allowed, while a visitor with no page access is refused (tests in `tests/`).
+- [x] 1.1 In `src/rain_in_my_head/overview.py`, add a function that returns, for one band label, each artist's name, `artist_key`, Last.fm listener count and play count in the range, most played first, plus the band's share of known-listener plays. Verify: a unit test in `tests/test_mainstream.py` shows two spellings with one key give one row, a 10k artist and a 100k artist land in the right bands, and the share equals the chart's `listener_buckets` value for the same data.
+- [x] 1.2 In `src/rain_in_my_head/api.py`, add `GET /api/mainstream?bucket=&start=&end=` (start and end default to all time). Return 422 for a band that is not in `LISTENER_LABELS`. Verify: a test in `tests/test_mainstream.py` checks the JSON shape, the 422 for an unknown band, and an empty band returning no artists.
+- [x] 1.3 In `src/rain_in_my_head/access.py`, add `("GET", "/api/mainstream"): frozenset({"mainstream"})`. Verify: the app still starts (`check_routes()` passes) and a guest's request is allowed, while a visitor with no page access is refused (tests in `tests/`).
 
 ## 2. Web: the page
 
