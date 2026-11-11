@@ -145,7 +145,7 @@ Every pull request from this repository gets its own copy of the hosted site on 
 **Making a test code** (run on your Mac; `dev` is the default branch):
 
 ```sh
-uv run rain-in-my-head viewer add Sam      # prints the code once; add --tier trusted to open Storm
+uv run rain-in-my-head viewer add Sam      # prints the code once
 uv run rain-in-my-head viewer revoke Sam   # when you're done
 ```
 
@@ -191,7 +191,7 @@ The hosted site has no public pages except the landing page and the login page. 
 | `viewer revoke NAME` | Ends their code and logs them out on every device, within seconds. |
 | `viewer grant NAME [--page KEY] [--remove-page KEY] [--tier guest\|trusted]` | Gives or takes back a page, or changes the tier. Applies on their next click. |
 
-**What each tier opens.** A guest opens the six dashboard pages (Overview, New artists, Genre, Artist, When you listen, Mainstream vs. niche), Playlist Generator, Analyst (pre-defined queries and the schema map, never free-form SQL), AI, About and Contact Me. Every section shows in the top bar for everyone; the ones a person can't open are marked with a padlock. The AI page is only a Coming soon card, so no AI runs on the hosted site. A trusted visitor also opens Storm. Page keys for `grant`: `overview`, `new-artists`, `genre`, `artist`, `slot`, `mainstream`, `playlists`, `analyst`, `ai`, `storm`, `about`, `contact`. On the hosted site the Playlist Generator shows the form and the track preview, but Create on Spotify answers "This DJ doesn't take requests." for everyone.
+**What each tier opens.** A guest opens the six dashboard pages (Overview, New artists, Genre, Artist, When you listen, Mainstream vs. niche), Playlist Generator, Analyst (pre-defined queries and the schema map, never free-form SQL), AI, Storm, About and Contact Me. Storm also opens with no login, so the landing page's lightning bolt always goes there; a logged-out visitor logs in from **Log in** at the end of the top bar. Every section shows in the top bar for everyone; the ones a person can't open are marked with a padlock. The AI page is only a Coming soon card, so no AI runs on the hosted site. Page keys for `grant`: `overview`, `new-artists`, `genre`, `artist`, `slot`, `mainstream`, `playlists`, `analyst`, `ai`, `storm`, `about`, `contact`. On the hosted site the Playlist Generator shows the form and the track preview, but Create on Spotify answers "This DJ doesn't take requests." for everyone.
 
 **What is stored.** A person's name, the hash of their code (never the code), and when they last logged in. A guessing limit uses a daily-changing scrambled form of the visitor's address, never the address. If a code is lost, revoke it and add the person again.
 

@@ -152,9 +152,9 @@ def test_guest_can_open_the_mainstream_route(db: Path, monkeypatch: pytest.Monke
 
 
 def test_visitor_without_the_mainstream_page_is_refused(db: Path, monkeypatch: pytest.MonkeyPatch):
-    # Same hosted setup, but the route is unlocked only by "storm", which guests don't have (trusted visitors only).
+    # Same hosted setup, but the route is unlocked only by a page no guest has.
     monkeypatch.setattr(config, "HOSTED", True)
     monkeypatch.setattr(config, "DB_PATH", db)
-    monkeypatch.setitem(access.API_ACCESS, ("GET", "/api/mainstream"), frozenset({"storm"}))
+    monkeypatch.setitem(access.API_ACCESS, ("GET", "/api/mainstream"), frozenset({"no-such-page"}))
     response = TestClient(api.app).get("/api/mainstream", params={"bucket": "10k–100k"})
     assert response.status_code == 403
