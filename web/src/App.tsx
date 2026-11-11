@@ -87,6 +87,12 @@ function NavLinks({ className }: { className: string }) {
           Log out
         </button>
       )}
+      {/* Logged out on the hosted site: Log in sits where Log out would. On your Mac there is no login. */}
+      {auth.status === "ready" && !auth.loggedIn && !auth.local && (
+        <NavLink to="/login" className={({ isActive }) => `${isActive ? styles.navActive : styles.navLink} ${className}`}>
+          Log in
+        </NavLink>
+      )}
     </>
   );
 }
