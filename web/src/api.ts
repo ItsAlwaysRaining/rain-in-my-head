@@ -278,6 +278,49 @@ export interface MainstreamParams {
 
 export const fetchMainstream = (p: MainstreamParams) => getJson<Mainstream>("/api/mainstream", { ...p });
 
+// ---- Listening slot ----------------------------------------------------------
+
+export interface SlotTrack {
+  track_key: string;
+  name: string;
+  artist: string;
+  artist_key: string;
+  thumb: string | null;
+  plays: number;
+}
+
+export interface Slot {
+  day: string;
+  hour: number;
+  /** null when there are no scrobbles at all */
+  range: SlotRange | null;
+  range_label: string;
+  plays: number;
+  distinct_tracks: number;
+  /** The slot has the most plays of any weekday and hour in the range */
+  busiest: boolean;
+  /** The most played tracks, up to 100 */
+  tracks: SlotTrack[];
+}
+
+interface SlotRange {
+  preset: Preset;
+  start: string;
+  end: string;
+  data_first: string;
+  data_last: string;
+}
+
+export interface SlotParams {
+  day: string;
+  hour: string;
+  preset?: Preset;
+  start?: string;
+  end?: string;
+}
+
+export const fetchSlot = (p: SlotParams) => getJson<Slot>("/api/slot", { ...p });
+
 // ---- SQL ---------------------------------------------------------------------
 
 export interface SqlMeta {

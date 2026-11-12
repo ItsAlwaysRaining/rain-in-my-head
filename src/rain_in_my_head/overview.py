@@ -169,6 +169,41 @@ def heatmap(df: pd.DataFrame) -> pd.DataFrame:
     return df.groupby(["weekday_name", "hour"], observed=False).size().rename("plays").reset_index()
 
 
+def slot_tracks(df: pd.DataFrame, weekday: str, hour: int) -> tuple[pd.DataFrame, bool]:
+    """Tracks played in one weekday (Mon..Sun) and hour in `df`, most played first, and whether that slot is the busiest.
+
+    Filters on the same columns as `heatmap`, so the plays add up to its square. Columns: `track_key`, `name`,
+    `artist`, `artist_key`, `plays`."""
+    in_slot = df[(df["weekday_name"] == weekday) & (df["hour"] == hour)]
+    tracks = (
+        in_slot.groupby("track_key")
+        .agg(name=("track_name", "first"), artist=("artist_name", "first"), artist_key=("artist_key", "first"),
+             plays=("track_name", "size"))
+        .reset_index()
+        .sort_values(["plays", "name"], ascending=[False, True], kind="stable")
+        .reset_index(drop=True)
+    )
+    busiest = len(in_slot) > 0 and len(in_slot) == int(heatmap(df)["plays"].max())
+    return tracks, busiest
+
+
+def track_art(db_path: Path, track_keys: list[str]) -> dict[str, str]:
+    """The most common album art URL per track key, for the keys that have one."""
+    if not track_keys:
+        return {}
+    marks = ",".join("?" * len(track_keys))
+    with closing(connect_readonly(db_path)) as conn:
+        rows = conn.execute(
+            f"""SELECT track_key, image_url FROM (
+                  SELECT track_key, image_url, ROW_NUMBER() OVER (PARTITION BY track_key ORDER BY COUNT(*) DESC) AS n
+                  FROM scrobbles WHERE track_key IN ({marks}) AND image_url IS NOT NULL AND image_url != ''
+                  GROUP BY track_key, image_url
+                ) WHERE n = 1""",  # noqa: S608 only "?" placeholders are interpolated; the keys are bound
+            track_keys,
+        ).fetchall()
+    return dict(rows)
+
+
 def new_artists(data: pd.DataFrame, start: date, end: date, grain: str) -> pd.DataFrame:
     """Artists first heard in the range, counted per `grain` step."""
     firsts = data.drop_duplicates("artist_key")[["artist_key", "artist_first_play"]]

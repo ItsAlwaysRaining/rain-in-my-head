@@ -15,7 +15,8 @@ import Login from "./pages/Login";
 import { Mainstream } from "./pages/Mainstream";
 import NewArtists from "./pages/NewArtists";
 import Overview from "./pages/Overview";
-import { Ai, ListeningSlot } from "./pages/Placeholders";
+import { Ai } from "./pages/Placeholders";
+import Slot from "./pages/Slot";
 import Playlists from "./pages/Playlists";
 import Storm from "./pages/Storm";
 import Visitors from "./pages/Visitors";
@@ -208,7 +209,7 @@ function Shell() {
               <Route path="/dashboards/new-artists" element={<RequireAccess page="new-artists"><NewArtists /></RequireAccess>} />
               <Route path="/dashboards/genre" element={<RequireAccess page="genre"><Genre /></RequireAccess>} />
               <Route path="/dashboards/artist" element={<RequireAccess page="artist"><Artist /></RequireAccess>} />
-              <Route path="/dashboards/slot" element={<RequireAccess page="slot"><ListeningSlot /></RequireAccess>} />
+              <Route path="/dashboards/slot" element={<RequireAccess page="slot"><Slot /></RequireAccess>} />
               <Route path="/dashboards/mainstream" element={<RequireAccess page="mainstream"><Mainstream /></RequireAccess>} />
               <Route path="/playlists" element={<RequireAccess page="playlists"><Playlists /></RequireAccess>} />
               <Route path="/analyst" element={<RequireAccess page="analyst"><Analyst /></RequireAccess>} />
