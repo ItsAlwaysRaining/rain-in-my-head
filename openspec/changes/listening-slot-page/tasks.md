@@ -6,7 +6,7 @@
 
 ## 2. Page
 
-- [ ] 2.1 `fetchSlot` and types in `web/src/api.ts`
-- [ ] 2.2 `Slot.tsx`: range chips, Day and Hour pickers, summary, track table, empty notice
-- [ ] 2.3 Route `/dashboards/slot` to it and remove the placeholder
+- [x] 2.1 `fetchSlot` and types in `web/src/api.ts`
+- [x] 2.2 `Slot.tsx`: range chips, Day and Hour pickers, summary, track table, empty notice
+- [x] 2.3 Route `/dashboards/slot` to it and remove the placeholder
 - [ ] 2.4 Run the Python tests, web typecheck and web tests; check the page in the browser

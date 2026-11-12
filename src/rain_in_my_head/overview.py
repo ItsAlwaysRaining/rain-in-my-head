@@ -198,7 +198,7 @@ def track_art(db_path: Path, track_keys: list[str]) -> dict[str, str]:
                   SELECT track_key, image_url, ROW_NUMBER() OVER (PARTITION BY track_key ORDER BY COUNT(*) DESC) AS n
                   FROM scrobbles WHERE track_key IN ({marks}) AND image_url IS NOT NULL AND image_url != ''
                   GROUP BY track_key, image_url
-                ) WHERE n = 1""",
+                ) WHERE n = 1""",  # noqa: S608 only "?" placeholders are interpolated; the keys are bound
             track_keys,
         ).fetchall()
     return dict(rows)
