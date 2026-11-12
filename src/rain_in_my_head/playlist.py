@@ -414,3 +414,40 @@ def preview_binges(
 
 def _candidates(ranked: pd.DataFrame, size: int) -> str:
     return f"{len(ranked):,} candidate tracks; the top {min(size, len(ranked))} are shown."
+
+
+# ---- SQL type ------------------------------------------------------------------------------------------------
+SQL_MAX = 100  # tracks a SQL playlist uses, in query order
+SQL_REQUIRED = ("artist", "track")
+
+
+@dataclass
+class SqlPreview(Preview):
+    missing: list[str] = field(default_factory=list)  # required columns the query didn't return
+
+
+def preview_sql(result: pd.DataFrame) -> SqlPreview:
+    """A playlist from a read-only query's result: needs `artist` and `track` columns (any case); keeps the rest."""
+    from rain_in_my_head.build import normalize, normalize_track
+
+    by_lower = {str(c).lower(): c for c in result.columns}
+    missing = [c for c in SQL_REQUIRED if c not in by_lower]
+    title = "From your query"
+    if missing:
+        p = SqlPreview(pd.DataFrame(), 0, "", "", {}, title=title, missing=missing,
+                       warning="The query must return " + " and ".join(f"`{c}`" for c in missing) + " column"
+                       + ("s." if len(missing) > 1 else "."))
+        return p
+    df = result.rename(columns={by_lower["artist"]: "artist", by_lower["track"]: "track"})
+    df = df.loc[:, ~df.columns.duplicated()].dropna(subset=["artist", "track"]).head(SQL_MAX).reset_index(drop=True)
+    if df.empty:
+        return SqlPreview(pd.DataFrame(), 0, "", "", {}, title=title, warning="The query returned no tracks.")
+    df.columns = [str(c) for c in df.columns]
+    ranked = df.assign(track_key=[f"{normalize(str(a))}\t{normalize_track(str(t))}" for a, t in zip(df["artist"], df["track"])])
+    columns = {"artist": Column("Artist"), "track": Column("Track")}
+    for c in df.columns:
+        if c not in columns:
+            columns[c] = Column(c, "number" if pd.api.types.is_numeric_dtype(df[c]) else "text")
+    caption = f"{len(df):,} tracks" + (f" (the first {SQL_MAX})" if len(result) > SQL_MAX else "") + ", in query order."
+    return SqlPreview(ranked, len(df), "From my query", f"Built from a SQL query. {CREDIT}", columns,
+                      title=title, display=df, caption=caption)

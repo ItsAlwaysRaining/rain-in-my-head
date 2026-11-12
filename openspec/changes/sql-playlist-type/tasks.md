@@ -1,9 +1,9 @@
 ## 1. Backend
 
-- [ ] 1.1 Add `preview_sql` to `playlist.py`: run read-only, detect missing `artist`/`track`, build `track_key`, keep extra columns, cap 100
-- [ ] 1.2 Add `kind: "sql"` and `sql` to `PlaylistRequest`; route it in `_preview`; refuse it when hosted
-- [ ] 1.3 Return `missing` in the preview JSON
-- [ ] 1.4 Tests: valid query, missing one/both columns, extra columns, write attempt, hosted 403
+- [x] 1.1 Add `preview_sql` to `playlist.py`: run read-only, detect missing `artist`/`track`, build `track_key`, keep extra columns, cap 100
+- [x] 1.2 Add `kind: "sql"` and `sql` to `PlaylistRequest`; route it in `_preview`; refuse it when hosted
+- [x] 1.3 Return `missing` in the preview JSON
+- [x] 1.4 Tests: valid query, missing one/both columns, extra columns, write attempt, hosted 403
 
 ## 2. Frontend
 

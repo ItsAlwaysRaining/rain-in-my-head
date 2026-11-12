@@ -703,9 +703,11 @@ def playlists_spotify() -> dict:
 
 
 class PlaylistRequest(BaseModel):
-    kind: Literal["slot", "discoveries", "binges"]
+    kind: Literal["slot", "discoveries", "binges", "sql"]
     size: int = 50
-    min_plays: int
+    min_plays: int = 1
+    # SQL (owner's Mac only: typed SQL never runs on the hosted site)
+    sql: str | None = None
     # Time slot
     days: list[str] = ["Friday"]
     hours: tuple[int, int] = (17, 19)
@@ -723,6 +725,12 @@ class PlaylistRequest(BaseModel):
 
 
 def _preview(body: PlaylistRequest) -> pl.Preview:
+    if body.kind == "sql":
+        try:
+            result = sq.run_readonly(config.DB_PATH, body.sql or "")
+        except Exception as e:  # invalid SQL or an attempted write: shown on the page, as on Analyst
+            raise HTTPException(422, str(e)) from e
+        return pl.preview_sql(result)
     with _connect() as conn:
         first, last = pl.play_bounds(conn)
         if body.kind == "slot":
@@ -739,9 +747,12 @@ def _preview(body: PlaylistRequest) -> pl.Preview:
 
 
 @app.post("/api/playlists/preview")
-def playlists_preview(body: PlaylistRequest) -> dict:
+def playlists_preview(body: PlaylistRequest):
+    if config.HOSTED and body.kind == "sql":  # typed SQL is refused on the hosted site, as on Analyst
+        return _refused()
+    _require_db()
     p = _preview(body)
-    result = {"title": p.title, "note": p.note, "warning": p.warning}
+    result = {"title": p.title, "note": p.note, "warning": p.warning, "missing": getattr(p, "missing", [])}
     if p.warning:
         return result
     return {
