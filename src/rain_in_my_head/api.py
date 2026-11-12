@@ -494,6 +494,55 @@ def genre_songs(
     }
 
 
+# ---- Listening slot ----------------------------------------------------------
+
+SLOT_TOP = 100
+
+
+@app.get("/api/slot")
+def slot(
+    day: str, hour: int, preset: GenrePreset | None = None, start: date | None = None, end: date | None = None,
+) -> dict:
+    """The tracks played in one weekday and hour (openspec/specs/listening-slot), most played first.
+
+    The range resolves as the Genre page's does: dates without a preset are Custom, nothing at all is the last 12
+    months (the Overview's default)."""
+    _require_db()
+    if day not in ov.WEEKDAYS:
+        raise HTTPException(422, f"Unknown day: {day}")
+    if not 0 <= hour <= 23:
+        raise HTTPException(422, "hour must be 0-23")
+    if preset is None:
+        preset = "custom" if start or end else "last12m"
+    data = ov.load_plays(config.DB_PATH)
+    if data.empty:
+        return {"day": day, "hour": hour, "range": None, "plays": 0, "distinct_tracks": 0, "busiest": False, "tracks": []}
+    first_day, last_day = ov.data_bounds(data)
+    custom = None
+    if preset == "custom":
+        custom = (start or first_day, end or last_day)
+        if custom[0] > custom[1]:
+            raise HTTPException(422, "start must not be after end")
+    start_, end_ = ov.resolve_range(data, PRESET_NAMES[preset], custom)
+    tracks, busiest = ov.slot_tracks(ov.in_range(data, start_, end_), day, hour)
+    shown = tracks.head(SLOT_TOP).copy()
+    art = ov.track_art(config.DB_PATH, list(shown["track_key"]))
+    shown["thumb"] = [gn.thumb(art[k]) if k in art else None for k in shown["track_key"]]
+    return {
+        "day": day,
+        "hour": hour,
+        "range": {
+            "preset": preset, "start": start_.isoformat(), "end": end_.isoformat(),
+            "data_first": first_day.isoformat(), "data_last": last_day.isoformat(),
+        },
+        "range_label": PRESET_NAMES[preset] if preset != "custom" else gn.range_label(start_.isoformat(), end_.isoformat()),
+        "plays": int(tracks["plays"].sum()),
+        "distinct_tracks": len(tracks),
+        "busiest": busiest,
+        "tracks": _records(shown, ["track_key", "name", "artist", "artist_key", "thumb", "plays"]),
+    }
+
+
 # ---- Mainstream vs. niche ----------------------------------------------------
 
 @app.get("/api/mainstream")

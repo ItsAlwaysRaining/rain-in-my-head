@@ -1,8 +1,8 @@
 ## 1. Data
 
-- [ ] 1.1 Add `slot_tracks(df, weekday, hour)` to `overview.py`
-- [ ] 1.2 Add `GET /api/slot` and list it in `access.API_ACCESS` under `slot`
-- [ ] 1.3 Tests in `tests/test_slot.py`
+- [x] 1.1 Add `slot_tracks(df, weekday, hour)` to `overview.py`
+- [x] 1.2 Add `GET /api/slot` and list it in `access.API_ACCESS` under `slot`
+- [x] 1.3 Tests in `tests/test_slot.py`
 
 ## 2. Page
 
