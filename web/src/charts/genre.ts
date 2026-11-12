@@ -17,7 +17,7 @@ export function shareArea(points: Point[], grain: string, color: string): TopLev
     data: { values },
     height: 220,
     encoding: {
-      x: { field: "start", type: "temporal", title: null, axis: { labelOverlap: "greedy", format: stepFormat } },
+      x: { field: "start", type: "temporal", title: null, axis: { labelOverlap: "greedy", format: stepFormat, tickCount: { interval: grain === "week" ? "week" : "month", step: 1 } } },
       y: { field: "share", type: "quantitative", title: null, axis: { format: "%", tickCount: 3 } },
       tooltip: [
         { field: "start", type: "temporal", title: capitalize(grain), format: "%d %b %Y" },
