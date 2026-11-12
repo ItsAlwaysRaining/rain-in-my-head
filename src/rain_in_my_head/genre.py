@@ -86,3 +86,28 @@ def songs(plays: pd.DataFrame, artist_key: str) -> pd.DataFrame:
     df = ranked(plays[plays["artist_key"] == artist_key], "track_key", "track_name")
     albums = plays.groupby("track_key")["album_name"].agg(most_common)
     return df.join(albums, on="track_key").assign(thumb=lambda d: d["art"].map(thumb, na_action="ignore"))
+
+
+def share_grain(start: date, end: date) -> str:
+    """Steps for the share chart: weeks for ranges up to about three months, else months."""
+    return "Week" if (end - start).days <= 92 else "Month"
+
+
+def genre_share(df: pd.DataFrame, genre: str, grain: str, n: int = 6) -> tuple[int | None, pd.DataFrame]:
+    """(the genre's rank among the top `n` tagged genres or None, its share of tagged plays per step).
+
+    `df` is `v_plays` rows for the range (see overview.load_plays). Steps with tagged plays but none in the
+    genre count as 0, so the area doesn't skip gaps. Columns: `played_local` (step start), `plays`, `share`.
+    """
+    from .overview import FREQ  # noqa: PLC0415 overview imports nothing from here, but keep the edge one-way at import time
+
+    tagged = df[df["primary_genre"].notna()]
+    if tagged.empty:
+        return None, pd.DataFrame(columns=["played_local", "plays", "share"])
+    top = list(tagged["primary_genre"].value_counts().head(n).index)
+    per = pd.Grouper(key="played_local", freq=FREQ[grain], label="left", closed="left")
+    totals = tagged.groupby(per).size().rename("tagged")
+    plays = tagged[tagged["primary_genre"] == genre].groupby(per).size().rename("plays")
+    out = pd.concat([totals, plays], axis=1).fillna(0).reset_index()
+    out = out[out["tagged"] > 0].assign(plays=lambda d: d["plays"].astype(int), share=lambda d: d["plays"] / d["tagged"])
+    return (top.index(genre) if genre in top else None), out[["played_local", "plays", "share"]]

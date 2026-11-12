@@ -412,29 +412,56 @@ def _heavy(request: Request, page: str, feature: str, detail: str | None = None)
 
 # ---- Genre -------------------------------------------------------------------
 
-def _genre_view(genre: str | None, start: date | None, end: date | None):
-    """The genre (asked for, else the most played), its range and plays, as the Streamlit page resolves them."""
+GenrePreset = Literal["last30", "last12m", "ytd", "all", "custom"]
+
+
+def _genre_view(genre: str | None, preset: GenrePreset | None, start: date | None, end: date | None):
+    """The genre (asked for, else the most played), its resolved range and plays.
+
+    The range resolves as the Overview's does. Dates without a preset are Custom (old links); nothing at all is
+    All time. Returns (all genres, chosen, range dict, v_plays rows in range, the genre's plays).
+    """
     _require_db()
     all_genres = gn.genres(config.DB_PATH)
     if not all_genres:
         return all_genres, None, None, None, None
     chosen = genre if genre in all_genres else all_genres[0]
-    start_ = start.isoformat() if start else None
-    end_ = (end or date.today()).isoformat()
-    plays = gn.genre_plays(config.DB_PATH, chosen, start_ or gn.ALL_TIME_START, end_)
-    return all_genres, chosen, start_, end_, plays
+    if preset is None:
+        preset = "custom" if start or end else "all"
+    data = ov.load_plays(config.DB_PATH)
+    first_day, last_day = ov.data_bounds(data)
+    custom = None
+    if preset == "custom":
+        custom = (start or first_day, end or last_day)
+        if custom[0] > custom[1]:
+            raise HTTPException(422, "start must not be after end")
+    start_, end_ = ov.resolve_range(data, PRESET_NAMES[preset], custom)
+    rng = {
+        "preset": preset, "start": start_.isoformat(), "end": end_.isoformat(),
+        "data_first": first_day.isoformat(), "data_last": last_day.isoformat(),
+    }
+    plays = gn.genre_plays(config.DB_PATH, chosen, rng["start"], rng["end"])
+    return all_genres, chosen, rng, ov.in_range(data, start_, end_), plays
 
 
 @app.get("/api/genre")
-def genre(genre: str | None = None, start: date | None = None, end: date | None = None) -> dict:
-    all_genres, chosen, start_, end_, plays = _genre_view(genre, start, end)
+def genre(genre: str | None = None, preset: GenrePreset | None = None, start: date | None = None, end: date | None = None) -> dict:
+    all_genres, chosen, rng, df, plays = _genre_view(genre, preset, start, end)
     if chosen is None:
         return {"genres": [], "genre": None, "reason": "no_tags"}
+    grain = gn.share_grain(date.fromisoformat(rng["start"]), date.fromisoformat(rng["end"]))
+    color_index, share = gn.genre_share(df, chosen, grain)
     return {
         "genres": all_genres,
         "genre": chosen,
-        "range_label": gn.range_label(start_, end_),
+        "range": rng,
+        "range_label": "All time" if rng["preset"] == "all" else gn.range_label(rng["start"], rng["end"]),
         "plays": len(plays),
+        "share": {
+            "grain": grain.lower(),
+            "color_index": color_index,
+            "points": _records(share, {"played_local": "start", "share": "share", "plays": "plays"}),
+        },
         "artists": [] if plays.empty else _records(
             gn.artists(plays), ["artist_key", "name", "art", "thumb", "plays"]
         ),
@@ -442,12 +469,15 @@ def genre(genre: str | None = None, start: date | None = None, end: date | None 
 
 
 @app.get("/api/genre/songs")
-def genre_songs(request: Request, artist_key: str, genre: str | None = None, start: date | None = None, end: date | None = None):
+def genre_songs(
+    request: Request, artist_key: str, genre: str | None = None, preset: GenrePreset | None = None,
+    start: date | None = None, end: date | None = None,
+):
     # Checked before the work is done, so a limited person costs the free plan almost nothing. A not-found answer
     # below still counts as a use.
     if (limited := _heavy(request, "genre", "genre-songs")) is not None:
         return limited
-    _, chosen, _, _, plays = _genre_view(genre, start, end)
+    _, chosen, _, _, plays = _genre_view(genre, preset, start, end)
     if chosen is None or plays.empty or artist_key not in set(plays["artist_key"]):
         raise HTTPException(404, "No plays by that artist in this genre and range")
     artist = gn.artists(plays).set_index("artist_key").loc[artist_key]
