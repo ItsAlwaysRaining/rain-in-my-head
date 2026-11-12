@@ -4,24 +4,18 @@
 // (specs/005-prototype-redesign). Unlike Streamlit, there's no Loved tracks section and the new
 // artists list is its own page.
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { fetchOverview, type Grain, type NamePlays, type OverviewFull, type Preset } from "../api";
 import * as charts from "../charts/overview";
 import { GENRE_COLORS } from "../charts/config";
 import { DataTable, type Column } from "../components/DataTable";
+import { PRESET_KEYS, RangePicker } from "../components/RangePicker";
 import { Button, Card, ChipGroup, ErrorState, Kpi, Loading, Notice, PageHeader, rememberDashboardsSearch, SegmentedControl, Tabs } from "../components/ui";
 import { VegaChart } from "../components/VegaChart";
 import { capitalize, formatDate, formatDateTime, percent } from "../format";
 import styles from "./Overview.module.css";
 
-const PRESETS: Record<Preset, string> = {
-  last30: "Last 30 days",
-  ytd: "This year",
-  last12m: "Last 12 months",
-  all: "All time",
-  custom: "Custom",
-};
 const GRAINS = ["week", "month", "year"] as const;
 const MEASURES = ["scrobbles", "hours"] as const;
 type Measure = (typeof MEASURES)[number];
@@ -46,15 +40,12 @@ function topColumns<T extends NamePlays>(label: string): Column<T>[] {
 export default function Overview() {
   const [params, setParams] = useSearchParams();
   const { search } = useLocation();
-  const preset = oneOf(params.get("preset"), Object.keys(PRESETS) as Preset[], "last12m");
+  const preset = oneOf(params.get("preset"), PRESET_KEYS, "last12m");
   const grain = oneOf<Grain>(params.get("grain"), GRAINS, "month");
   const measure = oneOf<Measure>(params.get("measure"), MEASURES, "scrobbles");
   const period = params.get("period") ?? undefined;
   const start = params.get("start") ?? undefined;
   const end = params.get("end") ?? undefined;
-
-  // The Custom popup's dates while it's open. Nothing reaches the URL until Apply.
-  const [draft, setDraft] = useState<{ start: string; end: string } | null>(null);
 
   useEffect(() => rememberDashboardsSearch(search), [search]);
 
@@ -88,52 +79,12 @@ export default function Overview() {
       </PageHeader>
 
       <div className={styles.filters}>
-        <div className={styles.rangeField}>
-          <ChipGroup
-            label="Date range"
-            options={Object.keys(PRESETS) as Preset[]}
-            format={(p) => PRESETS[p]}
-            value={preset}
-            onChange={(p) => {
-              if (p !== "custom") return update({ preset: p, start: undefined, end: undefined });
-              // Custom opens the popup on the range shown now; Apply makes it the range.
-              if (range) setDraft({ start: start ?? range.base_start, end: end ?? range.base_end });
-            }}
-          />
-          {draft && range && (
-            <div
-              className={styles.customPopup}
-              role="dialog"
-              aria-label="Custom date range"
-              onKeyDown={(e) => e.key === "Escape" && setDraft(null)}
-            >
-              <div className={styles.dates}>
-                <label>
-                  From
-                  <input type="date" autoFocus value={draft.start} min={range.data_first} max={draft.end} onChange={(e) => e.target.value && setDraft({ ...draft, start: e.target.value })} />
-                </label>
-                <label>
-                  To
-                  <input type="date" value={draft.end} min={draft.start} max={range.data_last} onChange={(e) => e.target.value && setDraft({ ...draft, end: e.target.value })} />
-                </label>
-              </div>
-              <div className={styles.popupActions}>
-                <Button onClick={() => setDraft(null)}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    update({ preset: "custom", start: draft.start, end: draft.end });
-                    setDraft(null);
-                  }}
-                >
-                  Apply
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        <RangePicker
+          preset={preset}
+          // Custom opens on the range before any selected period, as it did before.
+          shown={range && { start: start ?? range.base_start, end: end ?? range.base_end, data_first: range.data_first, data_last: range.data_last }}
+          onChange={(p, s, e) => update({ preset: p, start: s, end: e })}
+        />
         <ChipGroup label="Grain" options={GRAINS} format={capitalize} value={grain} onChange={(g) => update({ grain: g })} />
       </div>
 
@@ -148,7 +99,7 @@ export default function Overview() {
       ) : data.empty ? (
         <Notice tone="warning">No scrobbles in this range.</Notice>
       ) : (
-        <OverviewBody data={data} measure={measure} loading={query.isFetching} onMeasure={(m) => update({ measure: m })} onPeriod={(p) => update({ period: p ?? undefined })} />
+        <OverviewBody data={data} preset={preset} measure={measure} loading={query.isFetching} onMeasure={(m) => update({ measure: m })} onPeriod={(p) => update({ period: p ?? undefined })} />
       )}
     </>
   );
@@ -156,12 +107,14 @@ export default function Overview() {
 
 function OverviewBody({
   data,
+  preset,
   measure,
   loading,
   onMeasure,
   onPeriod,
 }: {
   data: OverviewFull;
+  preset: Preset;
   measure: Measure;
   loading: boolean;
   onMeasure: (m: Measure) => void;
@@ -178,7 +131,9 @@ function OverviewBody({
   const maxPlays = Math.max(0, ...data.heatmap.map((h) => h.plays));
 
   const periodName = selected && (data.grain === "week" ? `the week of ${selected}` : selected);
-  const openGenre = (genre: string) => navigate(`/dashboards/genre?${new URLSearchParams({ genre, start, end })}`);
+  // A selected period or a Custom range opens as Custom dates; a preset opens with the same chip.
+  const openGenre = (genre: string) =>
+    navigate(`/dashboards/genre?${new URLSearchParams(selected || preset === "custom" ? { genre, preset: "custom", start, end } : { genre, preset })}`);
 
   return (
     <div className={loading ? styles.loading : undefined}>
