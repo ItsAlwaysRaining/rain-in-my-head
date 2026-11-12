@@ -2,8 +2,10 @@
 // there are no audio files. Create it only from a click; browsers block audio that starts on its own.
 
 export interface Storm {
-  /** 0–1. */
-  setVolume: (volume: number) => void;
+  /** Rain hiss volume, 0–1 (0 is silent). */
+  setRain: (volume: number) => void;
+  /** Thunder volume, 0–1 (0 is silent). */
+  setThunder: (volume: number) => void;
   /** One rumble, 4–6 s long. */
   thunder: () => void;
   close: () => void;
@@ -17,19 +19,21 @@ function noise(ctx: AudioContext): AudioBuffer {
   return buffer;
 }
 
-export function createStorm(volume: number): Storm | null {
+export function createStorm(): Storm | null {
   const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Ctx) return null;
   const ctx = new Ctx();
   const buffer = noise(ctx);
 
-  const master = ctx.createGain();
-  master.gain.value = 0;
-  master.connect(ctx.destination);
-  const setVolume = (v: number) => {
-    master.gain.setTargetAtTime(v * 0.6, ctx.currentTime, 0.1);
+  // Rain and thunder each have their own volume, so one never changes the other.
+  const level = () => {
+    const g = new GainNode(ctx, { gain: 0 });
+    g.connect(ctx.destination);
+    return g;
   };
-  setVolume(volume);
+  const rainLevel = level();
+  const thunderLevel = level();
+  const set = (g: GainNode) => (v: number) => g.gain.setTargetAtTime(v * 0.6, ctx.currentTime, 0.1);
 
   // Rain: steady hiss, band-limited so it sounds like rain on a window rather than static.
   const rain = ctx.createBufferSource();
@@ -38,7 +42,7 @@ export function createStorm(volume: number): Storm | null {
   const high = new BiquadFilterNode(ctx, { type: "highpass", frequency: 400 });
   const low = new BiquadFilterNode(ctx, { type: "lowpass", frequency: 3200 });
   const rainGain = new GainNode(ctx, { gain: 0.35 });
-  rain.connect(high).connect(low).connect(rainGain).connect(master);
+  rain.connect(high).connect(low).connect(rainGain).connect(rainLevel);
   rain.start();
 
   const thunder = () => {
@@ -55,16 +59,17 @@ export function createStorm(volume: number): Storm | null {
     gain.gain.exponentialRampToValueAtTime(1.6, t + 0.08);
     gain.gain.exponentialRampToValueAtTime(0.5, t + 1);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + length);
-    burst.connect(filter).connect(gain).connect(master);
+    burst.connect(filter).connect(gain).connect(thunderLevel);
     burst.start(t);
     burst.stop(t + length);
   };
 
   return {
-    setVolume,
+    setRain: set(rainLevel),
+    setThunder: set(thunderLevel),
     thunder,
     close: () => {
-      master.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
+      for (const g of [rainLevel, thunderLevel]) g.gain.setTargetAtTime(0, ctx.currentTime, 0.05);
       setTimeout(() => void ctx.close(), 200);
     },
   };
