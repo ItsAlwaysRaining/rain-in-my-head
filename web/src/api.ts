@@ -184,7 +184,16 @@ export interface GenreArtist {
 
 export type Genre =
   | { genres: []; genre: null; reason: "no_tags" }
-  | { genres: string[]; genre: string; range_label: string; plays: number; artists: GenreArtist[] };
+  | {
+      genres: string[];
+      genre: string;
+      range: { preset: Preset; start: string; end: string; data_first: string; data_last: string };
+      range_label: string;
+      plays: number;
+      /** The genre's share of tagged plays per step; color_index is its rank in the range's top 6 genres, else null. */
+      share: { grain: "week" | "month"; color_index: number | null; points: { start: string; share: number; plays: number }[] };
+      artists: GenreArtist[];
+    };
 
 export interface GenreSongs {
   artist: { name: string; art: string | null; plays: number };
@@ -193,6 +202,7 @@ export interface GenreSongs {
 
 export interface GenreParams {
   genre?: string;
+  preset?: Preset;
   start?: string;
   end?: string;
 }
