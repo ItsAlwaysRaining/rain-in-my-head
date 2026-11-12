@@ -106,11 +106,16 @@
   box-shadow: var(--shadow-raised);
 }
 
+.sounds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
 .sound {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-5);
+  gap: var(--space-4);
 }
 
 .icon {
@@ -124,9 +129,9 @@
   display: block;
 }
 
-/* Thunder toggle: Off is a Line outline, On is a Bolt pill with Page text (Smart animate 150 ms). */
-.thunderOff,
-.thunderOn {
+/* Rain and Thunder toggles: Off is a Line outline, On is a Bolt pill with Page text (Smart animate 150 ms). */
+.toggleOff,
+.toggleOn {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -144,10 +149,10 @@
     color 150ms ease-out,
     border-color 150ms ease-out;
 }
-.thunderOff:hover {
+.toggleOff:hover {
   border-color: var(--bolt);
 }
-.thunderOn {
+.toggleOn {
   background: var(--bolt);
   border-color: var(--bolt);
   color: var(--page);
@@ -168,12 +173,12 @@
   transition: opacity 150ms ease-out;
 }
 .volume input {
-  width: 160px;
+  width: 120px;
   margin: 0;
   accent-color: var(--night);
   cursor: pointer;
 }
-/* Until Thunder is on, the volume sleeps. */
+/* Until its toggle is on, a volume sleeps. */
 .asleep {
   opacity: 0.5;
 }
@@ -187,8 +192,9 @@
     right: var(--space-4);
     bottom: var(--space-4);
   }
-  .pill:has(.sound) {
-    border-radius: 24px;
+  .sounds {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 
