@@ -35,9 +35,7 @@ export function RangePicker({
   shown: ShownRange | undefined;
   onChange: (preset: Preset, start?: string, end?: string) => void;
 }) {
-  const [draft, setDraft] = useState<{ start: string; end: string } | null>(
-    null,
-  );
+  const [draft, setDraft] = useState<{ start: string; end: string } | null>(null);
 
   return (
     <div className={styles.rangeField}>
@@ -52,12 +50,7 @@ export function RangePicker({
         }}
       />
       {draft && shown && (
-        <div
-          className={styles.customPopup}
-          role="dialog"
-          aria-label="Custom date range"
-          onKeyDown={(e) => e.key === "Escape" && setDraft(null)}
-        >
+        <div className={styles.customPopup} role="dialog" aria-label="Custom date range" onKeyDown={(e) => e.key === "Escape" && setDraft(null)}>
           <div className={styles.dates}>
             <label>
               From
@@ -67,10 +60,7 @@ export function RangePicker({
                 value={draft.start}
                 min={shown.data_first}
                 max={draft.end}
-                onChange={(e) =>
-                  e.target.value &&
-                  setDraft({ ...draft, start: e.target.value })
-                }
+                onChange={(e) => e.target.value && setDraft({ ...draft, start: e.target.value })}
               />
             </label>
             <label>
@@ -80,9 +70,7 @@ export function RangePicker({
                 value={draft.end}
                 min={draft.start}
                 max={shown.data_last}
-                onChange={(e) =>
-                  e.target.value && setDraft({ ...draft, end: e.target.value })
-                }
+                onChange={(e) => e.target.value && setDraft({ ...draft, end: e.target.value })}
               />
             </label>
           </div>

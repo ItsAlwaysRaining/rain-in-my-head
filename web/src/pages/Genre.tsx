@@ -97,8 +97,13 @@ export default function Genre() {
       </div>
 
       {data.artists.length > 0 && shareSpec && (
-        <Card title="Share of tagged plays" className={styles.section}>
+        <Card title={`Share of tagged plays · ${data.genre}`} className={styles.section}>
           <VegaChart spec={shareSpec} />
+          <p className={`caption ${styles.hint}`}>
+            {data.share.color_index === null
+              ? `${title(data.genre)} isn't in your top 6 genres for this range, so it uses the Rain colour.`
+              : `${title(data.genre)} keeps the colour it has on the Overview genre chart, so the link is easy to follow.`}
+          </p>
         </Card>
       )}
 
