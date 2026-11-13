@@ -387,7 +387,7 @@ export interface PlaylistsMeta {
   binge_orders: Record<BingeOrder, string>;
 }
 
-export type PlaylistKind = "slot" | "discoveries" | "binges";
+export type PlaylistKind = "slot" | "discoveries" | "binges" | "sql";
 export type BingeOrder = "oldest" | "newest" | "biggest";
 
 export interface PlaylistRequest {
@@ -405,6 +405,7 @@ export interface PlaylistRequest {
   years?: [number, number];
   window_days?: number;
   binge_order?: BingeOrder;
+  sql?: string;
 }
 
 export interface PreviewColumn {
@@ -418,6 +419,9 @@ export interface PlaylistPreview {
   title: string | null;
   note: string | null;
   warning: string | null;
+  /** SQL type: required columns (`artist`, `track`) the query didn't return. */
+  missing?: string[];
+  returned?: string[];
   info?: string | null;
   caption?: string;
   name?: string;

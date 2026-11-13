@@ -7,13 +7,13 @@
 
 ## 2. Frontend
 
-- [ ] 2.1 Add `"sql"` to `PlaylistKind` and `sql`/`missing` to the types in `api.ts`
-- [ ] 2.2 Build `SqlForm` (textarea + Preview) and replace the `ComingSoon` tab in `Playlists.tsx`
-- [ ] 2.3 Missing Columns state per Figma 351-20225; hide Create when shown
-- [ ] 2.4 Read `?sql=` on mount; Analyst's button passes the current query
-- [ ] 2.5 Check against Figma 343-3397
+- [x] 2.1 Add `"sql"` to `PlaylistKind` and `sql`/`missing` to the types in `api.ts`
+- [x] 2.2 Build `SqlForm` (textarea + Preview) and replace the `ComingSoon` tab in `Playlists.tsx`
+- [x] 2.3 Missing Columns state per Figma 351-20225; hide Create when shown
+- [x] 2.4 Read `?sql=` on mount; Analyst's button passes the current query
+- [x] 2.5 Check against Figma 343-3397
 
 ## 3. Verify
 
-- [ ] 3.1 Run backend tests and `npm run build` / lint
+- [x] 3.1 Run backend tests and `npm run build` / lint
 - [ ] 3.2 Create one real playlist on the Mac from a SQL query

@@ -424,6 +424,7 @@ SQL_REQUIRED = ("artist", "track")
 @dataclass
 class SqlPreview(Preview):
     missing: list[str] = field(default_factory=list)  # required columns the query didn't return
+    returned: list[str] = field(default_factory=list)  # the columns it did return, for the Missing Columns state
 
 
 def preview_sql(result: pd.DataFrame) -> SqlPreview:
@@ -432,9 +433,9 @@ def preview_sql(result: pd.DataFrame) -> SqlPreview:
 
     by_lower = {str(c).lower(): c for c in result.columns}
     missing = [c for c in SQL_REQUIRED if c not in by_lower]
-    title = "From your query"
+    title = "SQL playlist"
     if missing:
-        p = SqlPreview(pd.DataFrame(), 0, "", "", {}, title=title, missing=missing,
+        p = SqlPreview(pd.DataFrame(), 0, "", "", {}, title=title, missing=missing, returned=[str(c) for c in result.columns],
                        warning="The query must return " + " and ".join(f"`{c}`" for c in missing) + " column"
                        + ("s." if len(missing) > 1 else "."))
         return p

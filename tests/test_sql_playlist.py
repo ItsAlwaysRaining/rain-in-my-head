@@ -52,6 +52,7 @@ def test_rows_come_back_in_query_order_with_extra_columns(client):
 ])
 def test_missing_columns_are_named(client, sql, missing):
     body = preview(client, sql).json()
+    assert body["returned"][-1] == "plays"
     assert body["missing"] == missing and body["warning"] and "rows" not in body
 
 

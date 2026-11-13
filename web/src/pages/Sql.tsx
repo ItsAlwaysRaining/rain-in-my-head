@@ -103,8 +103,7 @@ export default function Sql() {
             >
               Clear
             </Button>
-            {/* The SQL playlist type is issue #31; its tab explains what's coming. */}
-            <Button onClick={() => navigate("/playlists?type=sql")}>Use in Playlist Generator</Button>
+            <Button onClick={() => navigate(`/playlists?${new URLSearchParams({ type: "sql", sql })}`)}>Use in Playlist Generator</Button>
           </div>
 
           <Outcome error={run.error} data={run.data} />

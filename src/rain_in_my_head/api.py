@@ -752,7 +752,8 @@ def playlists_preview(body: PlaylistRequest):
         return _refused()
     _require_db()
     p = _preview(body)
-    result = {"title": p.title, "note": p.note, "warning": p.warning, "missing": getattr(p, "missing", [])}
+    result = {"title": p.title, "note": p.note, "warning": p.warning, "missing": getattr(p, "missing", []),
+              "returned": getattr(p, "returned", [])}
     if p.warning:
         return result
     return {
