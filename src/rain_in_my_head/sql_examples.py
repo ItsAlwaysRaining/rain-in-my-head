@@ -34,6 +34,14 @@ ORDER BY plays DESC""",
 FROM v_plays GROUP BY artist_key ORDER BY plays DESC LIMIT 50""",
     "Plays by genre": """SELECT COALESCE(primary_genre, '(untagged)') AS genre, COUNT(*) AS plays
 FROM v_plays GROUP BY genre ORDER BY plays DESC LIMIT 30""",
+    # Returns artist and track, so Playlist Generator's SQL tab can turn it into a playlist.
+    "Loved tracks, most played first": """SELECT artist_name AS artist, track_name AS track, album_name AS album,
+       COUNT(*) AS plays, MAX(date(played_local)) AS last_played
+FROM v_plays
+WHERE loved = 1
+GROUP BY track_key
+ORDER BY plays DESC
+LIMIT 50""",
 }
 
 

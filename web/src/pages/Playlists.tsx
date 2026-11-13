@@ -1,26 +1,27 @@
 // Playlist Generator: the TypeScript twin of dashboard/views/playlists.py. The form has the same controls,
 // defaults and help text; the preview and the Spotify matching come from rain_in_my_head.playlist
-// through the API, so both apps list the same tracks. Laid out as in the Figma prototype, with two more
-// tabs, AI (#32) and SQL (#31), that show what's coming.
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+// through the API, so both apps list the same tracks. Laid out as in the Figma prototype. The SQL tab builds a
+// playlist from a read-only query (owner's Mac only); the AI tab (#32) shows what's coming.
+import { keepPreviousData, useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router";
 import {
-  createPlaylist, fetchPlaylistsMeta, fetchSpotifyStatus, previewPlaylist,
+  createPlaylist, fetchPlaylistsMeta, fetchSqlMeta, fetchSpotifyStatus, previewPlaylist,
   type BingeOrder, type CreateEvent, type PlaylistKind, type PlaylistPreview, type PlaylistRequest, type PlaylistsMeta,
 } from "../api";
 import { ApiError } from "../api";
 import { useAuth } from "../auth";
 import { DataTable, type Column } from "../components/DataTable";
-import { ComingSoon } from "../components/ComingSoon";
 import { Chips, Field, RangeSlider, Slider } from "../components/Form";
 import { Button, ChipGroup, ErrorState, Loading, Notice, PageHeader, Tabs } from "../components/ui";
 import { formatDayMonthYear } from "../format";
 import styles from "./Playlists.module.css";
+import sqlStyles from "./Sql.module.css";
 import { AiPlaylistComingSoon } from "./Placeholders";
 
-const KINDS: Record<PlaylistKind, string> = { slot: "Time Slot", discoveries: "Discovery", binges: "Binge" };
-type Tab = PlaylistKind | "ai" | "sql";
+type FormKind = Exclude<PlaylistKind, "sql">;
+const KINDS: Record<FormKind, string> = { slot: "Time Slot", discoveries: "Discovery", binges: "Binge" };
+type Tab = PlaylistKind | "ai";
 const TABS: Tab[] = ["slot", "discoveries", "binges", "ai", "sql"];
 
 /** The **bold** and *italic* that the shared notices use. */
@@ -40,7 +41,7 @@ function useDebounced<T>(value: T, ms = 250): T {
 }
 
 /** The form's starting values: the Streamlit defaults. */
-function defaults(meta: PlaylistsMeta): Record<PlaylistKind, PlaylistRequest> {
+function defaults(meta: PlaylistsMeta): Record<FormKind, PlaylistRequest> {
   const first = Number(meta.first.slice(0, 4));
   const last = Number(meta.last.slice(0, 4));
   return {
@@ -54,7 +55,7 @@ export default function Playlists() {
   const meta = useQuery({ queryKey: ["playlists-meta"], queryFn: fetchPlaylistsMeta });
   const [params, setParams] = useSearchParams();
   const tab = TABS.includes(params.get("type") as Tab) ? (params.get("type") as Tab) : "slot";
-  const form = (kind: PlaylistKind) =>
+  const form = (kind: FormKind) =>
     meta.error ? <ErrorState error={meta.error} /> : !meta.data ? <Loading /> : <PlaylistsForm key={kind} kind={kind} meta={meta.data} />;
 
   return (
@@ -64,7 +65,7 @@ export default function Playlists() {
         active={tab}
         onChange={(type) => setParams({ type }, { replace: true })}
         tabs={[
-          ...(Object.keys(KINDS) as PlaylistKind[]).map((k) => ({ key: k, label: KINDS[k], content: form(k) })),
+          ...(Object.keys(KINDS) as FormKind[]).map((k) => ({ key: k, label: KINDS[k], content: form(k) })),
           {
             key: "ai",
             label: "AI",
@@ -73,12 +74,7 @@ export default function Playlists() {
           {
             key: "sql",
             label: "SQL",
-            content: (
-              <ComingSoon title="Build a playlist from a query" issue={31}>
-                Paste a query from the Analyst page that returns <code>artist</code> and <code>track</code> columns, preview the songs, and create the playlist on
-                Spotify.
-              </ComingSoon>
-            ),
+            content: <SqlPlaylist initial={params.get("sql") ?? ""} example={params.get("example") ?? ""} />,
           },
         ]}
       />
@@ -87,9 +83,9 @@ export default function Playlists() {
 }
 
 /** Each type keeps its own form while you switch tabs (the forms live in this module, not the tab). */
-const saved: Partial<Record<PlaylistKind, PlaylistRequest>> = {};
+const saved: Partial<Record<FormKind, PlaylistRequest>> = {};
 
-function PlaylistsForm({ kind, meta }: { kind: PlaylistKind; meta: PlaylistsMeta }) {
+function PlaylistsForm({ kind, meta }: { kind: FormKind; meta: PlaylistsMeta }) {
   const [form, setForm] = useState(() => saved[kind] ?? defaults(meta)[kind]);
   const set = (changes: Partial<PlaylistRequest>) =>
     setForm((f) => {
@@ -122,6 +118,146 @@ function PlaylistsForm({ kind, meta }: { kind: PlaylistKind; meta: PlaylistsMeta
         </div>
       )}
     </div>
+  );
+}
+
+/** The SQL type: a read-only query that returns `artist` and `track`, previewed on click (a half-typed query only errors). */
+let savedSql = "";
+
+function SqlPlaylist({ initial, example }: { initial: string; example: string }) {
+  const hosted = !useAuth().local;
+  if (hosted) return <HostedSqlPlaylist initial={example} />;
+  return <TypedSqlPlaylist initial={initial} />;
+}
+
+/** The hosted SQL tab: pick one of the owner's pre-defined queries; nothing can be typed. Create shows the refusal. */
+function HostedSqlPlaylist({ initial }: { initial: string }) {
+  const meta = useQuery({ queryKey: ["sql-meta"], queryFn: fetchSqlMeta });
+  const names = Object.keys(meta.data?.examples ?? {});
+  const [chosen, setChosen] = useState(initial);
+  const example = names.includes(chosen) ? chosen : (names[0] ?? "");
+  const [request, setRequest] = useState<PlaylistRequest | null>(() => (initial ? exampleRequest(initial) : null));
+  const preview = useQuery({ queryKey: ["playlist-preview", request], queryFn: () => previewPlaylist(request!), enabled: request !== null });
+
+  if (meta.error) return <ErrorState error={meta.error} />;
+  if (!meta.data) return <Loading />;
+  return (
+    <div className={styles.page}>
+      <p className={styles.intro}>Pick a query from the Analyst page. It needs to return artist and track columns; any other columns show up in the preview.</p>
+      <label className={sqlStyles.label}>
+        SQL query
+        <select
+          className={`${sqlStyles.field} ${sqlStyles.select}`}
+          value={example}
+          onChange={(e) => {
+            setChosen(e.target.value);
+            setRequest(null);
+          }}
+        >
+          {names.map((n) => (
+            <option key={n}>{n}</option>
+          ))}
+        </select>
+        <span className="caption">On this site you can run these queries but not write your own.</span>
+      </label>
+      <pre className={`${sqlStyles.field} ${sqlStyles.editor}`} aria-label="SQL for the chosen query">
+        {meta.data.examples[example]}
+      </pre>
+      <div className={sqlStyles.actions}>
+        <Button variant="primary" onClick={() => setRequest(exampleRequest(example))} disabled={preview.isFetching || !example}>
+          Run query
+        </Button>
+      </div>
+      <SqlOutcome request={request} preview={preview} />
+    </div>
+  );
+}
+
+function TypedSqlPlaylist({ initial }: { initial: string }) {
+  const [sql, setSql] = useState(() => initial || savedSql);
+  const [request, setRequest] = useState<PlaylistRequest | null>(() => (initial.trim() ? sqlRequest(initial) : null));
+  const preview = useQuery({ queryKey: ["playlist-preview", request], queryFn: () => previewPlaylist(request!), enabled: request !== null });
+
+  const submit = () => sql.trim() && setRequest(sqlRequest(sql));
+
+  const missing = preview.data?.missing?.length ? preview.data : null;
+  return (
+    <div className={styles.page}>
+      <p className={styles.intro}>Paste a query from the Analyst page. It needs to return artist and track columns; any other columns show up in the preview.</p>
+      <label className={sqlStyles.label}>
+        SQL query
+        <textarea
+          className={`${sqlStyles.field} ${sqlStyles.editor}`}
+          style={missing ? { borderColor: "var(--coral)" } : undefined}
+          aria-invalid={missing ? true : undefined}
+          value={sql}
+          spellCheck={false}
+          placeholder="SELECT artist, track, COUNT(*) AS plays FROM v_plays GROUP BY track_key ORDER BY plays DESC LIMIT 50"
+          onChange={(e) => {
+            setSql(e.target.value);
+            savedSql = e.target.value;
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+        />
+        <span className="caption">
+          {missing ? "This query doesn't return artist and track columns." : "Read-only. Runs against your scrobbles, the same database as the Analyst page. Up to 100 tracks, in query order."}
+        </span>
+      </label>
+      <div className={sqlStyles.actions}>
+        <Button variant="primary" onClick={submit} disabled={preview.isFetching}>
+          Run query
+        </Button>
+        <Button
+          onClick={() => {
+            setSql("");
+            savedSql = "";
+            setRequest(null);
+          }}
+        >
+          Clear
+        </Button>
+      </div>
+
+      <SqlOutcome request={request} preview={preview} />
+    </div>
+  );
+}
+
+function SqlOutcome({ request, preview }: { request: PlaylistRequest | null; preview: UseQueryResult<PlaylistPreview> }) {
+  if (request === null) return null;
+  if (preview.error) return <ErrorState error={preview.error} />;
+  if (!preview.data) return <Loading />;
+  if (preview.data.missing?.length) return <MissingColumns missing={preview.data.missing} returned={preview.data.returned ?? []} />;
+  return (
+    <div className={preview.isFetching ? styles.stale : undefined}>
+      <Preview data={preview.data} />
+      {!preview.data.warning && <CreateOnSpotify request={request} preview={preview.data} />}
+    </div>
+  );
+}
+
+const sqlRequest = (sql: string): PlaylistRequest => ({ kind: "sql", sql, size: 100, min_plays: 1 });
+const exampleRequest = (example: string): PlaylistRequest => ({ kind: "sql", example, size: 100, min_plays: 1 });
+
+/** Figma "SQL - Missing Columns": names what the query returned, so the fix (rename with AS) is plain. */
+function MissingColumns({ missing, returned }: { missing: string[]; returned: string[] }) {
+  const list = (cols: string[]) => cols.map((c, i) => (
+    <Fragment key={c}>
+      {i > 0 && (i === returned.length - 1 ? " and " : ", ")}
+      <code>{c}</code>
+    </Fragment>
+  ));
+  return (
+    <Notice tone="error">
+      <strong>Missing {missing.length > 1 ? "columns" : "column"}</strong>
+      <br />
+      The query needs to return {list(missing)} {missing.length > 1 ? "columns" : "column"}. It returned {list(returned)}.
+    </Notice>
   );
 }
 
