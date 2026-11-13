@@ -7,6 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from rain_in_my_head import api, config
+from rain_in_my_head import sql_examples as sq
 
 SCHEMA = Path(__file__).resolve().parents[1] / "src" / "rain_in_my_head" / "schema.sql"
 PLAYS = [("Hozier", "Too Sweet"), ("Hozier", "Too Sweet"), ("bbno$", "Edamame"), ("Geese", "Cobra")]
@@ -71,3 +72,28 @@ def test_typed_sql_preview_is_refused_when_hosted(client, monkeypatch):
     monkeypatch.setattr(config, "HOSTED", True)
     response = preview(client, "SELECT 'a' AS artist, 'b' AS track")
     assert response.status_code == 403
+    assert response.json()["message"] == "This DJ doesn't take requests."
+
+
+LOVED = {"Loved-ish": "SELECT artist_name AS artist, track_name AS track FROM scrobbles ORDER BY played_at"}
+
+
+def test_a_pre_defined_query_previews_by_name(client, monkeypatch):
+    monkeypatch.setattr(sq, "EXAMPLES", LOVED)
+    body = client.post("/api/playlists/preview", json={"kind": "sql", "example": "Loved-ish"}).json()
+    assert [r["track"] for r in body["rows"]] == [t for _, t in PLAYS]
+
+
+def test_hosted_runs_a_pre_defined_query_but_not_an_unknown_name(client, monkeypatch):
+    monkeypatch.setattr(sq, "EXAMPLES", LOVED)
+    monkeypatch.setattr(config, "HOSTED", True)
+    monkeypatch.setattr(api, "_heavy", lambda *a, **k: None)  # the per-person count lives in Neon
+    assert client.post("/api/playlists/preview", json={"kind": "sql", "example": "Loved-ish"}).status_code == 200
+    assert client.post("/api/playlists/preview", json={"kind": "sql", "example": "Nope"}).status_code == 403
+
+
+def test_create_stays_refused_when_hosted(client, monkeypatch):
+    monkeypatch.setattr(sq, "EXAMPLES", LOVED)
+    monkeypatch.setattr(config, "HOSTED", True)
+    response = client.post("/api/playlists/create", json={"kind": "sql", "example": "Loved-ish", "name": "x"})
+    assert response.status_code == 403 and response.json()["message"] == "This DJ doesn't take requests."

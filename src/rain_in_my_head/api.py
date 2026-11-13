@@ -708,6 +708,7 @@ class PlaylistRequest(BaseModel):
     min_plays: int = 1
     # SQL (owner's Mac only: typed SQL never runs on the hosted site)
     sql: str | None = None
+    example: str | None = None  # a pre-defined query, by name (the only SQL that runs on the hosted site)
     # Time slot
     days: list[str] = ["Friday"]
     hours: tuple[int, int] = (17, 19)
@@ -727,7 +728,7 @@ class PlaylistRequest(BaseModel):
 def _preview(body: PlaylistRequest) -> pl.Preview:
     if body.kind == "sql":
         try:
-            result = sq.run_readonly(config.DB_PATH, body.sql or "")
+            result = sq.run_example(config.DB_PATH, body.example) if body.example else sq.run_readonly(config.DB_PATH, body.sql or "")
         except Exception as e:  # invalid SQL or an attempted write: shown on the page, as on Analyst
             raise HTTPException(422, str(e)) from e
         return pl.preview_sql(result)
@@ -747,9 +748,15 @@ def _preview(body: PlaylistRequest) -> pl.Preview:
 
 
 @app.post("/api/playlists/preview")
-def playlists_preview(body: PlaylistRequest):
-    if config.HOSTED and body.kind == "sql":  # typed SQL is refused on the hosted site, as on Analyst
-        return _refused()
+def playlists_preview(body: PlaylistRequest, request: Request):
+    if body.kind == "sql":
+        # As on Analyst: the hosted site runs only a pre-defined query, by name; visitor text never runs.
+        if config.HOSTED and (body.sql is not None or body.example not in sq.EXAMPLES):
+            return _refused()
+        if body.example is not None and body.example not in sq.EXAMPLES:
+            raise HTTPException(422, f"Unknown example {body.example!r}")
+        if body.example and (limited := _heavy(request, "playlists", "sql", body.example)) is not None:
+            return limited
     _require_db()
     p = _preview(body)
     result = {"title": p.title, "note": p.note, "warning": p.warning, "missing": getattr(p, "missing", []),

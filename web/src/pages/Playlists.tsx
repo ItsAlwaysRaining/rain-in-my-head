@@ -2,11 +2,11 @@
 // defaults and help text; the preview and the Spotify matching come from rain_in_my_head.playlist
 // through the API, so both apps list the same tracks. Laid out as in the Figma prototype. The SQL tab builds a
 // playlist from a read-only query (owner's Mac only); the AI tab (#32) shows what's coming.
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Fragment, useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "react-router";
 import {
-  createPlaylist, fetchPlaylistsMeta, fetchSpotifyStatus, previewPlaylist,
+  createPlaylist, fetchPlaylistsMeta, fetchSqlMeta, fetchSpotifyStatus, previewPlaylist,
   type BingeOrder, type CreateEvent, type PlaylistKind, type PlaylistPreview, type PlaylistRequest, type PlaylistsMeta,
 } from "../api";
 import { ApiError } from "../api";
@@ -74,7 +74,7 @@ export default function Playlists() {
           {
             key: "sql",
             label: "SQL",
-            content: <SqlPlaylist initial={params.get("sql") ?? ""} />,
+            content: <SqlPlaylist initial={params.get("sql") ?? ""} example={params.get("example") ?? ""} />,
           },
         ]}
       />
@@ -124,13 +124,60 @@ function PlaylistsForm({ kind, meta }: { kind: FormKind; meta: PlaylistsMeta }) 
 /** The SQL type: a read-only query that returns `artist` and `track`, previewed on click (a half-typed query only errors). */
 let savedSql = "";
 
-function SqlPlaylist({ initial }: { initial: string }) {
+function SqlPlaylist({ initial, example }: { initial: string; example: string }) {
   const hosted = !useAuth().local;
-  const [sql, setSql] = useState(() => initial || savedSql);
-  const [request, setRequest] = useState<PlaylistRequest | null>(() => (initial.trim() && !hosted ? sqlRequest(initial) : null));
+  if (hosted) return <HostedSqlPlaylist initial={example} />;
+  return <TypedSqlPlaylist initial={initial} />;
+}
+
+/** The hosted SQL tab: pick one of the owner's pre-defined queries; nothing can be typed. Create shows the refusal. */
+function HostedSqlPlaylist({ initial }: { initial: string }) {
+  const meta = useQuery({ queryKey: ["sql-meta"], queryFn: fetchSqlMeta });
+  const names = Object.keys(meta.data?.examples ?? {});
+  const [chosen, setChosen] = useState(initial);
+  const example = names.includes(chosen) ? chosen : (names[0] ?? "");
+  const [request, setRequest] = useState<PlaylistRequest | null>(() => (initial ? exampleRequest(initial) : null));
   const preview = useQuery({ queryKey: ["playlist-preview", request], queryFn: () => previewPlaylist(request!), enabled: request !== null });
 
-  if (hosted) return <Notice>This DJ doesn't take requests. Building a playlist from your own SQL only works on the owner's Mac.</Notice>;
+  if (meta.error) return <ErrorState error={meta.error} />;
+  if (!meta.data) return <Loading />;
+  return (
+    <div className={styles.page}>
+      <p className={styles.intro}>Pick a query from the Analyst page. It needs to return artist and track columns; any other columns show up in the preview.</p>
+      <label className={sqlStyles.label}>
+        SQL query
+        <select
+          className={`${sqlStyles.field} ${sqlStyles.select}`}
+          value={example}
+          onChange={(e) => {
+            setChosen(e.target.value);
+            setRequest(null);
+          }}
+        >
+          {names.map((n) => (
+            <option key={n}>{n}</option>
+          ))}
+        </select>
+        <span className="caption">On this site you can run these queries but not write your own.</span>
+      </label>
+      <pre className={`${sqlStyles.field} ${sqlStyles.editor}`} aria-label="SQL for the chosen query">
+        {meta.data.examples[example]}
+      </pre>
+      <div className={sqlStyles.actions}>
+        <Button variant="primary" onClick={() => setRequest(exampleRequest(example))} disabled={preview.isFetching || !example}>
+          Run query
+        </Button>
+      </div>
+      <SqlOutcome request={request} preview={preview} />
+    </div>
+  );
+}
+
+function TypedSqlPlaylist({ initial }: { initial: string }) {
+  const [sql, setSql] = useState(() => initial || savedSql);
+  const [request, setRequest] = useState<PlaylistRequest | null>(() => (initial.trim() ? sqlRequest(initial) : null));
+  const preview = useQuery({ queryKey: ["playlist-preview", request], queryFn: () => previewPlaylist(request!), enabled: request !== null });
+
   const submit = () => sql.trim() && setRequest(sqlRequest(sql));
 
   const missing = preview.data?.missing?.length ? preview.data : null;
@@ -176,23 +223,26 @@ function SqlPlaylist({ initial }: { initial: string }) {
         </Button>
       </div>
 
-      {request === null ? null : preview.error ? (
-        <ErrorState error={preview.error} />
-      ) : !preview.data ? (
-        <Loading />
-      ) : missing ? (
-        <MissingColumns missing={missing.missing!} returned={missing.returned ?? []} />
-      ) : (
-        <div className={preview.isFetching ? styles.stale : undefined}>
-          <Preview data={preview.data} />
-          {!preview.data.warning && <CreateOnSpotify request={request} preview={preview.data} />}
-        </div>
-      )}
+      <SqlOutcome request={request} preview={preview} />
+    </div>
+  );
+}
+
+function SqlOutcome({ request, preview }: { request: PlaylistRequest | null; preview: UseQueryResult<PlaylistPreview> }) {
+  if (request === null) return null;
+  if (preview.error) return <ErrorState error={preview.error} />;
+  if (!preview.data) return <Loading />;
+  if (preview.data.missing?.length) return <MissingColumns missing={preview.data.missing} returned={preview.data.returned ?? []} />;
+  return (
+    <div className={preview.isFetching ? styles.stale : undefined}>
+      <Preview data={preview.data} />
+      {!preview.data.warning && <CreateOnSpotify request={request} preview={preview.data} />}
     </div>
   );
 }
 
 const sqlRequest = (sql: string): PlaylistRequest => ({ kind: "sql", sql, size: 100, min_plays: 1 });
+const exampleRequest = (example: string): PlaylistRequest => ({ kind: "sql", example, size: 100, min_plays: 1 });
 
 /** Figma "SQL - Missing Columns": names what the query returned, so the fix (rename with AS) is plain. */
 function MissingColumns({ missing, returned }: { missing: string[]; returned: string[] }) {

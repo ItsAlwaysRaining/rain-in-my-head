@@ -16,20 +16,6 @@ import styles from "./Sql.module.css";
 const show = (value: SqlCell, isFloat: boolean) =>
   value === null ? "" : isFloat && typeof value === "number" && Number.isInteger(value) ? value.toFixed(1) : String(value);
 
-/** The CSV pandas `to_csv(index=False)` writes: fields quoted only when they hold a comma, quote or newline. */
-function toCsv(columns: string[], rows: SqlCell[][], floats: Set<number>): string {
-  const field = (text: string) => (/[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text);
-  const lines = [columns.map(field), ...rows.map((row) => row.map((v, i) => field(show(v, floats.has(i)))))];
-  return lines.map((line) => line.join(",")).join("\n") + "\n";
-}
-
-function download(name: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/csv" }));
-  const a = Object.assign(document.createElement("a"), { href: url, download: name });
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 export default function Sql() {
   const meta = useQuery({ queryKey: ["sql-meta"], queryFn: fetchSqlMeta });
   const [sql, setSql] = useState("");
@@ -40,7 +26,6 @@ export default function Sql() {
     if (sql.trim()) run.mutate(sql);
   };
 
-  const navigate = useNavigate();
   if (meta.data?.hosted) return <HostedSql meta={meta.data} />;
   return (
     <section>
@@ -103,10 +88,10 @@ export default function Sql() {
             >
               Clear
             </Button>
-            <Button onClick={() => navigate(`/playlists?${new URLSearchParams({ type: "sql", sql })}`)}>Use in Playlist Generator</Button>
           </div>
 
-          <Outcome error={run.error} data={run.data} />
+          {/* run.variables: the query that produced these results, not whatever the editor holds now. */}
+          <Outcome error={run.error} data={run.data} handOff={{ sql: run.variables ?? sql }} />
         </div>
       )}
     </section>
@@ -146,20 +131,24 @@ function HostedSql({ meta }: { meta: SqlMeta }) {
             Run query
           </Button>
         </div>
-        <Outcome error={run.error} data={run.data} />
+        <Outcome error={run.error} data={run.data} handOff={{ example: run.variables ?? example }} />
       </div>
     </section>
   );
 }
 
-function Outcome({ error, data }: { error: unknown; data: SqlResult | undefined }) {
+/** What the SQL tab of Playlist Generator opens with: typed SQL on the Mac, a pre-defined query's name when hosted. */
+type HandOff = { sql: string } | { example: string };
+
+function Outcome({ error, data, handOff }: { error: unknown; data: SqlResult | undefined; handOff: HandOff }) {
   if (error) return <ErrorState error={error} />;
   if (!data) return null;
   if ("error" in data) return <Notice tone="error">{data.error}</Notice>;
-  return <Result columns={data.columns} floatColumns={data.float_columns} rows={data.rows} rowCount={data.row_count} />;
+  return <Result columns={data.columns} floatColumns={data.float_columns} rows={data.rows} rowCount={data.row_count} handOff={handOff} />;
 }
 
-function Result({ columns, floatColumns, rows, rowCount }: { columns: string[]; floatColumns: number[]; rows: SqlCell[][]; rowCount: number }) {
+function Result({ columns, floatColumns, rows, rowCount, handOff }: { columns: string[]; floatColumns: number[]; rows: SqlCell[][]; rowCount: number; handOff: HandOff }) {
+  const navigate = useNavigate();
   const floats = new Set(floatColumns);
   // Keyed by position, so duplicate column names (SELECT a, a) still show.
   const records = useMemo(() => rows.map((row) => Object.fromEntries(row.map((v, i) => [String(i), v]))), [rows]);
@@ -176,7 +165,7 @@ function Result({ columns, floatColumns, rows, rowCount }: { columns: string[]; 
       </div>
       <DataTable rows={records} columns={tableColumns} maxHeight={480} sortable />
       <div>
-        <Button onClick={() => download("query.csv", toCsv(columns, rows, floats))}>Download CSV</Button>
+        <Button onClick={() => navigate(`/playlists?${new URLSearchParams({ type: "sql", ...handOff })}`)}>Use in Playlist Generator</Button>
       </div>
     </div>
   );

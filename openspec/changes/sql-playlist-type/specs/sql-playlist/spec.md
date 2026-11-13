@@ -41,15 +41,27 @@ Create on Spotify SHALL use the existing matching and creation code (`create_on_
 - **THEN** a playlist is created from the rows in query order and the unmatched tracks are listed
 
 ### Requirement: Analyst hands its query to the SQL tab
-The Analyst page's **Use in Playlist Generator** button SHALL open Playlist Generator on the SQL tab with the current query filled in and previewed.
+Under the Analyst results, a **Use in Playlist Generator** button SHALL replace **Download CSV**. It SHALL open Playlist Generator on the SQL tab with the query from the active editor filled in and previewed. On the owner's Mac that is the typed query; on the hosted site it is the chosen pre-defined query. The button SHALL show for every visitor.
 
-#### Scenario: Hand-off
-- **WHEN** the owner types a query on Analyst and clicks Use in Playlist Generator
-- **THEN** the SQL tab opens with that query in the box
+#### Scenario: Hand-off on the Mac
+- **WHEN** the owner runs a typed query on Analyst and clicks Use in Playlist Generator
+- **THEN** the SQL tab opens with that query in the box and its preview
 
-### Requirement: Hosted site keeps typed SQL refused
-On the hosted site, a SQL-type preview containing typed SQL SHALL be refused with 403 `refused` and "This DJ doesn't take requests.", as on Analyst. Create stays refused for every type.
+#### Scenario: Hand-off on the hosted site
+- **WHEN** a visitor runs the pre-defined query "Loved tracks" and clicks Use in Playlist Generator
+- **THEN** the SQL tab opens on that query, shows its SQL and preview, and shows Create on Spotify
 
-#### Scenario: Guest previews typed SQL
-- **WHEN** a hosted guest sends a SQL-type preview
+### Requirement: Hosted site runs only pre-defined queries and refuses Create
+On the hosted site the SQL tab SHALL let a visitor pick a pre-defined query by name and preview it; nothing can be typed. A SQL-type preview with typed SQL, or an unknown query name, SHALL be refused with 403 `refused` and "This DJ doesn't take requests." A pre-defined preview counts toward the visitor's heavy-request limit, as on Analyst. Clicking Create on Spotify SHALL show "This DJ doesn't take requests." as for every other type.
+
+#### Scenario: Visitor previews a pre-defined query
+- **WHEN** a hosted visitor previews a pre-defined query by name
+- **THEN** the preview comes back
+
+#### Scenario: Visitor sends typed SQL
+- **WHEN** a hosted visitor sends a SQL-type preview with typed SQL
 - **THEN** the API answers 403 `refused` and nothing runs
+
+#### Scenario: Visitor clicks Create
+- **WHEN** a hosted visitor clicks Create on Spotify on the SQL tab
+- **THEN** a notice reads "This DJ doesn't take requests." and no playlist is created

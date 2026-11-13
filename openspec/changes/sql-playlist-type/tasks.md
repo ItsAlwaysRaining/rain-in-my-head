@@ -13,6 +13,15 @@
 - [x] 2.4 Read `?sql=` on mount; Analyst's button passes the current query
 - [x] 2.5 Check against Figma 343-3397
 
+## 4. Hand-off for every visitor
+
+- [x] 4.1 Spec: Use in Playlist Generator replaces Download CSV; hosted SQL tab runs pre-defined queries by name
+- [x] 4.2 API: `example` on SQL-type preview; hosted allows it (heavy-counted), refuses typed SQL
+- [x] 4.3 Analyst: swap Download CSV for Use in Playlist Generator (Mac and hosted); drop the old button
+- [x] 4.4 SQL tab on the hosted site: pick a pre-defined query, preview, Create shows the refusal
+- [x] 4.5 Tests
+- [x] 4.6 Add a playlist-ready pre-defined query ("Loved tracks, most played first"): none of the existing ones return artist and track
+
 ## 3. Verify
 
 - [x] 3.1 Run backend tests and `npm run build` / lint

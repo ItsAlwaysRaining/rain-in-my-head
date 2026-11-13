@@ -406,6 +406,7 @@ export interface PlaylistRequest {
   window_days?: number;
   binge_order?: BingeOrder;
   sql?: string;
+  example?: string;
 }
 
 export interface PreviewColumn {
