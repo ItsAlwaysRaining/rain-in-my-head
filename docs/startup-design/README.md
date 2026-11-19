@@ -38,4 +38,4 @@ For long-time listeners who feel stuck in an algorithm's loop, Rain in My Head i
 - Brand: [mission, vision, and values](03-brand/mission-vision-values.md) · [tone](03-brand/tone-of-voice.md) · [personality](03-brand/brand-personality.md)
 - Product: [existing features](04-product/existing-features.md) · [MVP](04-product/mvp-definition.md) · [prioritization](04-product/feature-prioritization.md) · [journey](04-product/user-journey.md)
 - Validation: [playbook](06-validation/validation-playbook.md) · [risks](06-validation/risk-analysis.md) · [assumptions](06-validation/assumptions-tracker.md) · [experiments](06-validation/experiment-design.md) · [kill criteria](06-validation/kill-criteria.md) · [scorecard](06-validation/scorecard.md)
-- [30-day action plan](action-plan-30-days.md) · [PROGRESS](PROGRESS.md)
+- [PROGRESS](PROGRESS.md)

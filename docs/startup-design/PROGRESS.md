@@ -19,7 +19,7 @@ Last updated: 2026-11-18
 - [x] 6 Product
 - [x] 7 Financial: replaced by the "why this isn't a business" section in 02-strategy/business-model.md
 - [x] 8 Validation (score 6/10, conditional; a clear yes as a portfolio piece)
-- [x] Final: README.md and action-plan-30-days.md
+- [x] Final: README.md
 
 ## Notes
 - Worktree: ../rain-in-my-head-startup-design on branch docs/startup-design
